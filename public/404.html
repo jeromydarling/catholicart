@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ars Sacra</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      SPA on GitHub Pages: this 404 page rewrites the URL into a single-segment
+      query the index.html script can decode, so deep links like
+      /catholicart/browse work even though Pages serves no such file.
+      See https://github.com/rafgraph/spa-github-pages
+    -->
+    <script>
+      (function () {
+        // For project pages this should be 1 (the "/<repo>" prefix).
+        var pathSegmentsToKeep = 1;
+        var l = window.location;
+        l.replace(
+          l.protocol +
+            "//" +
+            l.hostname +
+            (l.port ? ":" + l.port : "") +
+            l.pathname
+              .split("/")
+              .slice(0, 1 + pathSegmentsToKeep)
+              .join("/") +
+            "/?/" +
+            l.pathname
+              .slice(1)
+              .split("/")
+              .slice(pathSegmentsToKeep)
+              .join("/")
+              .replace(/&/g, "~and~") +
+            (l.search ? "&" + l.search.slice(1).replace(/&/g, "~and~") : "") +
+            l.hash,
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>
