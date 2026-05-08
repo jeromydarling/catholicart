@@ -13,6 +13,10 @@ import Certificate from "./pages/Certificate";
 import Catalog from "./pages/Catalog";
 import Orders from "./pages/Orders";
 import Partnerships from "./pages/Partnerships";
+import Report from "./pages/Report";
+import Journal from "./pages/Journal";
+import Apprenticeships from "./pages/Apprenticeships";
+import Prize from "./pages/Prize";
 import About from "./pages/About";
 import Manifesto from "./pages/Manifesto";
 import Verify from "./pages/Verify";
@@ -46,6 +50,10 @@ export default function App() {
       <Route path="/catalog" element={<Catalog />} />
       <Route path="/orders" element={<Orders />} />
       <Route path="/partnerships" element={<Partnerships />} />
+      <Route path="/report" element={<Report />} />
+      <Route path="/journal" element={<Journal />} />
+      <Route path="/apprenticeships" element={<Apprenticeships />} />
+      <Route path="/prize" element={<Prize />} />
       <Route path="/about" element={<About />} />
       <Route path="/manifesto" element={<Manifesto />} />
       <Route path="/verify/:token" element={<Verify />} />

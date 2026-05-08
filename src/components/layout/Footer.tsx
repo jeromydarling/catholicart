@@ -38,6 +38,14 @@ export function Footer() {
             <FooterLink to="/about">Mission</FooterLink>
           </FooterCol>
         </div>
+        <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 border-t border-ink/10 pt-10">
+          <FooterCol heading="The culture engine">
+            <FooterLink to="/journal">Beauty Manifesto</FooterLink>
+            <FooterLink to="/report">Anti-Kitsch Report</FooterLink>
+            <FooterLink to="/prize">Pulchritudo Prize</FooterLink>
+            <FooterLink to="/apprenticeships">Apprenticeships</FooterLink>
+          </FooterCol>
+        </div>
 
         <div className="mt-12 pt-8 border-t border-ink/10 flex flex-col sm:flex-row justify-between gap-4 text-xs font-sans text-ink-muted">
           <div>
