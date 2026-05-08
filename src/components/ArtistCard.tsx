@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
+import { ShieldCheck } from "lucide-react";
 import type { Artist } from "../types";
 import { cn, formatPrice, initials } from "../lib/utils";
 import { categoryBySlug } from "../data/categories";
+import { isVerified } from "../data/artists";
 import { Badge } from "./ui/badge";
 
 interface ArtistCardProps {
@@ -65,9 +67,23 @@ export function ArtistCard({ artist, className, index = 0 }: ArtistCardProps) {
       <div className="p-5 sm:p-6 flex flex-col gap-3 grow">
         <div>
           <div className="flex items-baseline justify-between gap-3 mb-1">
-            <h3 className="font-display text-xl sm:text-2xl text-ink leading-tight">
-              {artist.honorific && <span className="text-ink-muted text-base mr-1">{artist.honorific}</span>}
-              {artist.name}
+            <h3 className="font-display text-xl sm:text-2xl text-ink leading-tight flex items-center gap-2">
+              <span>
+                {artist.honorific && (
+                  <span className="text-ink-muted text-base mr-1">
+                    {artist.honorific}
+                  </span>
+                )}
+                {artist.name}
+              </span>
+              {isVerified(artist) && (
+                <span
+                  className="text-olive-600"
+                  title={`Endorsed by ${artist.verification?.verifierName}`}
+                >
+                  <ShieldCheck className="h-4 w-4" aria-hidden />
+                </span>
+              )}
             </h3>
           </div>
           <div className="font-sans text-xs uppercase tracking-[0.18em] text-ink-muted">

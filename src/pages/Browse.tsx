@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { Filter, X } from "lucide-react";
-import { artists } from "../data/artists";
+import { artists, isVerified } from "../data/artists";
 import { categories } from "../data/categories";
 import type { CategorySlug } from "../types";
 import { PageShell } from "../components/layout/PageShell";
@@ -29,6 +29,7 @@ export default function Browse() {
     | "all"
     | CategorySlug;
   const acceptingOnly = params.get("accepting") === "true";
+  const verifiedOnly = params.get("verified") === "true";
   const priceBand = (params.get("price") || "any") as PriceId;
 
   const setParam = (key: string, value: string | null) => {
@@ -47,14 +48,16 @@ export default function Browse() {
       if (activeCategory !== "all" && !a.categories.includes(activeCategory))
         return false;
       if (acceptingOnly && !a.acceptingCommissions) return false;
+      if (verifiedOnly && !isVerified(a)) return false;
       if (a.startingAt < band.min || a.startingAt > band.max) return false;
       return true;
     });
-  }, [activeCategory, acceptingOnly, priceBand]);
+  }, [activeCategory, acceptingOnly, verifiedOnly, priceBand]);
 
   const activeFilterCount =
     (activeCategory !== "all" ? 1 : 0) +
     (acceptingOnly ? 1 : 0) +
+    (verifiedOnly ? 1 : 0) +
     (priceBand !== "any" ? 1 : 0);
 
   return (
@@ -108,6 +111,7 @@ export default function Browse() {
           <FilterPanel
             activeCategory={activeCategory}
             acceptingOnly={acceptingOnly}
+            verifiedOnly={verifiedOnly}
             priceBand={priceBand}
             setParam={setParam}
             onClear={() => setParams({}, { replace: true })}
@@ -167,6 +171,7 @@ export default function Browse() {
               <FilterPanel
                 activeCategory={activeCategory}
                 acceptingOnly={acceptingOnly}
+                verifiedOnly={verifiedOnly}
                 priceBand={priceBand}
                 setParam={setParam}
                 onClear={() => setParams({}, { replace: true })}
@@ -190,6 +195,7 @@ export default function Browse() {
 interface FilterPanelProps {
   activeCategory: "all" | CategorySlug;
   acceptingOnly: boolean;
+  verifiedOnly: boolean;
   priceBand: PriceId;
   setParam: (key: string, value: string | null) => void;
   onClear: () => void;
@@ -199,6 +205,7 @@ interface FilterPanelProps {
 function FilterPanel({
   activeCategory,
   acceptingOnly,
+  verifiedOnly,
   priceBand,
   setParam,
   onClear,
@@ -247,43 +254,17 @@ function FilterPanel({
         ))}
       </FilterSection>
 
-      <FilterSection title="Availability">
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <input
-            type="checkbox"
-            checked={acceptingOnly}
-            onChange={(e) =>
-              setParam("accepting", e.target.checked ? "true" : null)
-            }
-            className="peer sr-only"
-          />
-          <span
-            className={cn(
-              "h-5 w-5 rounded-sm border border-ink/25 grid place-items-center transition-colors",
-              acceptingOnly
-                ? "bg-burgundy-500 border-burgundy-500"
-                : "bg-parchment-50",
-            )}
-            aria-hidden
-          >
-            {acceptingOnly && (
-              <svg
-                viewBox="0 0 16 16"
-                className="h-3 w-3 text-parchment-50"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 8 L7 12 L13 4" />
-              </svg>
-            )}
-          </span>
-          <span className="font-serif text-base text-ink">
-            Accepting commissions only
-          </span>
-        </label>
+      <FilterSection title="Trust & availability">
+        <CheckboxRow
+          checked={verifiedOnly}
+          onChange={(v) => setParam("verified", v ? "true" : null)}
+          label="Pastor-endorsed only"
+        />
+        <CheckboxRow
+          checked={acceptingOnly}
+          onChange={(v) => setParam("accepting", v ? "true" : null)}
+          label="Accepting commissions"
+        />
       </FilterSection>
 
       {activeFilterCount > 0 && (
@@ -299,9 +280,53 @@ function FilterPanel({
             </Badge>
           )}
           {acceptingOnly && <Badge variant="olive">Accepting now</Badge>}
+          {verifiedOnly && <Badge variant="olive">Pastor-endorsed</Badge>}
         </div>
       )}
     </div>
+  );
+}
+
+function CheckboxRow({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+}) {
+  return (
+    <label className="flex items-center gap-3 cursor-pointer group py-1">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="peer sr-only"
+      />
+      <span
+        className={cn(
+          "h-5 w-5 rounded-sm border border-ink/25 grid place-items-center transition-colors shrink-0",
+          checked ? "bg-burgundy-500 border-burgundy-500" : "bg-parchment-50",
+        )}
+        aria-hidden
+      >
+        {checked && (
+          <svg
+            viewBox="0 0 16 16"
+            className="h-3 w-3 text-parchment-50"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 8 L7 12 L13 4" />
+          </svg>
+        )}
+      </span>
+      <span className="font-serif text-base text-ink">{label}</span>
+    </label>
   );
 }
 

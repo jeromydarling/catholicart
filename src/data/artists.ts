@@ -1,4 +1,5 @@
 import type { Artist } from "../types";
+import { SEED_VERIFICATIONS } from "./seed-verifications";
 
 export const artists: Artist[] = [
   {
@@ -1246,10 +1247,27 @@ export const artists: Artist[] = [
   },
 ];
 
+// Attach seed endorsements to each artist by slug.
+artists.forEach((a) => {
+  const v = SEED_VERIFICATIONS[a.slug];
+  if (v) a.verification = v;
+});
+
 export function artistBySlug(slug: string) {
   return artists.find((a) => a.slug === slug);
 }
 
 export function artistsByCategory(slug: string) {
   return artists.filter((a) => a.categories.includes(slug as never));
+}
+
+// Verified means: any endorsement state where the public profile should
+// show as vouched-for. Pending and declined do not count.
+export function isVerified(a: Artist): boolean {
+  const s = a.verification?.status;
+  return (
+    s === "endorsed" ||
+    s === "endorsed-chancery-pending" ||
+    s === "chancery-confirmed"
+  );
 }

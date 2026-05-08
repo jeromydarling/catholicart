@@ -7,6 +7,8 @@ import ArtistSignup from "./pages/ArtistSignup";
 import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import Manifesto from "./pages/Manifesto";
+import Verify from "./pages/Verify";
+import Chancery from "./pages/Chancery";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -20,6 +22,8 @@ export default function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/about" element={<About />} />
       <Route path="/manifesto" element={<Manifesto />} />
+      <Route path="/verify/:token" element={<Verify />} />
+      <Route path="/chancery/:token" element={<Chancery />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
