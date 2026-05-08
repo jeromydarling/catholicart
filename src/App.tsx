@@ -3,6 +3,8 @@ import Landing from "./pages/Landing";
 import Browse from "./pages/Browse";
 import ArtistProfile from "./pages/ArtistProfile";
 import Commission from "./pages/Commission";
+import Workspace from "./pages/Workspace";
+import Connect from "./pages/Connect";
 import ArtistSignup from "./pages/ArtistSignup";
 import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
@@ -18,6 +20,8 @@ export default function App() {
       <Route path="/browse" element={<Browse />} />
       <Route path="/artists/:slug" element={<ArtistProfile />} />
       <Route path="/commission/:slug" element={<Commission />} />
+      <Route path="/workspace/:id" element={<Workspace />} />
+      <Route path="/connect/:slug" element={<Connect />} />
       <Route path="/signup/artist" element={<ArtistSignup />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/about" element={<About />} />

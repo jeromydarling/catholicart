@@ -62,18 +62,103 @@ export interface Artist {
   verification?: Verification;
 }
 
-export interface CommissionRequest {
+// === Commission lifecycle ===
+
+export type CommissionStage =
+  | "scoping"           // Patron submitted scope; awaiting artist quote
+  | "awaiting-deposit"  // Artist quoted; patron hasn't funded the deposit
+  | "in-progress"       // Deposit held; artist is working
+  | "midpoint-review"   // Artist marked midpoint; patron must release midpoint funds
+  | "final-review"      // Artist marked complete; patron must release final funds
+  | "delivered"         // All funds released; work delivered
+  | "blessed"           // Optional installation/blessing recorded
+  | "cancelled";
+
+export type EscrowStage = "deposit" | "midpoint" | "final";
+export type EscrowStatus = "unfunded" | "held" | "released" | "refunded";
+
+export interface EscrowMilestone {
+  stage: EscrowStage;
+  label: string;          // "Deposit" / "Midpoint review" / "Final delivery"
+  pct: number;            // 0.25 / 0.35 / 0.40
+  amountUsd: number;
+  status: EscrowStatus;
+  fundedAt?: string;
+  releasedAt?: string;
+}
+
+export type MessageAuthorRole = "patron" | "artist" | "system";
+
+export interface CommissionMessage {
+  id: string;
+  authorRole: MessageAuthorRole;
+  authorName: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface WipUpdate {
+  id: string;
+  caption: string;
+  paletteFrom: string;
+  paletteTo: string;
+  pattern?: "halo" | "cross" | "vesica" | "triptych" | "frame";
+  postedAt: string;
+}
+
+export interface BlessingRecord {
+  recordedAt: string;
+  recordedBy: string;
+  note?: string;
+  parishOrChapel?: string;
+}
+
+export interface Commission {
   id: string;
   artistSlug: string;
-  fromName: string;
-  fromEmail: string;
+  patronName: string;
+  patronEmail: string;
   category: CategorySlug;
   setting: string;
-  description: string;
-  budgetUsd?: number;
+  scope: string;            // Patron's plain-language description
+  artistQuoteNote?: string; // Artist's reply / clarifications
+  artistTotalUsd?: number;  // What the artist quotes (artist receives 100% of this)
+  platformFeePct: number;   // e.g. 0.10
+  platformFeeUsd?: number;  // computed once artist quotes
+  totalDueUsd?: number;     // artistTotalUsd + platformFeeUsd
   preferredDeadline?: string;
+  feastDeadline?: { feastSlug: string; date: string; name: string };
+  patronSaint?: string;
+  diocese?: string;
+  parishOrChapel?: string;
+  stage: CommissionStage;
+  escrow: EscrowMilestone[];
+  messages: CommissionMessage[];
+  wip: WipUpdate[];
+  blessing?: BlessingRecord;
+  // Provenance certificate fields (filled at delivery)
+  certificate?: {
+    issuedAt: string;
+    serial: string;
+    title: string;          // Final title of the work
+  };
   createdAt: string;
-  status: "draft" | "sent" | "accepted" | "declined";
+  completedAt?: string;
+  cancelledAt?: string;
+}
+
+// === Stripe Connect (mocked) ===
+
+export type ConnectStatus = "not-onboarded" | "onboarding" | "verified";
+
+export interface ConnectAccount {
+  artistSlug: string;
+  status: ConnectStatus;
+  payoutAccountLast4?: string;
+  payoutAccountBank?: string;
+  taxFormStatus: "missing" | "pending" | "on-file";
+  startedAt?: string;
+  verifiedAt?: string;
 }
 
 // === Pastor / verifier endorsement ===

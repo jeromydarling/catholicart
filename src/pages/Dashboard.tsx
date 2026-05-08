@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  ArrowRight,
+  Banknote,
   CheckCircle2,
   Clock,
   ExternalLink,
@@ -10,16 +12,22 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
-import { artistBySlug } from "../data/artists";
+import { artistBySlug, isVerified } from "../data/artists";
 import { categoryBySlug } from "../data/categories";
-import { brand } from "../data/brand";
 import { PageShell } from "../components/layout/PageShell";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Ornament } from "../components/Ornament";
 import { useStore } from "../lib/store";
-import { formatPrice } from "../lib/utils";
-import type { Verification, VerificationStatus } from "../types";
+import { formatPrice, initials } from "../lib/utils";
+import { escrowReleasedUsd, escrowHeldUsd, escrowProgressPct } from "../lib/pricing";
+import type {
+  Commission,
+  CommissionStage,
+  ConnectAccount,
+  Verification,
+  VerificationStatus,
+} from "../types";
 
 const STATUS_COPY: Record<
   VerificationStatus,
@@ -38,13 +46,27 @@ const STATUS_COPY: Record<
   revoked: { label: "Revoked", tone: "burgundy" },
 };
 
+const STAGE_COPY: Record<
+  CommissionStage,
+  { label: string; tone: "gold" | "olive" | "burgundy" | "lapis" | "outline" }
+> = {
+  scoping:           { label: "Awaiting quote",     tone: "gold" },
+  "awaiting-deposit":{ label: "Awaiting deposit",   tone: "gold" },
+  "in-progress":     { label: "In the studio",      tone: "lapis" },
+  "midpoint-review": { label: "Midpoint · review",  tone: "gold" },
+  "final-review":    { label: "Final · review",     tone: "gold" },
+  delivered:         { label: "Delivered",          tone: "olive" },
+  blessed:           { label: "Delivered · blessed",tone: "olive" },
+  cancelled:         { label: "Cancelled",          tone: "burgundy" },
+};
+
 export default function Dashboard() {
-  const { requests, signedUpArtist, verifications } = useStore();
+  const { commissions, signedUpArtist, verifications, connectAccounts } = useStore();
   const [params] = useSearchParams();
   const justAppliedToken = params.get("just-applied");
   const [showCopyHint, setShowCopyHint] = useState<string | null>(null);
 
-  const myVerification =
+  const myVerification: Verification | null =
     verifications.find(
       (v) => v.token === signedUpArtist?.verificationToken,
     ) ??
@@ -52,7 +74,14 @@ export default function Dashboard() {
       ? verifications.find((v) => v.token === justAppliedToken) ?? null
       : null);
 
-  // Copy-to-clipboard helper for the simulated magic-links.
+  // Once a verifier is identified, look up their connect account to show payouts UI.
+  const verifierArtistSlug = signedUpArtist?.name
+    ? slugify(signedUpArtist.name)
+    : undefined;
+  const myConnect: ConnectAccount | null = verifierArtistSlug
+    ? (connectAccounts[verifierArtistSlug] ?? null)
+    : null;
+
   function copyLink(text: string, key: string) {
     navigator.clipboard?.writeText(text).catch(() => {});
     setShowCopyHint(key);
@@ -61,7 +90,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (justAppliedToken) {
-      // Scroll to the verification panel
       setTimeout(() => {
         document
           .getElementById("verification-panel")
@@ -69,6 +97,13 @@ export default function Dashboard() {
       }, 200);
     }
   }, [justAppliedToken]);
+
+  const inFlight = commissions.filter(
+    (c) => c.stage !== "delivered" && c.stage !== "blessed" && c.stage !== "cancelled",
+  );
+  const completed = commissions.filter(
+    (c) => c.stage === "delivered" || c.stage === "blessed",
+  );
 
   return (
     <PageShell>
@@ -80,17 +115,17 @@ export default function Dashboard() {
           Your guild record
         </h1>
         <p className="mt-4 font-serif text-lg text-ink-muted max-w-2xl">
-          Your application status, your pastor&rsquo;s endorsement, and a
-          register of any commissions you have requested.
+          Your applications, endorsements, payouts, and every commission in
+          flight or completed.
         </p>
         <Ornament className="my-10" />
       </section>
 
-      {/* Verification panel — only when artist has applied */}
+      {/* Verification panel */}
       {myVerification && (
         <section
           id="verification-panel"
-          className="container max-w-4xl mb-16"
+          className="container max-w-4xl mb-10"
         >
           <VerificationPanel
             verification={myVerification}
@@ -100,8 +135,19 @@ export default function Dashboard() {
         </section>
       )}
 
+      {/* Connect / payouts panel — only if artist is endorsed */}
+      {myVerification && isEndorsed(myVerification.status) && (
+        <section className="container max-w-4xl mb-12">
+          <PayoutsPanel
+            artistName={signedUpArtist?.name ?? "Artist"}
+            connect={myConnect}
+            slug={verifierArtistSlug}
+          />
+        </section>
+      )}
+
       {/* Welcome / artist applicant summary */}
-      <section className="container max-w-4xl">
+      <section className="container max-w-5xl">
         {signedUpArtist && !myVerification && (
           <div className="mb-10 rounded-md border border-ink/10 bg-burgundy-500/5 p-5 sm:p-6">
             <div className="flex items-start gap-4">
@@ -122,79 +168,237 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Commission requests register */}
-        <h2 className="font-display text-2xl sm:text-3xl text-ink mb-5">
-          Commissions you&rsquo;ve requested
-        </h2>
-        {requests.length === 0 ? (
-          <div className="rounded-md border border-dashed border-ink/15 p-8 sm:p-12 text-center">
-            <div className="grid h-12 w-12 mx-auto place-items-center rounded-full bg-parchment-100 text-ink-muted">
-              <Inbox className="h-5 w-5" />
-            </div>
-            <h3 className="mt-6 font-display text-2xl text-ink">
-              No commissions yet.
-            </h3>
-            <p className="mt-3 font-serif text-base text-ink-muted max-w-md mx-auto">
-              When you request work from a guild artist, the conversation
-              will be kept here.
-            </p>
-            <Button asChild className="mt-6">
-              <Link to="/browse">Browse the guild</Link>
-            </Button>
-          </div>
+        <div className="flex items-baseline justify-between mb-5 gap-4 flex-wrap">
+          <h2 className="font-display text-2xl sm:text-3xl text-ink">
+            Commissions in flight
+          </h2>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/browse">
+              Commission an artist <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
+
+        {inFlight.length === 0 ? (
+          <EmptyState />
         ) : (
-          <ul className="space-y-4">
-            {requests.map((r) => {
-              const artist = artistBySlug(r.artistSlug);
-              const cat = categoryBySlug(r.category);
-              if (!artist) return null;
-              return (
-                <li
-                  key={r.id}
-                  className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div>
-                      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
-                        Commission · {cat?.name}
-                      </div>
-                      <div className="mt-1 font-display text-2xl text-ink">
-                        <Link
-                          to={`/artists/${artist.slug}`}
-                          className="hover:text-burgundy-500"
-                        >
-                          {artist.honorific ? `${artist.honorific} ` : ""}
-                          {artist.name}
-                        </Link>
-                      </div>
-                      <div className="mt-1 font-sans text-xs uppercase tracking-[0.18em] text-ink-muted">
-                        From {r.fromName} · sent{" "}
-                        {new Date(r.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="gold">Sent</Badge>
-                      <Badge variant="outline">{r.setting}</Badge>
-                      {r.budgetUsd ? (
-                        <Badge variant="burgundy">
-                          Budget {formatPrice(r.budgetUsd)}
-                        </Badge>
-                      ) : null}
-                    </div>
-                  </div>
-                  <p className="mt-4 font-serif text-base text-ink-soft leading-relaxed line-clamp-4 whitespace-pre-line">
-                    {r.description}
-                  </p>
-                </li>
-              );
-            })}
+          <ul className="grid sm:grid-cols-2 gap-4 mb-12">
+            {inFlight.map((c) => (
+              <CommissionTile key={c.id} commission={c} />
+            ))}
           </ul>
+        )}
+
+        {completed.length > 0 && (
+          <>
+            <h2 className="font-display text-2xl sm:text-3xl text-ink mb-5 mt-8">
+              Completed
+            </h2>
+            <ul className="grid sm:grid-cols-2 gap-4">
+              {completed.map((c) => (
+                <CommissionTile key={c.id} commission={c} />
+              ))}
+            </ul>
+          </>
         )}
       </section>
     </PageShell>
   );
 }
 
+// ───────── Commission tile ─────────
+function CommissionTile({ commission }: { commission: Commission }) {
+  const artist = artistBySlug(commission.artistSlug);
+  const cat = categoryBySlug(commission.category);
+  const stage = STAGE_COPY[commission.stage];
+  const released = escrowReleasedUsd(commission.escrow);
+  const held = escrowHeldUsd(commission.escrow);
+  const total = commission.artistTotalUsd ?? 0;
+  const pct = escrowProgressPct(commission.escrow);
+  if (!artist) return null;
+  return (
+    <li>
+      <Link
+        to={`/workspace/${commission.id}`}
+        className="block rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 hover:shadow-plate transition-shadow focusable"
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="h-12 w-12 rounded-full grid place-items-center text-parchment-50 font-display text-base shrink-0"
+            style={{
+              background: `linear-gradient(135deg, ${artist.portraitFrom}, ${artist.portraitTo})`,
+            }}
+          >
+            {initials(artist.name)}
+          </div>
+          <div className="grow min-w-0">
+            <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+              {cat?.shortName} · with {artist.name.split(" ").slice(-1)[0]}
+            </div>
+            <div className="mt-0.5 font-display text-lg text-ink leading-tight line-clamp-2">
+              {commission.scope.split(/[\.\n]/)[0].slice(0, 80)}
+            </div>
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <Badge variant={stage.tone}>{stage.label}</Badge>
+              {commission.preferredDeadline && (
+                <Badge variant="outline">
+                  Due{" "}
+                  {new Date(commission.preferredDeadline).toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </Badge>
+              )}
+            </div>
+          </div>
+        </div>
+        {total > 0 && (
+          <>
+            <div className="mt-4 h-1 rounded-full bg-parchment-200 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-olive-500 to-olive-600"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <div className="mt-2 flex items-baseline justify-between font-sans text-xs text-ink-muted">
+              <span>
+                <span className="tabular-nums">{formatPrice(released)}</span>{" "}
+                released
+                {held > 0 && (
+                  <>
+                    {" · "}
+                    <span className="tabular-nums">{formatPrice(held)}</span>{" "}
+                    held
+                  </>
+                )}
+              </span>
+              <span className="tabular-nums">{formatPrice(total)} total</span>
+            </div>
+          </>
+        )}
+      </Link>
+    </li>
+  );
+}
+
+// ───────── Empty ─────────
+function EmptyState() {
+  return (
+    <div className="rounded-md border border-dashed border-ink/15 p-8 sm:p-12 text-center mb-12">
+      <div className="grid h-12 w-12 mx-auto place-items-center rounded-full bg-parchment-100 text-ink-muted">
+        <Inbox className="h-5 w-5" />
+      </div>
+      <h3 className="mt-6 font-display text-2xl text-ink">
+        No commissions yet.
+      </h3>
+      <p className="mt-3 font-serif text-base text-ink-muted max-w-md mx-auto">
+        When you commission a guild artist, the workspace — escrow, studio
+        thread, WIP gallery — lives here.
+      </p>
+      <Button asChild className="mt-6">
+        <Link to="/browse">Browse the guild</Link>
+      </Button>
+    </div>
+  );
+}
+
+// ───────── Payouts panel ─────────
+function PayoutsPanel({
+  artistName,
+  connect,
+  slug,
+}: {
+  artistName: string;
+  connect: ConnectAccount | null;
+  slug?: string;
+}) {
+  const verified = connect?.status === "verified";
+  return (
+    <div
+      className={`rounded-md border ${verified ? "border-olive-500/30" : "border-ink/10"} bg-parchment-50 shadow-card p-5 sm:p-6`}
+    >
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start gap-3">
+          <div
+            className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${verified ? "bg-olive-500/15 text-olive-600" : "bg-burgundy-500/10 text-burgundy-500"}`}
+          >
+            <Banknote className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600">
+              Payouts
+            </div>
+            <h2 className="mt-1 font-display text-2xl text-ink leading-tight">
+              {verified ? "You can receive payouts." : "Set up payouts"}
+            </h2>
+            {verified && connect ? (
+              <p className="mt-1 font-serif text-sm text-ink-soft">
+                Funds deposit to{" "}
+                <strong>{connect.payoutAccountBank}</strong> ••••
+                {connect.payoutAccountLast4} · tax form on file.
+              </p>
+            ) : (
+              <p className="mt-1 font-serif text-sm text-ink-soft max-w-lg">
+                You're endorsed and ready. Connect a bank account so we can
+                pay you when patrons release each milestone. Onboarding takes
+                under 5 minutes.
+              </p>
+            )}
+          </div>
+        </div>
+        {!verified && slug && (
+          <Button asChild>
+            <Link to={`/connect/${slug}`}>
+              {connect?.status === "onboarding"
+                ? "Continue setup"
+                : "Set up payouts"}{" "}
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        )}
+        {verified && (
+          <Badge variant="olive">
+            <ShieldCheck className="h-3 w-3 mr-1" /> Stripe Connect verified
+          </Badge>
+        )}
+      </div>
+      <div className="mt-4 pt-4 border-t border-ink/10 grid grid-cols-3 gap-4 text-center">
+        <KV label="Artist receives" value="100%" tone="olive" />
+        <KV label="Platform fee" value="10%" tone="ink" />
+        <KV label="Stripe fees" value="absorbed" tone="ink" />
+      </div>
+      <p className="mt-3 font-serif text-xs italic text-ink-muted leading-relaxed">
+        Our promise: {artistName.split(" ")[0]}, you keep 100% of what you
+        quote. The patron pays our fee on top.
+      </p>
+    </div>
+  );
+}
+
+function KV({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "olive" | "ink";
+}) {
+  return (
+    <div>
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+        {label}
+      </div>
+      <div
+        className={`mt-1 font-display text-2xl tabular-nums ${tone === "olive" ? "text-olive-600" : "text-ink"}`}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// ───────── Verification panel (unchanged shape from prior) ─────────
 function VerificationPanel({
   verification,
   onCopy,
@@ -209,7 +413,6 @@ function VerificationPanel({
   const chanceryUrl = verification.chanceryToken
     ? `${window.location.origin}${import.meta.env.BASE_URL}chancery/${verification.chanceryToken}`
     : null;
-
   const priestActed =
     verification.status === "endorsed" ||
     verification.status === "endorsed-chancery-pending" ||
@@ -238,7 +441,6 @@ function VerificationPanel({
       </div>
 
       <div className="p-5 sm:p-7">
-        {/* Step 1: priest */}
         <Step
           n={1}
           title={`${verification.role === "religious-superior" ? "Superior" : verification.role === "chancery" ? "Chancery" : "Pastor"}'s endorsement`}
@@ -324,7 +526,6 @@ function VerificationPanel({
           )}
         </Step>
 
-        {/* Step 2: chancery (only if free webmail) */}
         {verification.verifierEmailIsFreeWebmail && chanceryUrl && (
           <Step
             n={2}
@@ -400,10 +601,8 @@ function VerificationPanel({
           </Step>
         )}
 
-        {/* Final state */}
         <div className="mt-6 pt-6 border-t border-ink/10">
-          {verification.status === "endorsed" ||
-          verification.status === "chancery-confirmed" ? (
+          {isEndorsed(verification.status) ? (
             <div className="flex items-start gap-3">
               <ShieldCheck className="h-5 w-5 text-olive-600 shrink-0 mt-0.5" />
               <div>
@@ -491,3 +690,18 @@ function Step({
     </div>
   );
 }
+
+function isEndorsed(s: VerificationStatus) {
+  return s === "endorsed" || s === "chancery-confirmed";
+}
+
+function slugify(name: string) {
+  return name
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+// Suppress dead-import lint while keeping helpful icons available
+isVerified;
