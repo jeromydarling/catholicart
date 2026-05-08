@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Award, Compass, Hourglass } from "lucide-react";
-import { artistBySlug } from "../data/artists";
+import { ArrowRight, Award, Compass, Hourglass, ShieldCheck } from "lucide-react";
+import { artistBySlug, isVerified } from "../data/artists";
 import { categoryBySlug } from "../data/categories";
 import { PageShell } from "../components/layout/PageShell";
 import { Button } from "../components/ui/button";
@@ -75,6 +75,15 @@ export default function ArtistProfile() {
                 ) : (
                   <Badge variant="outline">Not currently booking</Badge>
                 )}
+                {isVerified(artist) && (
+                  <Badge
+                    variant="olive"
+                    className="inline-flex items-center gap-1"
+                  >
+                    <ShieldCheck className="h-3 w-3" />
+                    Pastor-endorsed
+                  </Badge>
+                )}
               </div>
               <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight text-ink leading-[1.05]">
                 {artist.honorific && (
@@ -103,6 +112,67 @@ export default function ArtistProfile() {
               >
                 “{artist.vocationStatement}”
               </p>
+
+              {artist.verification && isVerified(artist) && (
+                <div className="mt-7 rounded-md border border-olive-500/30 bg-olive-500/5 p-4 sm:p-5 max-w-2xl">
+                  <div className="flex items-start gap-3">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-olive-500 text-parchment-50">
+                      <ShieldCheck className="h-4 w-4" />
+                    </div>
+                    <div className="grow">
+                      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-olive-600 mb-0.5">
+                        Pastor-endorsed
+                      </div>
+                      <div className="font-display text-lg sm:text-xl text-ink leading-tight">
+                        {artist.verification.verifierName}
+                      </div>
+                      <div className="font-serif text-sm text-ink-soft mt-0.5">
+                        {artist.verification.parishOrCommunity}
+                      </div>
+                      <div className="mt-2 font-sans text-[10px] uppercase tracking-[0.18em] text-ink-muted">
+                        Endorsed{" "}
+                        {artist.verification.endorsedAt
+                          ? new Date(
+                              artist.verification.endorsedAt,
+                            ).toLocaleDateString(undefined, {
+                              year: "numeric",
+                              month: "short",
+                            })
+                          : "—"}
+                        {artist.verification.status ===
+                          "chancery-confirmed" && (
+                          <>
+                            {" · "}Chancery confirmed (
+                            {artist.verification.diocese})
+                          </>
+                        )}
+                        {artist.verification.status ===
+                          "endorsed-chancery-pending" && (
+                          <>
+                            {" · "}Awaiting chancery confirmation (
+                            {artist.verification.diocese})
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {artist.verification?.status === "pending" && (
+                <div className="mt-7 rounded-md border border-gold-500/40 bg-gold-500/5 p-4 sm:p-5 max-w-2xl">
+                  <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-1">
+                    Pending pastor endorsement
+                  </div>
+                  <p className="font-serif text-sm text-ink-soft leading-snug">
+                    Awaiting endorsement from{" "}
+                    {artist.verification.verifierName} (
+                    {artist.verification.parishOrCommunity}). The profile is
+                    visible while we wait, but cannot accept new commissions
+                    until the endorsement is recorded.
+                  </p>
+                </div>
+              )}
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button

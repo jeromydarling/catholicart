@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Info, ShieldCheck } from "lucide-react";
 import { categories } from "../data/categories";
+import type { VerifierRole } from "../types";
 import { PageShell } from "../components/layout/PageShell";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -10,40 +11,49 @@ import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { Ornament } from "../components/Ornament";
 import { useStore } from "../lib/store";
+import { classifyEmail } from "../lib/email-policy";
 import { cn } from "../lib/utils";
+import { brand } from "../data/brand";
+
+const ROLES: Array<{ id: VerifierRole; label: string; help: string }> = [
+  {
+    id: "pastor",
+    label: "Diocesan parish priest (pastor)",
+    help: "Most artists. Your pastor at the parish where you regularly worship.",
+  },
+  {
+    id: "religious-superior",
+    label: "Religious superior",
+    help: "For artists in religious life — abbot, abbess, prior, provincial.",
+  },
+  {
+    id: "chaplain",
+    label: "Chaplain or rector",
+    help: "Military, hospital, university, prison, or seminary chaplain.",
+  },
+  {
+    id: "chancery",
+    label: "Diocesan chancery (no parish reachable)",
+    help: "Use only if no pastor or superior is available. We'll contact the chancellor or vicar general.",
+  },
+];
 
 export default function ArtistSignup() {
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
-  const [submitted, setSubmitted] = useState(false);
-  const { signUpArtist } = useStore();
+  const [role, setRole] = useState<VerifierRole>("pastor");
+  const [verifierEmail, setVerifierEmail] = useState("");
+  const navigate = useNavigate();
+  const { signUpArtist, submitVerification } = useStore();
+
+  const emailClass = useMemo(
+    () => classifyEmail(verifierEmail),
+    [verifierEmail],
+  );
+  const showChanceryFields = emailClass.valid && emailClass.isFreeWebmail;
 
   function toggleCat(slug: string) {
     setSelectedCats((cur) =>
       cur.includes(slug) ? cur.filter((c) => c !== slug) : [...cur, slug],
-    );
-  }
-
-  if (submitted) {
-    return (
-      <PageShell>
-        <section className="container py-16 sm:py-24 max-w-2xl text-center">
-          <div className="grid h-14 w-14 mx-auto place-items-center rounded-full bg-olive-500/15 text-olive-600">
-            <CheckCircle2 className="h-7 w-7" />
-          </div>
-          <h1 className="mt-8 font-display text-4xl sm:text-5xl text-ink leading-tight">
-            Thank you for applying.
-          </h1>
-          <p className="mt-4 font-serif text-lg text-ink-muted">
-            A guild reader will read your application carefully and reply
-            within two weeks. We accept artists slowly because we want each
-            entry to mean something.
-          </p>
-          <Ornament className="my-10" />
-          <Button asChild>
-            <Link to="/dashboard">View your application</Link>
-          </Button>
-        </section>
-      </PageShell>
     );
   }
 
@@ -54,12 +64,13 @@ export default function ArtistSignup() {
           Apply to the guild
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight text-ink leading-[1.05]">
-          Become a member of the guild.
+          Apply to be vouched-for.
         </h1>
         <p className="mt-5 font-serif text-lg text-ink-muted leading-relaxed max-w-2xl">
-          We accept artists who keep the rule of their craft and who can be
-          vouched for by a master, a parish, or a body of completed work. We
-          read every application; we will not waste your time.
+          Every {brand.name} artist is endorsed by their pastor — or, for
+          religious, by their superior. The guild does not list anonymous
+          artists, and it does not list artists no priest will vouch for.
+          That&rsquo;s the whole point.
         </p>
         <Ornament className="my-10" />
 
@@ -71,7 +82,18 @@ export default function ArtistSignup() {
               name: String(data.get("name") || ""),
               email: String(data.get("email") || ""),
             });
-            setSubmitted(true);
+            const v = submitVerification({
+              role,
+              verifierName: String(data.get("verifierName") || ""),
+              verifierEmail: String(data.get("verifierEmail") || ""),
+              parishOrCommunity: String(data.get("parishOrCommunity") || ""),
+              parishWebsite:
+                String(data.get("parishWebsite") || "") || undefined,
+              diocese: String(data.get("diocese") || "") || undefined,
+              chanceryEmail:
+                String(data.get("chanceryEmail") || "") || undefined,
+            });
+            navigate(`/dashboard?just-applied=${v.token}`);
             window.scrollTo({ top: 0 });
           }}
           className="space-y-10"
@@ -89,7 +111,7 @@ export default function ArtistSignup() {
               </Field>
             </div>
             <div className="grid sm:grid-cols-2 gap-5">
-              <Field label="Email">
+              <Field label="Your email">
                 <Input name="email" type="email" required />
               </Field>
               <Field label="City and country">
@@ -172,25 +194,162 @@ export default function ArtistSignup() {
                   className="flex h-11 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 py-2 font-serif text-base text-ink focusable"
                   defaultValue="welcome"
                 >
-                  <option value="welcome">Welcome — I quote per request</option>
+                  <option value="welcome">
+                    Welcome — I quote per request
+                  </option>
                   <option value="tiers">Tiers only — no custom quotes</option>
                 </select>
               </Field>
             </div>
             <p className="font-serif text-sm italic text-ink-muted">
               You will be invited to a private dashboard to set your full
-              tiers, portfolio, and turnaround windows after we accept you.
+              tiers, portfolio, and turnaround windows after the guild
+              receives your endorsement.
             </p>
           </Section>
 
-          <Section title="A reference" eyebrow="Five">
-            <Field label="Who can vouch for you?">
-              <Textarea
-                name="reference"
-                rows={3}
-                placeholder="A parish priest, a master, a former patron, a religious community. Name and contact, please."
-              />
+          <Section
+            title="Pastor's endorsement"
+            eyebrow="Five"
+            extra={
+              <div className="rounded-md border border-burgundy-500/20 bg-burgundy-500/5 p-4 text-sm text-ink-soft font-serif leading-relaxed">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="h-4 w-4 text-burgundy-500 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="font-medium text-ink">
+                      How this works.
+                    </strong>{" "}
+                    We email your priest a one-click endorsement page. He
+                    affirms you are a parishioner in good standing and that
+                    he supports your work. His name and parish appear on
+                    your profile. Re-confirmed annually. He may revoke at
+                    any time.
+                  </div>
+                </div>
+              </div>
+            }
+          >
+            <Field label="Verifier's role">
+              <div className="grid gap-2">
+                {ROLES.map((r) => (
+                  <button
+                    type="button"
+                    key={r.id}
+                    onClick={() => setRole(r.id)}
+                    aria-pressed={role === r.id}
+                    className={cn(
+                      "rounded-md border p-3 text-left transition-colors focusable",
+                      role === r.id
+                        ? "border-burgundy-500 bg-burgundy-500/5"
+                        : "border-ink/10 bg-parchment-50 hover:border-ink/25",
+                    )}
+                  >
+                    <div className="font-serif text-base text-ink">
+                      {r.label}
+                    </div>
+                    <div className="mt-0.5 font-serif text-sm text-ink-muted">
+                      {r.help}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </Field>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              <Field label="Verifier's name">
+                <Input
+                  name="verifierName"
+                  required
+                  placeholder={
+                    role === "religious-superior"
+                      ? "e.g. Abbot James Dunne"
+                      : "e.g. Fr. John Smith"
+                  }
+                />
+              </Field>
+              <Field
+                label={
+                  role === "religious-superior"
+                    ? "Community"
+                    : role === "chancery"
+                      ? "Chancery / Diocese"
+                      : "Parish or chapel"
+                }
+              >
+                <Input
+                  name="parishOrCommunity"
+                  required
+                  placeholder="e.g. St. Mary's Parish, Pittsburgh PA"
+                />
+              </Field>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-5">
+              <Field label="Parish/community website (recommended)">
+                <Input
+                  name="parishWebsite"
+                  type="url"
+                  placeholder="https://stmaryparish.org"
+                />
+              </Field>
+              <Field label="Verifier's email">
+                <Input
+                  name="verifierEmail"
+                  type="email"
+                  required
+                  value={verifierEmail}
+                  onChange={(e) => setVerifierEmail(e.target.value)}
+                  placeholder="fr.smith@stmaryparish.org"
+                />
+              </Field>
+            </div>
+
+            {showChanceryFields && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35 }}
+                className="rounded-md border border-gold-500/40 bg-gold-500/5 p-4 sm:p-5"
+              >
+                <div className="flex items-start gap-3">
+                  <Info className="h-4 w-4 text-gold-600 shrink-0 mt-1" />
+                  <div className="space-y-3 grow">
+                    <div>
+                      <div className="font-sans text-[11px] uppercase tracking-[0.22em] text-gold-600 mb-1">
+                        Free-webmail address ({emailClass.domain})
+                      </div>
+                      <p className="font-serif text-sm text-ink-soft leading-relaxed">
+                        Many small parishes still use a free-webmail
+                        account. We accept this — but the endorsement only
+                        goes live once your{" "}
+                        <strong className="font-medium">
+                          diocesan chancery
+                        </strong>{" "}
+                        confirms. Most chanceries reply within a few
+                        business days.
+                      </p>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Field label="Diocese">
+                        <Input
+                          name="diocese"
+                          required={showChanceryFields}
+                          placeholder="Diocese of Pittsburgh"
+                        />
+                      </Field>
+                      <Field label="Chancery email">
+                        <Input
+                          name="chanceryEmail"
+                          type="email"
+                          required={showChanceryFields}
+                          placeholder="chancery@diopitt.org"
+                        />
+                      </Field>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </Section>
 
           <motion.div
@@ -206,6 +365,11 @@ export default function ArtistSignup() {
               <Link to="/manifesto">Read the manifesto first</Link>
             </Button>
           </motion.div>
+          <p className="font-serif italic text-sm text-ink-muted">
+            By submitting, you authorise the guild to contact your verifier
+            and (if applicable) the chancery for the sole purpose of
+            confirming you are a Catholic in good standing.
+          </p>
         </form>
       </section>
     </PageShell>
@@ -230,10 +394,12 @@ function Field({
 function Section({
   title,
   eyebrow,
+  extra,
   children,
 }: {
   title: string;
   eyebrow: string;
+  extra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -245,6 +411,7 @@ function Section({
         <span className="block h-px w-8 bg-gold-500/40" />
         <span className="font-display text-2xl text-ink">{title}</span>
       </div>
+      {extra}
       {children}
     </div>
   );
