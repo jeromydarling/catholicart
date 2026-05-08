@@ -1,0 +1,4 @@
+node_modules/
+
+# Built/cloned third-party desktop app — see tools/README.md for re-install steps
+tools/1code/
