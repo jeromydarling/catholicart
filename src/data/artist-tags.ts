@@ -11,21 +11,65 @@ import { artists } from "./artists";
 export interface ArtistTags {
   saintSlugs: string[];   // saints they've depicted / specialize in
   diocese?: string;        // canonical diocese
+  order?: string;          // religious-order slug (matches Order.slug below)
+}
+
+// Religious orders we group by. Slug + display name + short blurb.
+export interface Order {
+  slug: string;
+  name: string;
+  charism: string;
+  paletteFrom: string;
+  paletteTo: string;
+}
+export const ORDERS: Order[] = [
+  {
+    slug: "benedictine",
+    name: "Order of St. Benedict",
+    charism: "Ora et labora — pray and work. The grandfather of monastic art and chant.",
+    paletteFrom: "#3a352c",
+    paletteTo: "#0e0c08",
+  },
+  {
+    slug: "franciscan",
+    name: "Franciscans",
+    charism: "Lady Poverty and the cosmic Christ. Workshops of the people.",
+    paletteFrom: "#7a5320",
+    paletteTo: "#33240f",
+  },
+  {
+    slug: "dominican",
+    name: "Order of Preachers (Dominicans)",
+    charism: "Truth in the streets. The white-and-black habit and the studied hand.",
+    paletteFrom: "#3a3a3a",
+    paletteTo: "#0a0a0a",
+  },
+  {
+    slug: "discalced-carmelite",
+    name: "Discalced Carmelites",
+    charism: "Hidden contemplation, dazzling output. Teresa, John of the Cross, Thérèse.",
+    paletteFrom: "#5a4636",
+    paletteTo: "#231914",
+  },
+];
+
+export function orderBySlug(slug: string): Order | undefined {
+  return ORDERS.find((o) => o.slug === slug);
 }
 
 export const ARTIST_TAGS: Record<string, ArtistTags> = {
   "maria-chrysostom":      { saintSlugs: ["mary", "joseph", "therese"],          diocese: "Diocese of Pittsburgh" },
-  "br-andrew-of-subiaco":  { saintSlugs: ["francis", "anthony", "padre-pio"],    diocese: "Archdiocese of Santa Fe" },
+  "br-andrew-of-subiaco":  { saintSlugs: ["francis", "anthony", "padre-pio"],    diocese: "Archdiocese of Santa Fe", order: "benedictine" },
   "giovanna-solis":        { saintSlugs: ["mary", "guadalupe", "kolbe"],         diocese: "Archdiocese of Mexico" },
   "tobias-wren":           { saintSlugs: ["joseph", "michael", "patrick"],       diocese: "Diocese of Cleveland" },
   "annunciata-park":       { saintSlugs: ["mary", "guadalupe", "faustina"],      diocese: "Diocese of Pittsburgh" },
   "felix-donnegan":        { saintSlugs: ["michael", "augustine", "jpii"],       diocese: "Diocese of Charleston" },
-  "bartolomeu-camara":     { saintSlugs: ["mary", "francis", "anthony"],         diocese: "Archdiocese of São Paulo" },
-  "sr-clare-of-avila":     { saintSlugs: ["catherine-siena", "therese", "mary"], diocese: "Archdiocese of Madrid" },
+  "bartolomeu-camara":     { saintSlugs: ["mary", "francis", "anthony"],         diocese: "Archdiocese of São Paulo", order: "franciscan" },
+  "sr-clare-of-avila":     { saintSlugs: ["catherine-siena", "therese", "mary"], diocese: "Archdiocese of Madrid", order: "discalced-carmelite" },
   "henrik-aslaksen":       { saintSlugs: ["michael", "patrick", "augustine"],    diocese: "Diocese of Oslo" },
-  "theo-marchand":         { saintSlugs: ["bernadette", "therese", "joseph"],    diocese: "Archdiocese of Paris" },
+  "theo-marchand":         { saintSlugs: ["bernadette", "therese", "joseph"],    diocese: "Archdiocese of Paris", order: "dominican" },
   "imogen-fairbairn":      { saintSlugs: ["cecilia", "therese", "mary"],         diocese: "Archdiocese of Westminster" },
-  "esteban-vega-cruz":     { saintSlugs: ["guadalupe", "kolbe", "padre-pio"],    diocese: "Archdiocese of Mexico" },
+  "esteban-vega-cruz":     { saintSlugs: ["guadalupe", "kolbe", "padre-pio"],    diocese: "Archdiocese of Mexico", order: "franciscan" },
 };
 
 export function tagsFor(artistSlug: string): ArtistTags {
@@ -57,6 +101,10 @@ export function artistsBySaint(saintSlug: string) {
 
 export function artistsByDiocese(diocese: string) {
   return artists.filter((a) => tagsFor(a.slug).diocese === diocese);
+}
+
+export function artistsByOrder(orderSlug: string) {
+  return artists.filter((a) => tagsFor(a.slug).order === orderSlug);
 }
 
 export function listDioceses(): { diocese: string; count: number }[] {

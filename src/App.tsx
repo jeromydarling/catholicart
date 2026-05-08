@@ -10,6 +10,8 @@ import ArtistSignup from "./pages/ArtistSignup";
 import Dashboard from "./pages/Dashboard";
 import Ledger from "./pages/Ledger";
 import Certificate from "./pages/Certificate";
+import Catalog from "./pages/Catalog";
+import Orders from "./pages/Orders";
 import Partnerships from "./pages/Partnerships";
 import About from "./pages/About";
 import Manifesto from "./pages/Manifesto";
@@ -41,6 +43,8 @@ export default function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/ledger" element={<Ledger />} />
       <Route path="/certificate/:id" element={<Certificate />} />
+      <Route path="/catalog" element={<Catalog />} />
+      <Route path="/orders" element={<Orders />} />
       <Route path="/partnerships" element={<Partnerships />} />
       <Route path="/about" element={<About />} />
       <Route path="/manifesto" element={<Manifesto />} />

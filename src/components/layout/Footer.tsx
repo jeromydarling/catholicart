@@ -32,6 +32,8 @@ export function Footer() {
           </FooterCol>
           <FooterCol heading="Trust & transparency">
             <FooterLink to="/ledger">The Ledger</FooterLink>
+            <FooterLink to="/catalog">Annual catalog</FooterLink>
+            <FooterLink to="/orders">Religious orders</FooterLink>
             <FooterLink to="/partnerships">For dioceses</FooterLink>
             <FooterLink to="/about">Mission</FooterLink>
           </FooterCol>
