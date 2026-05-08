@@ -46,13 +46,13 @@ export default function Landing() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="max-w-2xl pb-28 sm:pb-32 lg:pb-44 pt-24"
+            className="max-w-xl lg:max-w-2xl pb-52 sm:pb-44 lg:pb-32 pt-16 sm:pt-20"
           >
-            <div className="font-sans text-[11px] uppercase tracking-[0.32em] text-gold-300 mb-5">
+            <div className="font-sans text-[11px] uppercase tracking-[0.32em] text-gold-300 mb-4 sm:mb-5">
               Beauty is the front line.
             </div>
             <h1
-              className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[5.25rem] leading-[1.02] tracking-tight text-parchment-50 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]"
+              className="font-display text-[2.5rem] sm:text-6xl md:text-7xl lg:text-[5rem] leading-[1.04] tracking-tight text-parchment-50 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]"
               style={{ textWrap: "balance" } as React.CSSProperties}
             >
               If you lose the war on beauty,
@@ -60,13 +60,11 @@ export default function Landing() {
                 you lose the culture.
               </span>
             </h1>
-            <p className="mt-6 max-w-xl font-serif text-lg sm:text-xl text-parchment-100 leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
-              For most of Christian history the faithful commissioned the most
-              beautiful civilization on earth — its cathedrals, its icons, its
-              polyphony. Today most Catholics buy mass-produced kitsch and
-              wonder where the culture went. If we want it back, we take art
-              seriously again. We commission. We put our money where our mouth
-              is.
+            <p className="mt-4 sm:mt-5 max-w-md lg:max-w-lg font-serif text-[15px] sm:text-lg lg:text-xl text-parchment-100 leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
+              For 1,500 years the faithful commissioned the most beautiful
+              civilization on earth. Today most Catholics buy mass-produced
+              kitsch. If we want the culture back, we commission again —
+              and put our money where our mouth is.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="gold">

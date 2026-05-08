@@ -22,16 +22,19 @@ const MET_DIR = resolve(ASSETS_DIR, "met");
 const AUDIO_DIR = resolve(ASSETS_DIR, "audio");
 
 // Curated commissioned Catholic artworks from the Met Open Access collection.
-// Met object IDs verified from the public collection. Patron/commission notes
-// are written from art-historical record — the Met's `creditLine` field
-// describes the museum's acquisition, not the work's original commission.
+// Only Met object IDs verified from the public collection are listed —
+// patron / commission notes are written from art-historical record (the
+// Met's `creditLine` describes the museum's acquisition, not the original
+// commission). Add more works only after verifying both the ID and the
+// work's actual subject.
 const WORKS = [
   {
     metId: 437877,
     fallbackTitle: "Allegory of the Catholic Faith",
     fallbackArtist: "Johannes Vermeer",
     fallbackYear: "ca. 1670–72",
-    patron: "A private Catholic patron in the Dutch Republic — likely for a schuilkerk, a hidden Catholic church.",
+    patron:
+      "A private Catholic patron in the Dutch Republic — likely for a schuilkerk, a hidden Catholic church.",
     why: "Painted for the underground Catholic faithful in Protestant Holland.",
   },
   {
@@ -39,7 +42,8 @@ const WORKS = [
     fallbackTitle: "The Cellier Altarpiece",
     fallbackArtist: "Jean Bellegambe",
     fallbackYear: "ca. 1508–14",
-    patron: "Jeanne de Boubais, abbess of the Cistercian convent of Flines, for her abbey church.",
+    patron:
+      "Jeanne de Boubais, abbess of the Cistercian convent of Flines, for her abbey church.",
     why: "An abbess commissioning an altarpiece for the women under her care.",
   },
   {
@@ -47,7 +51,8 @@ const WORKS = [
     fallbackTitle: "The Immaculate Conception",
     fallbackArtist: "Guido Reni",
     fallbackYear: "1627",
-    patron: "King Philip IV of Spain, through the Spanish Ambassador in Rome, for the Royal Chapel.",
+    patron:
+      "King Philip IV of Spain, through the Spanish Ambassador in Rome, for the Royal Chapel.",
     why: "A king commissioning Roman painting for the chapel of his court.",
   },
   {
@@ -55,24 +60,9 @@ const WORKS = [
     fallbackTitle: "The Fifteen Mysteries and the Virgin of the Rosary",
     fallbackArtist: "Netherlandish (Brussels) Painter",
     fallbackYear: "ca. 1515–20",
-    patron: "Commissioned for Rosary devotion — likely a confraternity or guild member.",
-    why: "A confraternity of the Rosary commissioning teaching art for the faithful.",
-  },
-  {
-    metId: 436455,
-    fallbackTitle: "Madonna and Child",
-    fallbackArtist: "Duccio di Buoninsegna",
-    fallbackYear: "ca. 1290–1300",
-    patron: "A private patron in Siena — small panels of this size were commissioned for personal devotion.",
-    why: "Personal devotional paintings, the household icons of medieval Tuscany.",
-  },
-  {
-    metId: 436572,
-    fallbackTitle: "Christ Carrying the Cross",
-    fallbackArtist: "El Greco (Domenikos Theotokopoulos)",
-    fallbackYear: "ca. 1577–87",
-    patron: "Toledan patrons during El Greco's Spanish period — Christ-carrying-the-cross panels were commissioned for private chapels.",
-    why: "Spanish nobility commissioning Greek-trained Mannerist painting for the chapel.",
+    patron:
+      "Commissioned for Rosary devotion — likely a confraternity or guild of the Rosary.",
+    why: "A confraternity commissioning teaching art for the faithful.",
   },
 ];
 

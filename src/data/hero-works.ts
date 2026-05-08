@@ -34,18 +34,6 @@ export const HERO_WORKS: HeroWork[] = [
       "Commissioned for Rosary devotion — likely a confraternity or guild of the Rosary.",
     why: "A lay confraternity commissioning teaching art for the faithful.",
   },
-  {
-    metId: 436455,
-    patron:
-      "A Sienese household — small panels of this size were commissioned for personal devotion.",
-    why: "Personal devotional painting; the household icons of medieval Tuscany.",
-  },
-  {
-    metId: 436572,
-    patron:
-      "Toledan patrons during El Greco's Spanish period — for private chapels and oratories.",
-    why: "Spanish nobility commissioning Greek-trained Mannerist painting for chapel walls.",
-  },
 ];
 
 // Manifest shape produced by scripts/fetch-assets.mjs.

@@ -16,6 +16,8 @@ export function HeroVideo() {
   const [index, setIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
+  // Once the user has unmuted, hide the discoverability prompt.
+  const [hasInteracted, setHasInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
@@ -45,19 +47,31 @@ export function HeroVideo() {
     return () => window.clearTimeout(t);
   }, [index, paused, length]);
 
-  // Audio: respect autoplay policy. Start muted; user click unmutes.
-  useEffect(() => {
+  // Audio is started inside the click handler (preserves user-gesture
+  // context required by the autoplay policy). No useEffect autoplay.
+  const toggleMute = () => {
     const a = audioRef.current;
+    const next = !muted;
+    setMuted(next);
+    setHasInteracted(true);
     if (!a) return;
-    a.muted = muted;
-    if (!paused) {
-      a.play().catch(() => {
-        /* autoplay blocked — silent fallback */
-      });
-    } else {
-      a.pause();
+    a.muted = next;
+    if (!next && !paused) {
+      a.play().catch(() => {});
     }
-  }, [muted, paused]);
+  };
+
+  const togglePause = () => {
+    const a = audioRef.current;
+    const next = !paused;
+    setPaused(next);
+    if (!a) return;
+    if (next) {
+      a.pause();
+    } else if (!muted) {
+      a.play().catch(() => {});
+    }
+  };
 
   const work = length > 0 ? works[index % length] : null;
 
@@ -99,7 +113,7 @@ export function HeroVideo() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(28,22,14,0.55) 0%, rgba(28,22,14,0.35) 35%, rgba(28,22,14,0.65) 75%, rgba(28,22,14,0.85) 100%)",
+            "linear-gradient(180deg, rgba(28,22,14,0.55) 0%, rgba(28,22,14,0.30) 35%, rgba(28,22,14,0.55) 75%, rgba(28,22,14,0.85) 100%)",
         }}
       />
       <div
@@ -107,41 +121,35 @@ export function HeroVideo() {
         className="absolute inset-0 pointer-events-none mix-blend-multiply"
         style={{
           background:
-            "radial-gradient(ellipse at 30% 50%, transparent 30%, rgba(94,22,35,0.18) 100%)",
+            "radial-gradient(ellipse at 25% 50%, transparent 28%, rgba(94,22,35,0.20) 100%)",
         }}
       />
 
-      {/* Patron card — slides in/out with each work */}
+      {/* Patron card — compact on every breakpoint */}
       <AnimatePresence mode="wait">
         {work && (
           <motion.figure
             key={`caption-${work.metId}`}
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="absolute right-4 sm:right-6 lg:right-10 bottom-4 sm:bottom-8 lg:bottom-10 max-w-[88%] sm:max-w-md z-10"
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+            className="absolute right-3 sm:right-5 lg:right-8 bottom-3 sm:bottom-5 lg:bottom-8 w-[min(74vw,300px)] z-10"
           >
-            <div className="rounded-md bg-parchment-50/95 backdrop-blur-md shadow-plate border border-ink/10 p-4 sm:p-5">
-              <div className="font-sans text-[10px] uppercase tracking-[0.28em] text-burgundy-500 mb-1.5">
+            <div className="rounded-md bg-parchment-50/95 backdrop-blur-md shadow-plate border border-ink/10 px-3.5 py-3 sm:px-4 sm:py-3.5">
+              <div className="font-sans text-[9px] sm:text-[10px] uppercase tracking-[0.28em] text-burgundy-500 mb-1">
                 Commissioned
               </div>
-              <div className="font-display italic text-lg sm:text-xl text-ink leading-snug">
+              <div className="font-display italic text-[15px] sm:text-base lg:text-lg text-ink leading-tight line-clamp-2">
                 {work.title}
               </div>
-              <div className="mt-1 font-sans text-xs uppercase tracking-[0.18em] text-ink-muted">
+              <div className="mt-0.5 font-sans text-[10px] uppercase tracking-[0.16em] text-ink-muted">
                 {work.artist} · {work.year}
               </div>
-              <div className="mt-3 pt-3 border-t border-ink/10">
-                <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-1">
-                  Patron
-                </div>
-                <p className="font-serif text-sm text-ink-soft leading-snug">
+              <div className="mt-2 pt-2 border-t border-ink/10">
+                <p className="font-serif text-[12px] sm:text-[13px] text-ink-soft leading-snug line-clamp-3">
                   {work.patron}
                 </p>
-              </div>
-              <div className="mt-2 font-sans text-[10px] uppercase tracking-[0.18em] text-ink-muted/70">
-                The Met · Open Access
               </div>
             </div>
           </motion.figure>
@@ -149,27 +157,37 @@ export function HeroVideo() {
       </AnimatePresence>
 
       {/* Top-right controls */}
-      <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-10 flex items-center gap-1.5">
+      <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-20 flex items-center gap-1.5">
         {manifest?.chant && (
           <button
             type="button"
-            onClick={() => setMuted((m) => !m)}
-            aria-label={muted ? "Unmute chant" : "Mute chant"}
-            className="grid h-9 w-9 place-items-center rounded-full bg-parchment-50/90 backdrop-blur text-ink hover:bg-parchment-50 shadow-sm transition-colors"
+            onClick={toggleMute}
+            aria-label={muted ? "Unmute Gregorian chant" : "Mute"}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full bg-parchment-50/95 backdrop-blur text-ink shadow-sm hover:bg-parchment-50 transition-all focusable",
+              muted && !hasInteracted
+                ? "h-9 px-3.5 sm:px-4"
+                : "h-9 w-9 px-0 justify-center",
+            )}
           >
             {muted ? (
               <VolumeX className="h-4 w-4" />
             ) : (
               <Volume2 className="h-4 w-4" />
             )}
+            {muted && !hasInteracted && (
+              <span className="font-sans text-[11px] font-medium tracking-wide whitespace-nowrap">
+                Play chant
+              </span>
+            )}
           </button>
         )}
         {length > 0 && (
           <button
             type="button"
-            onClick={() => setPaused((p) => !p)}
-            aria-label={paused ? "Resume" : "Pause"}
-            className="grid h-9 w-9 place-items-center rounded-full bg-parchment-50/90 backdrop-blur text-ink hover:bg-parchment-50 shadow-sm transition-colors"
+            onClick={togglePause}
+            aria-label={paused ? "Resume slideshow" : "Pause slideshow"}
+            className="grid h-9 w-9 place-items-center rounded-full bg-parchment-50/95 backdrop-blur text-ink shadow-sm hover:bg-parchment-50 transition-colors focusable"
           >
             {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
           </button>
