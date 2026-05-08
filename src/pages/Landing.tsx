@@ -49,26 +49,30 @@ export default function Landing() {
             className="max-w-2xl pb-28 sm:pb-32 lg:pb-44 pt-24"
           >
             <div className="font-sans text-[11px] uppercase tracking-[0.32em] text-gold-300 mb-5">
-              Commissioned · always
+              Beauty is the front line.
             </div>
             <h1
               className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[5.25rem] leading-[1.02] tracking-tight text-parchment-50 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]"
               style={{ textWrap: "balance" } as React.CSSProperties}
             >
-              Great Catholic art was never made
+              If you lose the war on beauty,
               <span className="block italic text-gold-300 mt-1">
-                on speculation.
+                you lose the culture.
               </span>
             </h1>
             <p className="mt-6 max-w-xl font-serif text-lg sm:text-xl text-parchment-100 leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
-              Abbesses, kings, confraternities, and ordinary households
-              commissioned it — for chapels, abbeys, and homes. {brand.name}{" "}
-              is a guild of Catholic artists who still take commissions today.
+              For most of Christian history the faithful commissioned the most
+              beautiful civilization on earth — its cathedrals, its icons, its
+              polyphony. Today most Catholics buy mass-produced kitsch and
+              wonder where the culture went. If we want it back, we take art
+              seriously again. We commission. We put our money where our mouth
+              is.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="gold">
                 <Link to="/browse">
-                  Browse the guild <ArrowRight className="ml-2 h-4 w-4" />
+                  Commission an artist{" "}
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button
@@ -98,8 +102,51 @@ export default function Landing() {
         </p>
       </section>
 
+      {/* The argument */}
+      <section className="container pt-20 sm:pt-28 max-w-3xl">
+        <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
+          The argument
+        </div>
+        <h2 className="font-display text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.02] text-ink">
+          If we&rsquo;re serious.
+        </h2>
+        <div className="mt-8 space-y-6">
+          <p className="font-serif text-lg sm:text-xl text-ink leading-relaxed drop-cap">
+            For fifteen hundred years the Church didn&rsquo;t argue the world
+            into the kingdom. She built it — through stone and tempera, through
+            chant and stained glass, through patient commissions made by
+            abbesses and kings, confraternities and ordinary households. The
+            faithful taught humanity to see.
+          </p>
+          <p className="font-serif text-lg sm:text-xl text-ink-soft leading-relaxed">
+            Then we stopped commissioning. The wealthiest Catholics in history
+            now furnish their parishes with mass-produced statues and their
+            homes with souvenir-shop prints. The art has gone elsewhere — to
+            patrons who still pay for it.
+          </p>
+          <p className="font-serif text-lg sm:text-xl text-ink leading-relaxed">
+            <strong className="font-medium">
+              If we&rsquo;re serious about changing the culture, it starts
+              here.
+            </strong>{" "}
+            Take beauty seriously again. Commission. Put your money where your
+            mouth is.
+          </p>
+        </div>
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Button asChild size="lg">
+            <Link to="/browse">
+              Commission an artist <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+          <Button asChild variant="link" size="lg">
+            <Link to="/manifesto">Read the manifesto</Link>
+          </Button>
+        </div>
+      </section>
+
       {/* Categories */}
-      <section className="container pt-8 sm:pt-12">
+      <section className="container pt-20 sm:pt-28">
         <SectionHeading
           eyebrow="The crafts"
           title="Eight crafts, one tradition"
@@ -187,20 +234,20 @@ export default function Landing() {
           <Quote quote={quotes[3]} size="lg" />
           <div className="mt-10 sm:mt-14 grid gap-6 sm:gap-8 sm:grid-cols-2">
             <Tenet
-              title="Just wages, plainly stated"
-              body="No race-to-the-bottom bidding. Each artist sets her tiers and her custom-quote rules. The faithful pay the price the artist asks."
+              title="Beauty is the front line"
+              body="The culture won&rsquo;t be saved by argument. It will be saved — if it is to be saved — by patient, beautiful things, made by people who know what they are doing."
             />
             <Tenet
-              title="Beauty is not a luxury"
-              body="Beauty is the visible form of the good. A good icon, a good hymn, a good play makes the kingdom of heaven a little nearer."
-            />
-            <Tenet
-              title="A vocation, not a hustle"
-              body="Our artists keep the rule of their craft. The work is slow because it is a kind of prayer."
+              title="Pay the artist"
+              body="No race-to-the-bottom bidding. Each artist sets her tiers and her own custom-quote rules. You pay the price she asks. Plainly stated."
             />
             <Tenet
               title="Catholic, not kitsch"
-              body="We are catholic in the old sense — universal, formed, plural. We make for chapel and home, parish and pilgrimage, in many tongues."
+              body="The seriousness of the faith must be visible in the things we make for it. Mass-produced statues from a catalog do not count."
+            />
+            <Tenet
+              title="Patrons, not consumers"
+              body="You are not buying merch. You are commissioning a real human being to make a real thing for the people of God. Be specific. Be patient. Be generous."
             />
           </div>
           <div className="mt-10 flex justify-center">
@@ -225,20 +272,21 @@ export default function Landing() {
           <div className="relative grid gap-8 lg:grid-cols-12 items-end">
             <div className="lg:col-span-8">
               <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-300 mb-4">
-                Begin a commission
+                Stop buying kitsch.
               </div>
               <h2 className="font-display text-4xl sm:text-5xl tracking-tight leading-[1.05]">
-                Tell an artist what you long for.
+                Commission the beautiful.
               </h2>
               <p className="mt-4 font-serif text-base sm:text-lg text-parchment-200/90 max-w-xl">
-                A patron saint for a child. A motet for a wedding. An altar
-                piece for a parish. A poem for a requiem. The work is
-                hand-made, and so is the conversation.
+                A patron saint for a child. A motet for a wedding. An
+                altarpiece for a parish. A poem for a requiem. Hand-made,
+                hand-paid. The least you can do is take it as seriously as
+                the artist does.
               </p>
             </div>
             <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 lg:items-stretch">
               <Button asChild size="lg" variant="gold">
-                <Link to="/browse">Browse artists</Link>
+                <Link to="/browse">Commission an artist</Link>
               </Button>
               <Button
                 asChild

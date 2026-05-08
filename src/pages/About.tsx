@@ -64,16 +64,18 @@ export default function About() {
           The mission
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight text-ink leading-[1.05]">
-          A guild for Catholic artists.
+          Beauty is the front line.
           <span className="block italic text-burgundy-500 mt-2">
-            Beauty for the People of God.
+            We mean to take it back.
           </span>
         </h1>
         <p className="mt-6 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed max-w-3xl">
-          {brand.name} exists because the faithful still need beautiful
-          things, and Catholic artists still need to be paid honestly to make
-          them. We are a connector, a register, and a slow conversation
-          between the two.
+          {brand.name} exists because Catholics talk about beauty constantly
+          and pay for it almost never. The art has gone elsewhere — to clients
+          who still pay for it. If we are serious about changing the culture,
+          it begins here: with patient, honest, well-paid commissions to
+          artists who keep the rule of their craft. Put your money where your
+          mouth is.
         </p>
         <Ornament className="my-10" />
       </section>
@@ -84,31 +86,37 @@ export default function About() {
 
       <section id="how-it-works" className="container mt-20 sm:mt-28 max-w-4xl">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
-          The story
+          The argument
         </div>
         <h2 className="font-display text-3xl sm:text-4xl text-ink leading-[1.1]">
-          Why a guild, and why now.
+          You can&rsquo;t out-argue the world.
+          <span className="block italic text-burgundy-500 mt-1">
+            You can out-build it.
+          </span>
         </h2>
         <div className="mt-8 space-y-6">
           <p className="font-serif text-lg text-ink-soft leading-relaxed drop-cap">
-            In 1999 John Paul II addressed a Letter to Artists — to all who
-            are passionately dedicated to the search for new <em>epiphanies</em> of
-            beauty. The Church, he wrote, has need of art. So does the world.
-            And artists, in turn, have need of communities that will commission
-            them to make.
+            For fifteen hundred years the Church didn&rsquo;t argue the world
+            into the kingdom. She built it. She taught humanity to see —
+            through stone and tempera, through chant and stained glass,
+            through patient commissions made by abbesses, kings, confraternities,
+            and ordinary households. The faithful didn&rsquo;t convince the world.
+            They commissioned something so beautiful it stopped to look.
           </p>
           <p className="font-serif text-lg text-ink-soft leading-relaxed">
-            For most of our history, that work was done by guilds. A young
-            sculptor was apprenticed; a cathedral chapter commissioned an
-            altarpiece; a parish paid a composer for a Mass setting; a family
-            asked the village painter for a patron-saint icon. The
-            conversation was slow, particular, and embedded in the life of
-            the community.
+            Then we stopped commissioning. The wealthiest Catholics in history
+            now furnish their parishes with mass-produced statues and their
+            homes with souvenir-shop prints. Most parish &ldquo;art&rdquo; is
+            indistinguishable from a hospital gift shop. The actual artists —
+            the iconographers, the sculptors, the composers, the poets — work
+            for clients who still pay them.
           </p>
           <p className="font-serif text-lg text-ink-soft leading-relaxed">
-            {brand.name} is a small, modern attempt to do something of the
-            same — for the faithful who want beautiful things made for chapel
-            and home, and for the artists whose vocation is to make them.
+            In 1999 John Paul II addressed a Letter to Artists. The Church,
+            he wrote, has need of art. The artist has need of a community
+            that will commission. {brand.name} is a small, modern attempt to
+            close that loop. We are not the Church. We are a guild — and an
+            argument made in commissions.
           </p>
         </div>
       </section>

@@ -8,36 +8,40 @@ import { Quote } from "../components/Quote";
 
 const ARTICLES: Array<{ heading: string; body: string }> = [
   {
-    heading: "The artist is not a vendor.",
-    body: "The artist is a craftsman, and craft is a vocation — a kind of prayer with materials. We will not speak of our artists as suppliers, sellers, or providers. They make. They are paid. They are honoured.",
+    heading: "Beauty is the front line.",
+    body: "The culture will not be saved by argument. It will be saved — if it is to be saved — by patient, beautiful things, made by people who know what they are doing. That is where we stake our claim. If you lose the war on beauty, you lose the culture.",
   },
   {
-    heading: "Beauty is the visible form of the good.",
-    body: "We will not pretend beauty is decoration. Beauty is the visible form of the good and a glimmer of the Spirit of God. A good icon, a good hymn, a good play makes the kingdom a little more present in the world.",
+    heading: "The kitsch must end.",
+    body: "For two generations the wealthiest Church in history has furnished its own parishes with mass-produced statues and its homes with souvenir-shop prints. We will not pretend this is fine. The seriousness of the faith must be visible in the things made for it. If we are not embarrassed by what we hang on our walls, we are not paying attention.",
+  },
+  {
+    heading: "Put your money where your mouth is.",
+    body: "Catholics talk about beauty constantly. Most do not pay for it. The art has gone elsewhere — to clients who still pay for it. If we want it back, we patronise. We commission. We send the cheque. We close the gap between what we say we believe and what we are willing to fund.",
+  },
+  {
+    heading: "The artist is not a vendor.",
+    body: "The artist is a craftsman, and craft is a vocation — a kind of prayer with materials. We will not speak of our artists as suppliers or content-providers. They make. They are paid as workers worthy of their wage. They are honoured.",
   },
   {
     heading: "Slow is sacred.",
-    body: "The work is slow because the work is real. We will not promise turnaround windows the artist cannot keep, and we will not invent urgency to sell more.",
+    body: "The work is slow because the work is real. We will not promise turnaround windows the artist cannot keep, and we will not invent urgency to sell more. If you need it next week, you do not need it.",
   },
   {
     heading: "Wages, plainly stated.",
-    body: "Each artist sets her tiers and her custom rules. Commissioners pay the asking price. The guild takes a small, named fee — never hidden, never on a sliding pretext.",
-  },
-  {
-    heading: "Catholic, not kitsch.",
-    body: "We are catholic in the old sense — universal, formed, plural. We make for chapel, parish, and home; in many tongues; with the discipline of the canon and the freedom of the genuine.",
+    body: "Each artist sets her tiers and her custom rules. You pay the price she asks. The guild takes a small, named fee — never hidden, never on a sliding pretext. Just commerce, plainly conducted.",
   },
   {
     heading: "The poor are not afterthoughts.",
-    body: "Smaller works begin at modest prices. In time, we will carry a fund so that parishes and persons without means can still receive a saint, an icon, a hymn.",
+    body: "Smaller works begin at modest prices, on purpose. In time, we will carry a fund so that parishes and persons without means can still receive a saint, an icon, a hymn — because beauty for the People of God is not a luxury good.",
   },
   {
-    heading: "We are not the Church.",
-    body: "We are a guild — a body of artists and patrons in conversation. We do not stand in for the bishop, the parish, or the magisterium. We work in their shadow and at their service.",
+    heading: "Patrons, not passive consumers.",
+    body: "You are not buying merch. You are commissioning a real human being to make a real thing for the people of God. Be specific. Be patient. Be generous. Behave like the abbess, the king, the confraternity, the household of any of the last fifteen centuries.",
   },
   {
-    heading: "Beauty will save the world.",
-    body: "We do not say this lightly. We mean: the patient labour of beautiful things — made in workshops, paid for justly, given to communities that pray — is part of how God is putting the world to rights.",
+    heading: "Build, don’t argue.",
+    body: "Beauty will save the world (Dostoevsky knew it; John Paul II repeated it). We do not say this lightly. The patient labour of beautiful things — made in workshops, paid for justly, given to communities that pray — is part of how God is putting the world to rights.",
   },
 ];
 
@@ -49,12 +53,12 @@ export default function Manifesto() {
           The manifesto
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight text-ink leading-[1.05]">
-          A rule of life, for a guild.
+          If we&rsquo;re serious.
         </h1>
         <p className="mt-6 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed">
           {brand.name} keeps to a small, written rule. We share it openly so
-          that artists and commissioners know what they are entering, and
-          what we will and will not do.
+          that artists and patrons know what they are entering — and so that
+          we are bound to it ourselves. The argument runs in nine lines.
         </p>
         <Ornament className="my-10" />
       </section>
