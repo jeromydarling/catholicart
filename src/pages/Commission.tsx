@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Ornament } from "../components/Ornament";
+import { FeastDeadlinePicker } from "../components/FeastDeadlinePicker";
 import { useStore } from "../lib/store";
 import { PLATFORM_FEE_PCT } from "../lib/pricing";
 import { formatPrice, initials } from "../lib/utils";
@@ -79,6 +80,9 @@ export default function Commission() {
             onSubmit={(e) => {
               e.preventDefault();
               const data = new FormData(e.currentTarget);
+              const deadline = String(data.get("deadline") || "");
+              const feastSlug = String(data.get("feastSlug") || "");
+              const feastName = String(data.get("feastName") || "");
               const c = createCommission({
                 artistSlug: artist.slug,
                 patronName: String(data.get("name") || ""),
@@ -86,8 +90,13 @@ export default function Commission() {
                 category: artist.categories[0],
                 setting: String(data.get("setting") || ""),
                 scope: String(data.get("description") || ""),
-                preferredDeadline: String(data.get("deadline") || "") || undefined,
-                parishOrChapel: String(data.get("parishOrChapel") || "") || undefined,
+                preferredDeadline: deadline || undefined,
+                feastDeadline:
+                  feastSlug && feastName && deadline
+                    ? { feastSlug, name: feastName, date: deadline }
+                    : undefined,
+                parishOrChapel:
+                  String(data.get("parishOrChapel") || "") || undefined,
               });
               navigate(`/workspace/${c.id}`);
             }}
@@ -140,9 +149,9 @@ export default function Commission() {
               />
             </Field>
 
-            <Field label="Preferred completion date (optional)">
-              <Input name="deadline" type="date" />
-            </Field>
+            <FeastDeadlinePicker
+              minWeeks={tier.turnaroundWeeks[0] ?? 6}
+            />
 
             <div className="pt-2 rounded-md border border-ink/10 bg-parchment-100 p-4">
               <div className="flex items-start gap-3">

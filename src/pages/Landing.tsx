@@ -12,6 +12,7 @@ import { Quote } from "../components/Quote";
 import { CategoryTile } from "../components/CategoryTile";
 import { ArtistCard } from "../components/ArtistCard";
 import { HeroVideo } from "../components/HeroVideo";
+import { LiturgicalSeasonBanner } from "../components/LiturgicalSeason";
 
 const HOW = [
   {
@@ -142,6 +143,11 @@ export default function Landing() {
           </Button>
         </div>
       </section>
+
+      {/* Liturgical season banner — orient the patron in the year */}
+      <div className="mt-20 sm:mt-28">
+        <LiturgicalSeasonBanner />
+      </div>
 
       {/* Categories */}
       <section className="container pt-20 sm:pt-28">

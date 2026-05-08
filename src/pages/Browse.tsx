@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { Filter, X } from "lucide-react";
+import { Filter, MapPin, X } from "lucide-react";
 import { artists, isVerified } from "../data/artists";
 import { categories } from "../data/categories";
+import { saints, saintBySlug } from "../data/saints";
+import { tagsFor } from "../data/artist-tags";
 import type { CategorySlug } from "../types";
 import { PageShell } from "../components/layout/PageShell";
 import { ArtistCard } from "../components/ArtistCard";
@@ -31,6 +33,8 @@ export default function Browse() {
   const acceptingOnly = params.get("accepting") === "true";
   const verifiedOnly = params.get("verified") === "true";
   const priceBand = (params.get("price") || "any") as PriceId;
+  const activeSaint = params.get("saint") || "";
+  const activeSaintInfo = activeSaint ? saintBySlug(activeSaint) : undefined;
 
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(params);
@@ -50,15 +54,18 @@ export default function Browse() {
       if (acceptingOnly && !a.acceptingCommissions) return false;
       if (verifiedOnly && !isVerified(a)) return false;
       if (a.startingAt < band.min || a.startingAt > band.max) return false;
+      if (activeSaint && !tagsFor(a.slug).saintSlugs.includes(activeSaint))
+        return false;
       return true;
     });
-  }, [activeCategory, acceptingOnly, verifiedOnly, priceBand]);
+  }, [activeCategory, acceptingOnly, verifiedOnly, priceBand, activeSaint]);
 
   const activeFilterCount =
     (activeCategory !== "all" ? 1 : 0) +
     (acceptingOnly ? 1 : 0) +
     (verifiedOnly ? 1 : 0) +
-    (priceBand !== "any" ? 1 : 0);
+    (priceBand !== "any" ? 1 : 0) +
+    (activeSaint ? 1 : 0);
 
   return (
     <PageShell>
@@ -80,7 +87,23 @@ export default function Browse() {
                 </span>
               </>
             )}
+            {activeSaintInfo && (
+              <>
+                {" "}who depict{" "}
+                <span className="italic text-burgundy-500">
+                  {activeSaintInfo.name}
+                </span>
+              </>
+            )}
           </p>
+        </div>
+        <div className="mt-5 flex items-center gap-3 flex-wrap">
+          <Link
+            to="/map"
+            className="inline-flex items-center gap-1.5 rounded-full border border-ink/15 bg-parchment-50 px-3 py-1.5 font-sans text-[11px] uppercase tracking-[0.18em] text-ink-soft hover:bg-parchment-100 focusable"
+          >
+            <MapPin className="h-3 w-3" /> Map of the Body of Christ
+          </Link>
         </div>
         <Ornament className="mt-8" />
       </section>
@@ -113,6 +136,7 @@ export default function Browse() {
             acceptingOnly={acceptingOnly}
             verifiedOnly={verifiedOnly}
             priceBand={priceBand}
+            activeSaint={activeSaint}
             setParam={setParam}
             onClear={() => setParams({}, { replace: true })}
             activeFilterCount={activeFilterCount}
@@ -173,6 +197,7 @@ export default function Browse() {
                 acceptingOnly={acceptingOnly}
                 verifiedOnly={verifiedOnly}
                 priceBand={priceBand}
+                activeSaint={activeSaint}
                 setParam={setParam}
                 onClear={() => setParams({}, { replace: true })}
                 activeFilterCount={activeFilterCount}
@@ -197,6 +222,7 @@ interface FilterPanelProps {
   acceptingOnly: boolean;
   verifiedOnly: boolean;
   priceBand: PriceId;
+  activeSaint: string;
   setParam: (key: string, value: string | null) => void;
   onClear: () => void;
   activeFilterCount: number;
@@ -207,6 +233,7 @@ function FilterPanel({
   acceptingOnly,
   verifiedOnly,
   priceBand,
+  activeSaint,
   setParam,
   onClear,
   activeFilterCount,
@@ -267,6 +294,22 @@ function FilterPanel({
         />
       </FilterSection>
 
+      <FilterSection title="Patron saint">
+        <FilterChip
+          label="Any"
+          active={!activeSaint}
+          onClick={() => setParam("saint", null)}
+        />
+        {saints.slice(0, 12).map((s) => (
+          <FilterChip
+            key={s.slug}
+            label={s.name.replace(/^St\.\s/, "")}
+            active={activeSaint === s.slug}
+            onClick={() => setParam("saint", s.slug)}
+          />
+        ))}
+      </FilterSection>
+
       {activeFilterCount > 0 && (
         <div className="pt-4 border-t border-ink/10 flex flex-wrap gap-1.5">
           {activeCategory !== "all" && (
@@ -281,6 +324,11 @@ function FilterPanel({
           )}
           {acceptingOnly && <Badge variant="olive">Accepting now</Badge>}
           {verifiedOnly && <Badge variant="olive">Pastor-endorsed</Badge>}
+          {activeSaint && (
+            <Badge variant="lapis">
+              {saintBySlug(activeSaint)?.name.replace(/^St\.\s/, "")}
+            </Badge>
+          )}
         </div>
       )}
     </div>

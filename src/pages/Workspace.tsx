@@ -125,13 +125,18 @@ export default function Workspace() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge variant={stageCopy.tone}>{stageCopy.label}</Badge>
-            {commission.preferredDeadline && (
+            {commission.feastDeadline ? (
+              <Badge variant="lapis">
+                For {commission.feastDeadline.name} ·{" "}
+                {formatDateShort(commission.feastDeadline.date)}
+              </Badge>
+            ) : commission.preferredDeadline ? (
               <Badge variant="outline">
                 Due {formatDateShort(commission.preferredDeadline)}
               </Badge>
-            )}
+            ) : null}
           </div>
         </div>
         <Ornament className="my-8" />
