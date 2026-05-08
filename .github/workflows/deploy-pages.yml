@@ -33,6 +33,15 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Cache hero assets (Met images + chant audio)
+        uses: actions/cache@v4
+        with:
+          path: public/assets
+          key: hero-assets-v1
+
+      - name: Fetch hero assets
+        run: npm run fetch-assets
+
       - name: Typecheck
         run: npm run typecheck
 

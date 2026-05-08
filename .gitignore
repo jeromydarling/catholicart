@@ -6,5 +6,11 @@ dist/
 # Vite
 .vite/
 
+# Hero assets fetched by scripts/fetch-assets.mjs at build time.
+# manifest.json is committed as a placeholder so dev works without a fetch.
+public/assets/met/
+public/assets/audio/
+public/assets/hero.mp4
+
 # Built/cloned third-party desktop app — see tools/README.md for re-install steps
 tools/1code/

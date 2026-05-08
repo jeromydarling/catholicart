@@ -11,6 +11,7 @@ import { Ornament } from "../components/Ornament";
 import { Quote } from "../components/Quote";
 import { CategoryTile } from "../components/CategoryTile";
 import { ArtistCard } from "../components/ArtistCard";
+import { HeroVideo } from "../components/HeroVideo";
 
 const HOW = [
   {
@@ -35,73 +36,66 @@ export default function Landing() {
 
   return (
     <PageShell>
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="absolute inset-0 -z-10"
-          style={{
-            background:
-              "radial-gradient(ellipse at 80% 0%, rgba(168,137,63,0.10), transparent 55%), radial-gradient(ellipse at 0% 100%, rgba(122,31,44,0.08), transparent 55%)",
-          }}
-        />
-        <div className="container pt-12 pb-16 sm:pt-20 sm:pb-24 lg:pt-28 lg:pb-32">
-          <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="lg:col-span-7"
-            >
-              <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-5">
-                {brand.tagline}
-              </div>
-              <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-[5.25rem] leading-[1.02] tracking-tight text-ink">
-                Commission the
-                <span className="block italic text-burgundy-500">beautiful.</span>
-              </h1>
-              <p className="mt-6 max-w-xl font-serif text-lg sm:text-xl text-ink-soft leading-relaxed">
-                {brand.name} is a guild of Catholic artists — iconographers,
-                sculptors, composers, poets, dramatists — who take commissions
-                from the faithful and make work fit for chapel, parish, and
-                home.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild size="lg">
-                  <Link to="/browse">
-                    Browse artists <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link to="/signup/artist">Apply to the guild</Link>
-                </Button>
-              </div>
+      {/* Hero — full-bleed cinematic, makes the commission thesis visible */}
+      <section className="relative h-[calc(100svh-4rem)] sm:h-[calc(100svh-5rem)] min-h-[600px] max-h-[880px] overflow-hidden">
+        <HeroVideo />
 
-              <div className="mt-10 sm:mt-14 max-w-md">
-                <Ornament className="mb-4" />
-                <p
-                  className="font-display italic text-base sm:text-lg text-ink-soft leading-snug"
-                  style={{ textWrap: "balance" } as React.CSSProperties}
-                >
-                  “{heroQuote.text}”
-                </p>
-                <p className="mt-3 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
-                  — John Paul II · Letter to Artists, 1999
-                </p>
-              </div>
-            </motion.div>
-
-            {/* Hero plate */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
-              className="lg:col-span-5"
+        <div className="relative h-full container flex flex-col">
+          <div className="grow" />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="max-w-2xl pb-28 sm:pb-32 lg:pb-44 pt-24"
+          >
+            <div className="font-sans text-[11px] uppercase tracking-[0.32em] text-gold-300 mb-5">
+              Commissioned · always
+            </div>
+            <h1
+              className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-[5.25rem] leading-[1.02] tracking-tight text-parchment-50 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]"
+              style={{ textWrap: "balance" } as React.CSSProperties}
             >
-              <HeroPlate />
-            </motion.div>
-          </div>
+              Great Catholic art was never made
+              <span className="block italic text-gold-300 mt-1">
+                on speculation.
+              </span>
+            </h1>
+            <p className="mt-6 max-w-xl font-serif text-lg sm:text-xl text-parchment-100 leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
+              Abbesses, kings, confraternities, and ordinary households
+              commissioned it — for chapels, abbeys, and homes. {brand.name}{" "}
+              is a guild of Catholic artists who still take commissions today.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild size="lg" variant="gold">
+                <Link to="/browse">
+                  Browse the guild <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                size="lg"
+                className="bg-parchment-50/10 border-parchment-50/40 text-parchment-50 hover:bg-parchment-50/20 hover:border-parchment-50/60 backdrop-blur-sm"
+              >
+                <Link to="/signup/artist">Apply as an artist</Link>
+              </Button>
+            </div>
+          </motion.div>
         </div>
+      </section>
+
+      {/* Thesis epigraph — bridge between video hero and the marketplace */}
+      <section className="container pt-16 sm:pt-24 pb-4 max-w-3xl">
+        <Ornament className="mb-7" />
+        <p
+          className="font-display italic text-2xl sm:text-3xl md:text-4xl text-ink leading-snug text-center"
+          style={{ textWrap: "balance" } as React.CSSProperties}
+        >
+          “{heroQuote.text}”
+        </p>
+        <p className="mt-5 text-center font-sans text-[11px] uppercase tracking-[0.22em] text-ink-muted">
+          — John Paul II · Letter to Artists, 1999
+        </p>
       </section>
 
       {/* Categories */}
@@ -302,69 +296,3 @@ function Tenet({ title, body }: { title: string; body: string }) {
   );
 }
 
-function HeroPlate() {
-  return (
-    <div className="relative mx-auto max-w-md lg:max-w-none">
-      <div
-        className="aspect-[3/4] rounded-md shadow-plate border border-ink/10 overflow-hidden relative"
-        style={{
-          background:
-            "linear-gradient(160deg, #5e1623 0%, #1c160e 60%, #876b2c 100%)",
-        }}
-      >
-        <div
-          className="absolute inset-0 opacity-40 mix-blend-overlay"
-          aria-hidden
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>\")",
-          }}
-        />
-        <div className="absolute inset-4 sm:inset-5 rounded border border-parchment-50/15" />
-        <div className="absolute inset-0 grid place-items-center text-parchment-50">
-          <svg
-            viewBox="0 0 200 260"
-            className="w-3/5 h-3/5 sm:w-2/3 sm:h-2/3"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-          >
-            <circle cx="100" cy="80" r="40" opacity="0.7" />
-            <circle cx="100" cy="80" r="54" opacity="0.4" />
-            <path d="M100 124 C70 140 60 200 70 240 L130 240 C140 200 130 140 100 124 Z" opacity="0.85" />
-            <path d="M100 80 v-60 M70 30 h60" opacity="0.6" />
-          </svg>
-        </div>
-        <div className="absolute inset-x-0 bottom-0 p-5 text-parchment-50">
-          <div
-            className="font-display italic text-xl sm:text-2xl leading-tight tracking-tight"
-            style={{ textWrap: "balance" } as React.CSSProperties}
-          >
-            Theotokos of the Sign
-          </div>
-          <div className="mt-1 font-sans text-[10px] uppercase tracking-[0.22em] opacity-80">
-            Egg tempera, gold leaf · 2024
-          </div>
-        </div>
-      </div>
-      <div className="absolute -bottom-5 -right-5 sm:-bottom-7 sm:-right-7 hidden sm:block">
-        <div
-          className="aspect-square w-32 rounded-md shadow-card border border-ink/10 overflow-hidden"
-          style={{
-            background:
-              "linear-gradient(160deg, #1d3a6b 0%, #28477a 60%, #c9a961 100%)",
-          }}
-        >
-          <div className="h-full w-full grid place-items-center text-parchment-50">
-            <span className="font-display italic text-sm leading-tight text-center px-3">
-              Tree of Jesse
-              <span className="block font-sans not-italic uppercase text-[9px] tracking-[0.22em] mt-1 opacity-80">
-                Stained glass
-              </span>
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
