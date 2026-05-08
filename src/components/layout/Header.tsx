@@ -7,8 +7,9 @@ import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 
 const NAV = [
-  { to: "/browse", label: "Browse Artists" },
-  { to: "/about", label: "Mission" },
+  { to: "/browse", label: "Browse" },
+  { to: "/map", label: "Map" },
+  { to: "/ledger", label: "Ledger" },
   { to: "/manifesto", label: "Manifesto" },
 ];
 

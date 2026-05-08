@@ -22,7 +22,7 @@ export function Footer() {
           </div>
           <FooterCol heading="Commission">
             <FooterLink to="/browse">Browse artists</FooterLink>
-            <FooterLink to="/browse?category=iconography">By category</FooterLink>
+            <FooterLink to="/map">Map of the guild</FooterLink>
             <FooterLink to="/about#how-it-works">How it works</FooterLink>
           </FooterCol>
           <FooterCol heading="For artists">
@@ -30,10 +30,10 @@ export function Footer() {
             <FooterLink to="/dashboard">Artist dashboard</FooterLink>
             <FooterLink to="/manifesto">The manifesto</FooterLink>
           </FooterCol>
-          <FooterCol heading="The guild">
+          <FooterCol heading="Trust & transparency">
+            <FooterLink to="/ledger">The Ledger</FooterLink>
+            <FooterLink to="/partnerships">For dioceses</FooterLink>
             <FooterLink to="/about">Mission</FooterLink>
-            <FooterLink to="/manifesto">Manifesto</FooterLink>
-            <FooterLink to="/about#cst">Catholic Social Teaching</FooterLink>
           </FooterCol>
         </div>
 
