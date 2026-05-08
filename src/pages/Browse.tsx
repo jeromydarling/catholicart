@@ -186,7 +186,8 @@ export default function Browse() {
               <span className="font-display text-2xl">Filter</span>
               <button
                 onClick={() => setDrawerOpen(false)}
-                className="h-9 w-9 grid place-items-center rounded-sm hover:bg-parchment-100"
+                aria-label="Close filters"
+                className="h-11 w-11 grid place-items-center rounded-sm hover:bg-parchment-100 focusable"
               >
                 <X className="h-5 w-5" />
               </button>

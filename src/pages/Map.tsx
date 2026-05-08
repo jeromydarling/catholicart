@@ -43,7 +43,7 @@ export default function MapPage() {
       {/* Mapbox map */}
       <section className="container">
         <MapboxMap
-          className="h-[60vh] min-h-[460px] max-h-[720px]"
+          className="h-[60dvh] min-h-[420px] max-h-[720px]"
           selectedDiocese={selectedDiocese}
           onSelect={(s) => setSelectedDiocese(s?.diocese ?? null)}
         />

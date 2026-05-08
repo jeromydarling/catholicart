@@ -71,8 +71,7 @@ export default function Certificate() {
       {/* The certificate itself — print-styled */}
       <section className="container my-10 sm:my-14 max-w-[8.5in] print:my-0 print:max-w-none print:px-0">
         <article
-          className="relative bg-parchment-50 border-2 border-ink/15 rounded-md shadow-plate print:shadow-none print:rounded-none p-8 sm:p-12 lg:p-16"
-          style={{ aspectRatio: "8.5 / 11", minHeight: "10in" }}
+          className="relative bg-parchment-50 border-2 border-ink/15 rounded-md shadow-plate print:shadow-none print:rounded-none p-6 sm:p-12 lg:p-16 sm:[aspect-ratio:8.5/11] sm:min-h-[10in] print:[aspect-ratio:8.5/11] print:min-h-[10in]"
         >
           {/* Ornamental gold frame inset */}
           <div

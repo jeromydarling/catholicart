@@ -245,7 +245,6 @@ export function MapboxMap({ className, onSelect, selectedDiocese }: MapboxMapPro
         "rounded-md border border-ink/10 overflow-hidden shadow-card " +
         (className ?? "")
       }
-      style={{ minHeight: 460 }}
     />
   );
 }

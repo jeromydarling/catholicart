@@ -144,21 +144,23 @@ export default function Workspace() {
 
       {/* Persona switcher: prototype-only honesty */}
       <section className="container">
-        <div className="rounded-md border border-dashed border-burgundy-500/30 bg-burgundy-500/5 p-3 sm:p-4 mb-8 flex items-start gap-3">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-burgundy-500/10">
-            <Sparkles className="h-4 w-4 text-burgundy-500" />
-          </div>
-          <div className="grow">
-            <div className="font-sans text-[11px] uppercase tracking-[0.18em] text-burgundy-500 mb-0.5">
-              Prototype simulation
+        <div className="rounded-md border border-dashed border-burgundy-500/30 bg-burgundy-500/5 p-3 sm:p-4 mb-8 flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+          <div className="flex items-start gap-3 grow">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-burgundy-500/10">
+              <Sparkles className="h-4 w-4 text-burgundy-500" />
             </div>
-            <p className="font-serif text-sm text-ink-soft leading-relaxed">
-              In a real deployment, the patron and the artist would each see
-              their own controls. Here, you can switch perspective to step
-              through the full commission lifecycle.
-            </p>
+            <div className="grow">
+              <div className="font-sans text-[11px] uppercase tracking-[0.18em] text-burgundy-500 mb-0.5">
+                Prototype simulation
+              </div>
+              <p className="font-serif text-sm text-ink-soft leading-relaxed">
+                In a real deployment, the patron and the artist would each see
+                their own controls. Here, you can switch perspective to step
+                through the full commission lifecycle.
+              </p>
+            </div>
           </div>
-          <div className="shrink-0">
+          <div className="sm:shrink-0 sm:ml-auto sm:self-center">
             <PersonaToggle persona={persona} onChange={setPersona} patronName={commission.patronName} artistName={artist?.name ?? "Artist"} />
           </div>
         </div>
@@ -294,7 +296,7 @@ function PersonaToggle({
           aria-selected={persona === p}
           onClick={() => onChange(p)}
           className={cn(
-            "px-3 py-1.5 rounded-full font-sans text-[11px] uppercase tracking-[0.18em] transition-colors",
+            "min-h-[36px] px-4 py-2 rounded-full font-sans text-[11px] uppercase tracking-[0.18em] transition-colors",
             persona === p
               ? "bg-ink text-parchment-50"
               : "text-ink-soft hover:text-ink",
