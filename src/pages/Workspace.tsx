@@ -24,6 +24,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { EscrowMeter } from "../components/EscrowMeter";
 import { StarRating } from "../components/StarRating";
+import { Seo } from "../components/Seo";
 import { useStore } from "../lib/store";
 import { computePricing, PLATFORM_FEE_PCT } from "../lib/pricing";
 import { cn, deriveTitle, formatPrice, initials } from "../lib/utils";
@@ -103,6 +104,12 @@ export default function Workspace() {
 
   return (
     <PageShell>
+      <Seo
+        title={`${deriveTitle(commission.scope, 60)} · Commission · Ars Sacra`}
+        description={`Commission workspace for ${commission.patronName} and ${artist?.name ?? "the artist"}. Status: ${stageCopy.label}.`}
+        path={`/workspace/${commission.id}`}
+        robots="noindex,nofollow"
+      />
       <section className="container pt-10 sm:pt-12">
         <div className="font-sans text-[11px] uppercase tracking-[0.22em] text-ink-muted mb-3 flex items-center gap-2 flex-wrap">
           <Link to="/dashboard" className="hover:text-burgundy-500">

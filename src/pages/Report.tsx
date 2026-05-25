@@ -4,6 +4,7 @@ import { ArrowRight, AlertOctagon, Eye, Flame } from "lucide-react";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 import { Button } from "../components/ui/button";
+import { Seo } from "../components/Seo";
 
 // The Anti-Kitsch Report — a quarterly broadside. We name names (or
 // anti-names): the patterns of failure that flatten the faith. The
@@ -12,6 +13,11 @@ import { Button } from "../components/ui/button";
 export default function Report() {
   return (
     <PageShell>
+      <Seo
+        title="The Anti-Kitsch Report — what we will not commission"
+        description="A quarterly broadside from Ars Sacra naming the five failure modes of contemporary sacred art: the Gift-Shop Saint, the Bureaucratic Modern, AI Slop, the Polychrome Plastic, the Pious Pastiche."
+        path="/report"
+      />
       <section className="relative overflow-hidden border-b border-ink/10">
         <div className="absolute inset-0 bg-gradient-to-br from-burgundy-500/10 via-parchment-50 to-gold-500/5" aria-hidden />
         <div className="relative container py-16 sm:py-24 max-w-4xl">

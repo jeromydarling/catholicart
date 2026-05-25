@@ -9,6 +9,7 @@ import { Ornament } from "../components/Ornament";
 import { Badge } from "../components/ui/badge";
 import { useStore } from "../lib/store";
 import { deriveTitle, formatPrice, initials } from "../lib/utils";
+import { Seo } from "../components/Seo";
 import type { Commission } from "../types";
 
 // Annual catalog — a yearbook of every delivered commission. The
@@ -51,6 +52,11 @@ export default function Catalog() {
 
   return (
     <PageShell>
+      <Seo
+        title="The Annual Catalog of Commissioned Beauty"
+        description="The yearbook of every sacred work the Ars Sacra guild delivered. Bound annually. Sent to every patron, every artist, every diocese who asked for one."
+        path="/catalog"
+      />
       <section className="container pt-12 sm:pt-16">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
           Annual catalog

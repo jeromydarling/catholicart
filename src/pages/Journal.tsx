@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, CheckCircle2 } from "lucide-react";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 import { notify } from "../lib/email/notify";
+import { Seo } from "../components/Seo";
 
 interface Issue {
   number: number;
@@ -75,6 +76,11 @@ const ARCHIVE = ISSUES.slice(1);
 export default function Journal() {
   return (
     <PageShell>
+      <Seo
+        title="The Beauty Manifesto — quarterly journal"
+        description="Long-form essays from artists, patrons, theologians, and the occasional bishop. Published four times a year. Free in the mail to anyone who asks."
+        path="/journal"
+      />
       <section className="container pt-12 sm:pt-16 max-w-5xl">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
           The Beauty Manifesto · Quarterly

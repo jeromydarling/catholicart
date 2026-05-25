@@ -13,6 +13,7 @@ import { categories } from "../data/categories";
 import { artists } from "../data/artists";
 import { useStore } from "../lib/store";
 import { initials } from "../lib/utils";
+import { Seo } from "../components/Seo";
 import type { CategorySlug } from "../types";
 
 interface Grantee {
@@ -77,6 +78,11 @@ const GRANTEES: Grantee[] = [
 export default function Apprenticeships() {
   return (
     <PageShell>
+      <Seo
+        title="Apprenticeships — fund the next master"
+        description="Ars Sacra pays young Catholic artists a stipend to spend two to three years inside a master's studio. No degree. No tuition. The old way. Funded by 1% of every commission."
+        path="/apprenticeships"
+      />
       <section className="container pt-12 sm:pt-16 max-w-5xl">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
           Apprenticeship grants

@@ -8,6 +8,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { useStore } from "../lib/store";
 import { formatPrice } from "../lib/utils";
+import { Seo } from "../components/Seo";
 
 export default function Partnerships() {
   const dioceses = listDioceses();
@@ -15,6 +16,11 @@ export default function Partnerships() {
   const openIntakes = intakes.filter((i) => i.status === "open" || i.status === "shortlisting");
   return (
     <PageShell>
+      <Seo
+        title="Partnerships — for dioceses, religious orders & parishes"
+        description="Furnish a parish. Outfit a chapel. Adorn a cathedral. Ars Sacra builds custom ledgers for dioceses and Catholic institutions: vetted artists, multi-stakeholder approval, NET-30 invoicing."
+        path="/partnerships"
+      />
       <section className="container pt-12 sm:pt-16">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
           For dioceses & religious orders

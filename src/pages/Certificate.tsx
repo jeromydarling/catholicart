@@ -8,6 +8,7 @@ import { Button } from "../components/ui/button";
 import { Ornament } from "../components/Ornament";
 import { useStore } from "../lib/store";
 import { formatPrice } from "../lib/utils";
+import { Seo } from "../components/Seo";
 
 // Provenance certificate. Print-friendly. Records who made the work, who
 // commissioned it, who endorsed the artist, who blessed the finished
@@ -39,6 +40,31 @@ export default function Certificate() {
 
   return (
     <PageShell>
+      <Seo
+        title={`Certificate · ${c.certificate.title} · ${artist?.name ?? "Ars Sacra"}`}
+        description={`Provenance certificate for ${c.certificate.title}, by ${artist?.name ?? "an Ars Sacra artist"}. Serial ${c.certificate.serial}. Recorded in The Ledger.`}
+        path={`/certificate/${c.id}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "CreativeWork",
+          name: c.certificate.title,
+          dateCreated: c.completedAt,
+          identifier: c.certificate.serial,
+          creator: artist
+            ? {
+                "@type": "Person",
+                name: artist.name,
+                address: {
+                  "@type": "PostalAddress",
+                  addressLocality: artist.city,
+                  addressCountry: artist.region,
+                },
+              }
+            : undefined,
+          publisher: { "@type": "Organization", name: "Ars Sacra" },
+          genre: cat?.name,
+        }}
+      />
       {/* Action toolbar — hidden on print */}
       <section className="container pt-8 sm:pt-12 print:hidden">
         <div className="font-sans text-[11px] uppercase tracking-[0.22em] text-ink-muted mb-3">

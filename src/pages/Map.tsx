@@ -11,6 +11,7 @@ import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { initials } from "../lib/utils";
 import { MapboxMap } from "../components/MapboxMap";
+import { Seo } from "../components/Seo";
 
 export default function MapPage() {
   const [query, setQuery] = useState("");
@@ -25,6 +26,11 @@ export default function MapPage() {
 
   return (
     <PageShell>
+      <Seo
+        title="Map of the Body of Christ — Catholic artists worldwide"
+        description="Every Ars Sacra guild artist is rooted in a particular church — a real parish, a real diocese, a real bishop. Find a hand near you, or commission across the world."
+        path="/map"
+      />
       <section className="container pt-12 sm:pt-16">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
           The geography of the guild

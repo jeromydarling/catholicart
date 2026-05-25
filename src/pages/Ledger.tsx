@@ -16,6 +16,7 @@ import {
   escrowReleasedUsd,
   escrowHeldUsd,
 } from "../lib/pricing";
+import { Seo } from "../components/Seo";
 import type { Commission, CommissionStage, CategorySlug } from "../types";
 
 const STAGE_COPY: Record<
@@ -93,6 +94,11 @@ export default function Ledger() {
 
   return (
     <PageShell>
+      <Seo
+        title="The Ledger — every commission, every dollar, public"
+        description="Radical transparency. Every commission Ars Sacra has facilitated, every dollar paid to artists, every fee we kept. Updated in real time."
+        path="/ledger"
+      />
       <section className="container pt-12 sm:pt-16">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
           Radical transparency

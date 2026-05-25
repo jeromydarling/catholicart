@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /outbox
+Disallow: /preferences
+Disallow: /workspace/
+Disallow: /certificate/
+Disallow: /dashboard
+Disallow: /connect/
+
+Sitemap: https://arssacra.local/sitemap.xml

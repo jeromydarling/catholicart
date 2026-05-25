@@ -18,6 +18,7 @@ import { formatPrice, initials } from "../lib/utils";
 import { similarArtists } from "../lib/recommend";
 import { useStore } from "../lib/store";
 import { StarRating } from "../components/StarRating";
+import { Seo } from "../components/Seo";
 
 export default function ArtistProfile() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -41,9 +42,34 @@ export default function ArtistProfile() {
   }
 
   const cats = artist.categories.map((s) => categoryBySlug(s)!);
+  const bioText = Array.isArray(artist.bio) ? artist.bio.join(" ") : artist.bio ?? "";
 
   return (
     <PageShell>
+      <Seo
+        title={`${artist.honorific ? artist.honorific + " " : ""}${artist.name} · ${cats[0]?.shortName ?? "Artist"} · Ars Sacra`}
+        description={`${cats[0]?.name ?? "Sacred art"} commissions by ${artist.name}, ${artist.city}. ${bioText.slice(0, 140)}`}
+        path={`/artists/${artist.slug}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: artist.name,
+          honorificPrefix: artist.honorific ?? undefined,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: artist.city,
+            addressCountry: artist.region,
+          },
+          jobTitle: cats[0]?.name ?? "Artist",
+          description: bioText.slice(0, 280),
+          knowsAbout: cats.map((c) => c?.name),
+          memberOf: {
+            "@type": "Organization",
+            name: "Ars Sacra",
+            url: "https://arssacra.local",
+          },
+        }}
+      />
       {/* Hero */}
       <section className="relative">
         <div

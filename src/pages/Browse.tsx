@@ -26,6 +26,7 @@ import {
   toggleSaved,
 } from "../lib/saved";
 import { useStore } from "../lib/store";
+import { Seo } from "../components/Seo";
 
 const PRICE_BANDS = [
   { id: "any", label: "Any price", min: 0, max: Number.POSITIVE_INFINITY },
@@ -153,6 +154,11 @@ export default function Browse() {
 
   return (
     <PageShell>
+      <Seo
+        title="Browse the guild — Catholic artists accepting commissions"
+        description="Read each pastor-endorsed Catholic artist's vocation, study their portfolios, filter by craft, saint, diocese, and price. Compare side-by-side."
+        path="/browse"
+      />
       <section className="container pt-12 sm:pt-16">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
           The guild
