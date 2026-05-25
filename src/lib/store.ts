@@ -13,6 +13,8 @@ import type {
 import { classifyEmail } from "./email-policy";
 import { PLATFORM_FEE_PCT, computePricing } from "./pricing";
 import { deriveTitle } from "./utils";
+import { notify } from "./email/notify";
+import { artistBySlug } from "../data/artists";
 import { seedCommissions } from "../data/seed-commissions";
 import { seedConnect } from "../data/seed-connect";
 
@@ -241,12 +243,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           createdAt: nowIso(),
         };
         setState((s) => ({ ...s, commissions: [c, ...s.commissions] }));
+        notify({ kind: "commission.created", commission: c, artist: artistBySlug(c.artistSlug) ?? undefined });
         return c;
       },
 
       artistQuote: (id, artistTotalUsd, quoteNote, feePct) => {
         const pricing = computePricing(artistTotalUsd, feePct ?? PLATFORM_FEE_PCT);
-        return patchCommission(id, (c) => ({
+        const updated = patchCommission(id, (c) => ({
           ...c,
           stage: "awaiting-deposit",
           artistTotalUsd: pricing.artistTotalUsd,
@@ -273,16 +276,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             },
           ],
         }));
+        if (updated) notify({ kind: "commission.quoted", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined });
+        return updated;
       },
 
-      fundEscrow: (id, stage) =>
-        patchCommission(id, (c) => {
+      fundEscrow: (id, stage) => {
+        const updated = patchCommission(id, (c) => {
           const escrow = c.escrow.map((m) =>
             m.stage === stage && m.status === "unfunded"
               ? { ...m, status: "held" as const, fundedAt: nowIso() }
               : m,
           );
-          // Stage transition: deposit funded → in-progress
           let nextStage = c.stage;
           if (stage === "deposit") nextStage = "in-progress";
           return {
@@ -300,16 +304,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               },
             ],
           };
-        }),
+        });
+        if (updated) notify({ kind: "commission.funded", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined, stage });
+        return updated;
+      },
 
-      releaseMilestone: (id, stage) =>
-        patchCommission(id, (c) => {
+      releaseMilestone: (id, stage) => {
+        const updated = patchCommission(id, (c) => {
           const escrow = c.escrow.map((m) =>
             m.stage === stage && m.status === "held"
               ? { ...m, status: "released" as const, releasedAt: nowIso() }
               : m,
           );
-          // Lifecycle progression
           let nextStage = c.stage;
           let completedAt = c.completedAt;
           if (stage === "midpoint") nextStage = "in-progress";
@@ -344,10 +350,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               },
             ],
           };
-        }),
+        });
+        if (updated) {
+          const artist = artistBySlug(updated.artistSlug) ?? undefined;
+          notify({ kind: "commission.released", commission: updated, artist, stage });
+          if (stage === "final") notify({ kind: "commission.delivered", commission: updated, artist });
+        }
+        return updated;
+      },
 
-      artistMarkMidpoint: (id, body) =>
-        patchCommission(id, (c) => ({
+      artistMarkMidpoint: (id, body) => {
+        const updated = patchCommission(id, (c) => ({
           ...c,
           stage: "midpoint-review",
           messages: [
@@ -367,10 +380,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               createdAt: nowIso(),
             },
           ],
-        })),
+        }));
+        if (updated) notify({ kind: "commission.midpoint", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined });
+        return updated;
+      },
 
-      artistMarkFinal: (id, body, _title) =>
-        patchCommission(id, (c) => ({
+      artistMarkFinal: (id, body, _title) => {
+        const updated = patchCommission(id, (c) => ({
           ...c,
           stage: "final-review",
           messages: [
@@ -390,10 +406,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               createdAt: nowIso(),
             },
           ],
-        })),
+        }));
+        if (updated) notify({ kind: "commission.final", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined });
+        return updated;
+      },
 
-      addMessage: (id, authorRole, authorName, body) =>
-        patchCommission(id, (c) => ({
+      addMessage: (id, authorRole, authorName, body) => {
+        const updated = patchCommission(id, (c) => ({
           ...c,
           messages: [
             ...c.messages,
@@ -405,10 +424,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               createdAt: nowIso(),
             },
           ],
-        })),
+        }));
+        if (updated && (authorRole === "patron" || authorRole === "artist")) {
+          notify({
+            kind: "commission.message",
+            commission: updated,
+            artist: artistBySlug(updated.artistSlug) ?? undefined,
+            fromRole: authorRole,
+            body,
+          });
+        }
+        return updated;
+      },
 
-      addWip: (id, wip) =>
-        patchCommission(id, (c) => ({
+      addWip: (id, wip) => {
+        const updated = patchCommission(id, (c) => ({
           ...c,
           wip: [
             ...c.wip,
@@ -428,10 +458,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               createdAt: nowIso(),
             },
           ],
-        })),
+        }));
+        if (updated) notify({ kind: "commission.wip", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined, caption: wip.caption });
+        return updated;
+      },
 
-      recordBlessing: (id, record) =>
-        patchCommission(id, (c) => ({
+      recordBlessing: (id, record) => {
+        const updated = patchCommission(id, (c) => ({
           ...c,
           stage: "blessed",
           blessing: { ...record, recordedAt: nowIso() },
@@ -445,10 +478,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               createdAt: nowIso(),
             },
           ],
-        })),
+        }));
+        if (updated) notify({ kind: "commission.blessed", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined });
+        return updated;
+      },
 
-      cancelCommission: (id) =>
-        patchCommission(id, (c) => ({
+      cancelCommission: (id) => {
+        const updated = patchCommission(id, (c) => ({
           ...c,
           stage: "cancelled",
           cancelledAt: nowIso(),
@@ -467,7 +503,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               createdAt: nowIso(),
             },
           ],
-        })),
+        }));
+        if (updated) notify({ kind: "commission.cancelled", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined });
+        return updated;
+      },
 
       // ===== Artist signup =====
       signedUpArtist: state.signedUpArtist,
@@ -548,6 +587,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             ? { ...s.signedUpArtist, verificationToken: token }
             : s.signedUpArtist,
         }));
+        notify({ kind: "verification.requested", verification: v });
         return v;
       },
 
@@ -582,6 +622,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             return next;
           }),
         }));
+        if (updated) {
+          if (action === "endorse") {
+            notify({ kind: "verification.endorsed", verification: updated });
+            if ((updated as Verification).verifierEmailIsFreeWebmail) {
+              notify({ kind: "verification.chancery", verification: updated });
+            }
+          } else if (action === "decline") {
+            notify({ kind: "verification.declined", verification: updated });
+          }
+        }
         return updated;
       },
 
@@ -604,6 +654,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             return next;
           }),
         }));
+        if (updated) {
+          if (action === "confirm") notify({ kind: "verification.confirmed", verification: updated });
+          else notify({ kind: "verification.declined", verification: updated });
+        }
         return updated;
       },
 

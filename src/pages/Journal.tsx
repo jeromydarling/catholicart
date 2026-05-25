@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ArrowRight, BookOpen, CheckCircle2 } from "lucide-react";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
+import { notify } from "../lib/email/notify";
 
 interface Issue {
   number: number;
@@ -227,7 +228,10 @@ function SubscribeBlock() {
                 e.preventDefault();
                 const fd = new FormData(e.currentTarget);
                 const email = String(fd.get("email") || "");
-                if (email) setSubmitted(email);
+                if (email) {
+                  notify({ kind: "subscribe.journal", email });
+                  setSubmitted(email);
+                }
               }}
             >
               <label htmlFor="journal-subscribe-email" className="sr-only">

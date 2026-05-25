@@ -8,6 +8,8 @@ import Workspace from "./pages/Workspace";
 import Connect from "./pages/Connect";
 import ArtistSignup from "./pages/ArtistSignup";
 import Dashboard from "./pages/Dashboard";
+import Outbox from "./pages/Outbox";
+import Preferences from "./pages/Preferences";
 import Ledger from "./pages/Ledger";
 import Certificate from "./pages/Certificate";
 import Catalog from "./pages/Catalog";
@@ -45,6 +47,8 @@ export default function App() {
       />
       <Route path="/signup/artist" element={<ArtistSignup />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/outbox" element={<Outbox />} />
+      <Route path="/preferences" element={<Preferences />} />
       <Route path="/ledger" element={<Ledger />} />
       <Route path="/certificate/:id" element={<Certificate />} />
       <Route path="/catalog" element={<Catalog />} />
