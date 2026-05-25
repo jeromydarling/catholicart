@@ -134,7 +134,8 @@ function Offering({
 }
 
 function countContinents(_n: number) {
-  // The seed dioceses span North America, South America, and Europe.
-  // We hard-code the count to avoid a real geo lookup.
-  return 3;
+  // Seed dioceses span North America (Pittsburgh, Santa Fe, Mexico),
+  // South America (Recife), Europe (Tivoli, Plymouth, Galway, Oslo,
+  // Lyon, Edinburgh, Granada), and Asia (Seoul).
+  return 4;
 }

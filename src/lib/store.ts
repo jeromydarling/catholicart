@@ -12,6 +12,7 @@ import type {
 } from "../types";
 import { classifyEmail } from "./email-policy";
 import { PLATFORM_FEE_PCT, computePricing } from "./pricing";
+import { deriveTitle } from "./utils";
 import { seedCommissions } from "../data/seed-commissions";
 import { seedConnect } from "../data/seed-connect";
 
@@ -326,7 +327,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                 ? {
                     issuedAt: nowIso(),
                     serial: `AS-${new Date().getFullYear()}-${c.id.slice(-6).toUpperCase()}`,
-                    title: c.scope.split(/[\.\n]/)[0].slice(0, 80) || "Untitled",
+                    title: deriveTitle(c.scope),
                   }
                 : c.certificate,
             messages: [

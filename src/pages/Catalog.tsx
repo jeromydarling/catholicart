@@ -8,7 +8,7 @@ import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 import { Badge } from "../components/ui/badge";
 import { useStore } from "../lib/store";
-import { formatPrice, initials } from "../lib/utils";
+import { deriveTitle, formatPrice, initials } from "../lib/utils";
 import type { Commission } from "../types";
 
 // Annual catalog — a yearbook of every delivered commission. The
@@ -151,12 +151,17 @@ function CatalogPlate({ commission: c, i }: { commission: Commission; i: number 
         <div className="absolute inset-0 flex items-center justify-center text-parchment-50/80">
           <PlateGlyph pattern={pattern} />
         </div>
+        {/* Bottom scrim — ensures the title reads on any palette */}
+        <div
+          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/65 via-black/35 to-transparent"
+          aria-hidden
+        />
         <div className="absolute inset-x-0 bottom-0 p-5 text-parchment-50">
           <div
-            className="font-display italic text-2xl leading-tight tracking-tight drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)]"
+            className="font-display italic text-2xl leading-tight tracking-tight drop-shadow-[0_1px_8px_rgba(0,0,0,0.45)] line-clamp-3"
             style={{ textWrap: "balance" } as React.CSSProperties}
           >
-            {c.certificate?.title ?? c.scope.split(/[\.\n]/)[0].slice(0, 80)}
+            {c.certificate?.title ?? deriveTitle(c.scope, 60)}
           </div>
           <div className="mt-1 font-sans text-[10px] uppercase tracking-[0.22em] opacity-85">
             {cat?.shortName} · {c.completedAt

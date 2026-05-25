@@ -19,7 +19,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Ornament } from "../components/Ornament";
 import { useStore } from "../lib/store";
-import { formatPrice, initials } from "../lib/utils";
+import { deriveTitle, formatPrice, initials } from "../lib/utils";
 import { escrowReleasedUsd, escrowHeldUsd, escrowProgressPct } from "../lib/pricing";
 import type {
   Commission,
@@ -236,7 +236,7 @@ function CommissionTile({ commission }: { commission: Commission }) {
               {cat?.shortName} · with {artist.name.split(" ").slice(-1)[0]}
             </div>
             <div className="mt-0.5 font-display text-lg text-ink leading-tight line-clamp-2">
-              {commission.scope.split(/[\.\n]/)[0].slice(0, 80)}
+              {deriveTitle(commission.scope)}
             </div>
             <div className="mt-2 flex items-center gap-2 flex-wrap">
               <Badge variant={stage.tone}>{stage.label}</Badge>

@@ -11,7 +11,7 @@ import { Ornament } from "../components/Ornament";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { useStore } from "../lib/store";
-import { formatPrice, initials } from "../lib/utils";
+import { deriveTitle, formatPrice, initials } from "../lib/utils";
 import {
   escrowReleasedUsd,
   escrowHeldUsd,
@@ -253,7 +253,7 @@ function LedgerRow({ commission: c, i }: { commission: Commission; i: number }) 
         <div className="grow min-w-0">
           <div className="flex items-baseline justify-between gap-3 flex-wrap">
             <div className="font-display text-lg text-ink leading-tight line-clamp-1">
-              {c.scope.split(/[\.\n]/)[0].slice(0, 90)}
+              {deriveTitle(c.scope, 90)}
             </div>
             <Badge variant={stage.tone}>{stage.label}</Badge>
           </div>

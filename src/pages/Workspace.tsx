@@ -25,7 +25,7 @@ import { Label } from "../components/ui/label";
 import { EscrowMeter } from "../components/EscrowMeter";
 import { useStore } from "../lib/store";
 import { computePricing, PLATFORM_FEE_PCT } from "../lib/pricing";
-import { cn, formatPrice, initials } from "../lib/utils";
+import { cn, deriveTitle, formatPrice, initials } from "../lib/utils";
 import type { Commission, CommissionStage } from "../types";
 
 const STAGE_COPY: Record<
@@ -113,7 +113,7 @@ export default function Workspace() {
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl tracking-tight text-ink leading-[1.05]">
-              {commission.scope.split(/[\.\n]/)[0].slice(0, 80) || "Commission"}
+              {deriveTitle(commission.scope) || "Commission"}
             </h1>
             <p className="mt-3 font-serif text-base text-ink-muted max-w-2xl">
               <span>For {commission.setting.toLowerCase()}</span>

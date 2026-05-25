@@ -57,38 +57,41 @@ export function orderBySlug(slug: string): Order | undefined {
   return ORDERS.find((o) => o.slug === slug);
 }
 
+// Diocese assignments match each artist's actual city (artists.ts).
 export const ARTIST_TAGS: Record<string, ArtistTags> = {
   "maria-chrysostom":      { saintSlugs: ["mary", "joseph", "therese"],          diocese: "Diocese of Pittsburgh" },
-  "br-andrew-of-subiaco":  { saintSlugs: ["francis", "anthony", "padre-pio"],    diocese: "Archdiocese of Santa Fe", order: "benedictine" },
+  "br-andrew-of-subiaco":  { saintSlugs: ["francis", "anthony", "padre-pio"],    diocese: "Diocese of Tivoli",                       order: "benedictine" },
   "giovanna-solis":        { saintSlugs: ["mary", "guadalupe", "kolbe"],         diocese: "Archdiocese of Mexico" },
-  "tobias-wren":           { saintSlugs: ["joseph", "michael", "patrick"],       diocese: "Diocese of Cleveland" },
-  "annunciata-park":       { saintSlugs: ["mary", "guadalupe", "faustina"],      diocese: "Diocese of Pittsburgh" },
-  "felix-donnegan":        { saintSlugs: ["michael", "augustine", "jpii"],       diocese: "Diocese of Charleston" },
-  "bartolomeu-camara":     { saintSlugs: ["mary", "francis", "anthony"],         diocese: "Archdiocese of São Paulo", order: "franciscan" },
-  "sr-clare-of-avila":     { saintSlugs: ["catherine-siena", "therese", "mary"], diocese: "Archdiocese of Madrid", order: "discalced-carmelite" },
+  "tobias-wren":           { saintSlugs: ["joseph", "michael", "patrick"],       diocese: "Diocese of Plymouth" },
+  "annunciata-park":       { saintSlugs: ["mary", "guadalupe", "faustina"],      diocese: "Archdiocese of Seoul" },
+  "felix-donnegan":        { saintSlugs: ["michael", "augustine", "jpii"],       diocese: "Diocese of Galway, Kilmacduagh & Kilfenora" },
+  "bartolomeu-camara":     { saintSlugs: ["mary", "francis", "anthony"],         diocese: "Archdiocese of Olinda and Recife",        order: "franciscan" },
+  "sr-clare-of-avila":     { saintSlugs: ["catherine-siena", "therese", "mary"], diocese: "Archdiocese of Santa Fe",                 order: "discalced-carmelite" },
   "henrik-aslaksen":       { saintSlugs: ["michael", "patrick", "augustine"],    diocese: "Diocese of Oslo" },
-  "theo-marchand":         { saintSlugs: ["bernadette", "therese", "joseph"],    diocese: "Archdiocese of Paris", order: "dominican" },
-  "imogen-fairbairn":      { saintSlugs: ["cecilia", "therese", "mary"],         diocese: "Archdiocese of Westminster" },
-  "esteban-vega-cruz":     { saintSlugs: ["guadalupe", "kolbe", "padre-pio"],    diocese: "Archdiocese of Mexico", order: "franciscan" },
+  "theo-marchand":         { saintSlugs: ["bernadette", "therese", "joseph"],    diocese: "Archdiocese of Lyon",                     order: "dominican" },
+  "imogen-fairbairn":      { saintSlugs: ["cecilia", "therese", "mary"],         diocese: "Archdiocese of St Andrews & Edinburgh" },
+  "esteban-vega-cruz":     { saintSlugs: ["guadalupe", "kolbe", "padre-pio"],    diocese: "Archdiocese of Granada",                  order: "franciscan" },
 };
 
 export function tagsFor(artistSlug: string): ArtistTags {
   return ARTIST_TAGS[artistSlug] ?? { saintSlugs: [], diocese: undefined };
 }
 
-// Cathedral-or-chancery coordinates for each diocese. Hand-picked so the
+// Cathedral coordinates for each diocese (lon, lat). Hand-picked so the
 // Mapbox map shows pins at the canonical episcopal seat.
 export const DIOCESE_COORDS: Record<string, [number, number]> = {
-  "Diocese of Pittsburgh":      [-79.9959, 40.4406],
-  "Archdiocese of Santa Fe":    [-105.9378, 35.6870],
-  "Archdiocese of Mexico":      [-99.1332, 19.4326],
-  "Diocese of Cleveland":       [-81.6944, 41.4993],
-  "Diocese of Charleston":      [-79.9311, 32.7765],
-  "Archdiocese of São Paulo":   [-46.6333, -23.5505],
-  "Archdiocese of Madrid":      [-3.7038, 40.4168],
-  "Diocese of Oslo":            [10.7522, 59.9139],
-  "Archdiocese of Paris":       [2.3522, 48.8566],
-  "Archdiocese of Westminster": [-0.1248, 51.4994],
+  "Diocese of Pittsburgh":                          [-79.9959, 40.4406],
+  "Diocese of Tivoli":                              [ 12.7991, 41.9658],
+  "Archdiocese of Mexico":                          [-99.1332, 19.4326],
+  "Diocese of Plymouth":                            [ -4.1427, 50.3755],
+  "Archdiocese of Seoul":                           [126.9779, 37.5663],
+  "Diocese of Galway, Kilmacduagh & Kilfenora":     [ -9.0568, 53.2707],
+  "Archdiocese of Olinda and Recife":               [-34.8829, -8.0578],
+  "Archdiocese of Santa Fe":                        [-105.9378, 35.6870],
+  "Diocese of Oslo":                                [ 10.7522, 59.9139],
+  "Archdiocese of Lyon":                            [  4.8357, 45.7640],
+  "Archdiocese of St Andrews & Edinburgh":          [ -3.1883, 55.9533],
+  "Archdiocese of Granada":                         [ -3.5986, 37.1773],
 };
 
 export function coordsFor(diocese: string): [number, number] | undefined {
