@@ -257,6 +257,30 @@ export interface ArtistAvailability {
 }
 
 // ── Apprenticeship applications ─────────────────────────────────
+// ── Moderation / risk ───────────────────────────────────────────
+export type FlagReason =
+  | "ai-generated"        // suspected AI-generated work
+  | "inappropriate"        // theologically / morally objectionable
+  | "fraud"                // suspected fraud / laundering
+  | "quality"              // does not meet guild standard
+  | "other";
+
+export interface CommissionFlag {
+  commissionId: string;
+  reason: FlagReason;
+  note?: string;
+  flaggedAt: string;
+  flaggedBy: "operator" | "patron" | "artist";
+}
+
+export interface ArtistSuspension {
+  artistSlug: string;
+  reason: string;
+  suspendedAt: string;
+  // null = indefinite
+  liftedAt?: string;
+}
+
 export interface ApprenticeshipApplication {
   id: string;
   applicantName: string;

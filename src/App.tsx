@@ -18,6 +18,8 @@ import Orders from "./pages/Orders";
 import Partnerships from "./pages/Partnerships";
 import IntakeForm from "./pages/IntakeForm";
 import IntakeDetail from "./pages/IntakeDetail";
+import Admin from "./pages/Admin";
+import Security from "./pages/Security";
 import Report from "./pages/Report";
 import Journal from "./pages/Journal";
 import Apprenticeships from "./pages/Apprenticeships";
@@ -60,6 +62,8 @@ export default function App() {
       <Route path="/partnerships" element={<Partnerships />} />
       <Route path="/partnerships/new" element={<IntakeForm />} />
       <Route path="/partnerships/:id" element={<IntakeDetail />} />
+      <Route path="/admin" element={<Admin />} />
+      <Route path="/security" element={<Security />} />
       <Route path="/report" element={<Report />} />
       <Route path="/journal" element={<Journal />} />
       <Route path="/apprenticeships" element={<Apprenticeships />} />

@@ -3,7 +3,10 @@ import type {
   ApprenticeshipApplication,
   ApprovalStep,
   ArtistAvailability,
+  ArtistSuspension,
   AvailabilityMonthStatus,
+  CommissionFlag,
+  FlagReason,
   Commission,
   CommissionMessage,
   ConnectAccount,
@@ -121,6 +124,15 @@ interface StoreState {
   apprenticeships: ApprenticeshipApplication[];
   submitApprenticeship: (input: Omit<ApprenticeshipApplication, "id" | "status" | "createdAt">) => ApprenticeshipApplication;
 
+  // Moderation
+  commissionFlags: CommissionFlag[];
+  artistSuspensions: ArtistSuspension[];
+  flagCommission: (input: { commissionId: string; reason: FlagReason; note?: string; flaggedBy?: CommissionFlag["flaggedBy"] }) => CommissionFlag;
+  clearCommissionFlag: (commissionId: string) => void;
+  suspendArtist: (artistSlug: string, reason: string) => ArtistSuspension;
+  liftArtistSuspension: (artistSlug: string) => void;
+  isArtistSuspended: (artistSlug: string) => boolean;
+
   // Institutional (B2B) intakes + proposals
   intakes: InstitutionalIntake[];
   proposals: Proposal[];
@@ -179,6 +191,8 @@ interface Persisted {
   proposals: Proposal[];
   availability: Record<string, ArtistAvailability>;
   apprenticeships: ApprenticeshipApplication[];
+  commissionFlags: CommissionFlag[];
+  artistSuspensions: ArtistSuspension[];
 }
 
 const EMPTY: Persisted = {
@@ -192,6 +206,8 @@ const EMPTY: Persisted = {
   proposals: [],
   availability: {},
   apprenticeships: [],
+  commissionFlags: [],
+  artistSuspensions: [],
 };
 
 function load(): Persisted {
@@ -210,6 +226,8 @@ function load(): Persisted {
         proposals: seedProposals(),
         availability: {},
         apprenticeships: [],
+        commissionFlags: [],
+        artistSuspensions: [],
       };
     }
     const parsed = JSON.parse(raw) as Partial<Persisted>;
@@ -224,6 +242,8 @@ function load(): Persisted {
       proposals: parsed.proposals ?? seedProposals(),
       availability: parsed.availability ?? {},
       apprenticeships: parsed.apprenticeships ?? [],
+      commissionFlags: parsed.commissionFlags ?? [],
+      artistSuspensions: parsed.artistSuspensions ?? [],
     };
   } catch {
     return EMPTY;
@@ -794,6 +814,63 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setState((s) => ({ ...s, apprenticeships: [a, ...s.apprenticeships] }));
         return a;
       },
+
+      // ===== Moderation =====
+      commissionFlags: state.commissionFlags,
+      artistSuspensions: state.artistSuspensions,
+
+      flagCommission: (input) => {
+        const flag: CommissionFlag = {
+          commissionId: input.commissionId,
+          reason: input.reason,
+          note: input.note,
+          flaggedAt: nowIso(),
+          flaggedBy: input.flaggedBy ?? "operator",
+        };
+        setState((s) => ({
+          ...s,
+          commissionFlags: [
+            flag,
+            ...s.commissionFlags.filter((f) => f.commissionId !== input.commissionId),
+          ],
+        }));
+        return flag;
+      },
+
+      clearCommissionFlag: (commissionId) => {
+        setState((s) => ({
+          ...s,
+          commissionFlags: s.commissionFlags.filter((f) => f.commissionId !== commissionId),
+        }));
+      },
+
+      suspendArtist: (slug, reason) => {
+        const s: ArtistSuspension = {
+          artistSlug: slug,
+          reason,
+          suspendedAt: nowIso(),
+        };
+        setState((st) => ({
+          ...st,
+          artistSuspensions: [
+            s,
+            ...st.artistSuspensions.filter((x) => x.artistSlug !== slug),
+          ],
+        }));
+        return s;
+      },
+
+      liftArtistSuspension: (slug) => {
+        setState((s) => ({
+          ...s,
+          artistSuspensions: s.artistSuspensions.map((x) =>
+            x.artistSlug === slug && !x.liftedAt ? { ...x, liftedAt: nowIso() } : x,
+          ),
+        }));
+      },
+
+      isArtistSuspended: (slug) =>
+        state.artistSuspensions.some((s) => s.artistSlug === slug && !s.liftedAt),
 
       // ===== Institutional intakes + proposals =====
       intakes: state.intakes,
