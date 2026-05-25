@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
-import { ArrowRight, Award, Calendar, Eye } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { ArrowRight, Award, Calendar, CheckCircle2, Eye } from "lucide-react";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 import { Button } from "../components/ui/button";
@@ -192,37 +193,8 @@ export default function Prize() {
       </section>
 
       {/* Nominate */}
-      <section id="nominate" className="container my-24 max-w-3xl">
-        <Ornament className="my-8" />
-        <div className="text-center">
-          <h2 className="font-display text-3xl sm:text-4xl text-ink leading-tight">
-            Nominate a work for {new Date().getFullYear()}.
-          </h2>
-          <p className="mt-3 font-serif text-base text-ink-muted max-w-xl mx-auto">
-            Anyone can nominate any work in The Ledger. Self-nominations are
-            welcome. The jury reads all serious entries.
-          </p>
-        </div>
-        <form className="mt-10 grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-          <Field label="Your name" placeholder="Full name" />
-          <Field label="Your email" placeholder="email@parish.org" type="email" />
-          <Field label="Work you're nominating" placeholder="Title or commission ID" full />
-          <Field
-            label="Why this work"
-            placeholder="A few sentences. The jury reads what you write."
-            full
-            textarea
-          />
-          <div className="sm:col-span-2 flex items-center justify-end gap-3 pt-2">
-            <Button type="submit" size="lg">
-              Send nomination <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </form>
-        <p className="mt-6 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted text-center">
-          Prototype · no nomination is sent
-        </p>
-      </section>
+      <NominateSection />
+
 
       <section className="container my-20 max-w-2xl text-center">
         <Ornament className="my-8" />
@@ -234,6 +206,88 @@ export default function Prize() {
         </div>
       </section>
     </PageShell>
+  );
+}
+
+function NominateSection() {
+  const [submitted, setSubmitted] = useState<null | { name: string }>(null);
+  return (
+    <section id="nominate" className="container my-24 max-w-3xl">
+      <Ornament className="my-8" />
+      <AnimatePresence mode="wait">
+        {submitted ? (
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="text-center"
+          >
+            <div className="grid h-14 w-14 mx-auto place-items-center rounded-full bg-olive-500/15 text-olive-600">
+              <CheckCircle2 className="h-7 w-7" />
+            </div>
+            <h2 className="mt-6 font-display text-3xl sm:text-4xl text-ink leading-tight">
+              Thank you, {submitted.name.split(" ")[0] || "friend"}.
+            </h2>
+            <p className="mt-3 font-serif text-base text-ink-muted max-w-xl mx-auto">
+              Your nomination is with the jury. We meet quarterly; the
+              laureate is announced at Pentecost. Every serious entry is
+              read.
+            </p>
+            <p className="mt-6 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+              Prototype · no nomination is sent
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.25 }}
+          >
+            <div className="text-center">
+              <h2 className="font-display text-3xl sm:text-4xl text-ink leading-tight">
+                Nominate a work for {new Date().getFullYear()}.
+              </h2>
+              <p className="mt-3 font-serif text-base text-ink-muted max-w-xl mx-auto">
+                Anyone can nominate any work in The Ledger. Self-nominations
+                are welcome. The jury reads all serious entries.
+              </p>
+            </div>
+            <form
+              className="mt-10 grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData(e.currentTarget);
+                setSubmitted({ name: String(fd.get("name") || "") });
+              }}
+            >
+              <Field name="name" label="Your name" placeholder="Full name" required />
+              <Field name="email" label="Your email" placeholder="email@parish.org" type="email" required />
+              <Field name="work" label="Work you're nominating" placeholder="Title or commission ID" full required />
+              <Field
+                name="reason"
+                label="Why this work"
+                placeholder="A few sentences. The jury reads what you write."
+                full
+                textarea
+                required
+              />
+              <div className="sm:col-span-2 flex items-center justify-end gap-3 pt-2">
+                <Button type="submit" size="lg">
+                  Send nomination <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </div>
+            </form>
+            <p className="mt-6 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted text-center">
+              Prototype · no nomination is sent
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 }
 
@@ -273,12 +327,16 @@ function Field({
   type,
   full,
   textarea,
+  name,
+  required,
 }: {
   label: string;
   placeholder: string;
   type?: string;
   full?: boolean;
   textarea?: boolean;
+  name?: string;
+  required?: boolean;
 }) {
   return (
     <div className={`space-y-1.5 ${full ? "sm:col-span-2" : ""}`}>
@@ -287,12 +345,16 @@ function Field({
       </label>
       {textarea ? (
         <textarea
+          name={name}
+          required={required}
           placeholder={placeholder}
           rows={4}
           className="flex w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 py-2 font-serif text-sm placeholder:text-ink-muted focusable"
         />
       ) : (
         <input
+          name={name}
+          required={required}
           type={type ?? "text"}
           placeholder={placeholder}
           className="flex h-11 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm placeholder:text-ink-muted focusable"

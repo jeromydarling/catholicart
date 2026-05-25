@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { ArrowRight, BookOpen, CheckCircle2 } from "lucide-react";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 
@@ -171,33 +172,86 @@ export default function Journal() {
       </section>
 
       {/* Subscribe */}
-      <section className="container my-24 sm:my-32 max-w-2xl text-center">
-        <Ornament className="my-8" />
-        <h2 className="font-display text-3xl sm:text-4xl text-ink leading-tight">
-          Get it in the mail.
-        </h2>
-        <p className="mt-3 font-serif text-base text-ink-muted">
-          Free to anyone who asks. Print run is small; tell a friend.
-        </p>
-        <form className="mt-8 flex gap-2 max-w-md mx-auto">
-          <input
-            type="email"
-            required
-            placeholder="your address"
-            className="flex h-12 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm placeholder:text-ink-muted focusable"
-          />
-          <button
-            type="submit"
-            className="h-12 rounded-sm bg-burgundy-500 px-5 font-sans text-sm font-medium text-parchment-50 hover:bg-burgundy-600 focusable"
-          >
-            Subscribe
-          </button>
-        </form>
-        <p className="mt-3 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
-          Prototype · no email is sent
-        </p>
-      </section>
+      <SubscribeBlock />
     </PageShell>
+  );
+}
+
+function SubscribeBlock() {
+  const [submitted, setSubmitted] = useState<string | null>(null);
+
+  return (
+    <section className="container my-24 sm:my-32 max-w-2xl text-center">
+      <Ornament className="my-8" />
+      <AnimatePresence mode="wait">
+        {submitted ? (
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="grid h-14 w-14 mx-auto place-items-center rounded-full bg-olive-500/15 text-olive-600">
+              <CheckCircle2 className="h-7 w-7" />
+            </div>
+            <h2 className="mt-6 font-display text-3xl sm:text-4xl text-ink leading-tight">
+              You're on the list.
+            </h2>
+            <p className="mt-3 font-serif text-base text-ink-muted">
+              The next issue will land at{" "}
+              <strong className="text-ink">{submitted}</strong>. We send four
+              times a year. Nothing else.
+            </p>
+            <p className="mt-6 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+              Prototype · no email is sent
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.25 }}
+          >
+            <h2 className="font-display text-3xl sm:text-4xl text-ink leading-tight">
+              Get it in the mail.
+            </h2>
+            <p className="mt-3 font-serif text-base text-ink-muted">
+              Free to anyone who asks. Print run is small; tell a friend.
+            </p>
+            <form
+              className="mt-8 flex gap-2 max-w-md mx-auto"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData(e.currentTarget);
+                const email = String(fd.get("email") || "");
+                if (email) setSubmitted(email);
+              }}
+            >
+              <input
+                name="email"
+                type="email"
+                required
+                placeholder="your address"
+                autoComplete="email"
+                className="flex h-12 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm placeholder:text-ink-muted focusable"
+              />
+              <button
+                type="submit"
+                className="h-12 rounded-sm bg-burgundy-500 px-5 font-sans text-sm font-medium text-parchment-50 hover:bg-burgundy-600 focusable"
+              >
+                Subscribe
+              </button>
+            </form>
+            <p className="mt-3 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+              Prototype · no email is sent
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
   );
 }
 
