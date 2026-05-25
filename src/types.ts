@@ -163,6 +163,85 @@ export type IpTerms =
   | "artist-retains"       // Artist retains all reproduction rights; patron owns the original
   | "shared-custom";       // Custom terms recorded in customNote
 
+// ── Institutional (B2B) intake ───────────────────────────────────
+//
+// Dioceses, religious orders, parishes, schools — they don't fill
+// out a single-artist commission form. They post an RFP-style brief
+// describing the scope (often multiple works), invite proposals from
+// guild artists, route through a multi-stakeholder approval chain,
+// and pay on NET-30 terms instead of immediate Stripe capture.
+
+export type IntakeKind =
+  | "diocese-bulk"        // 14 stations of the cross for 14 parishes
+  | "parish-altar"         // one altar, several works
+  | "religious-order"      // a community-wide commission
+  | "school"               // school chapel, classroom, etc.
+  | "other-institution";
+
+export type IntakeStatus =
+  | "draft"
+  | "open"                 // accepting proposals
+  | "shortlisting"         // proposals received; under review
+  | "awarded"              // artist(s) selected; commission(s) created
+  | "closed";              // no award / cancelled
+
+export interface ApprovalStep {
+  role: string;            // "Chancellor", "Pastor", "Finance Council", etc.
+  name?: string;
+  email?: string;
+  status: "pending" | "approved" | "declined";
+  decidedAt?: string;
+  note?: string;
+}
+
+export interface InstitutionalIntake {
+  id: string;
+  kind: IntakeKind;
+  // Institution
+  institutionName: string;
+  diocese?: string;
+  contactName: string;
+  contactEmail: string;
+  contactRole?: string;    // "Director of Sacred Worship", "Chancellor", etc.
+  // The brief
+  title: string;
+  brief: string;
+  craft: CategorySlug | "mixed";
+  budgetTotalUsd?: number;
+  budgetPerWorkUsd?: number;
+  quantity: number;        // how many works (e.g. 14 stations)
+  preferredDelivery?: string; // ISO date
+  feastDeadline?: { feastSlug: string; date: string; name: string };
+  // Billing
+  invoicingTerms: "stripe-immediate" | "net-30" | "net-60" | "purchase-order";
+  poNumber?: string;
+  // Workflow
+  status: IntakeStatus;
+  approvalChain: ApprovalStep[];
+  proposalIds: string[];   // references Proposal[].id
+  awardedProposalId?: string;
+  commissionIds: string[]; // commissions spawned from this intake (one or many)
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Proposal {
+  id: string;
+  intakeId: string;
+  artistSlug: string;
+  artistName: string;      // denormalized so we can render even if artist is removed
+  pricePerWorkUsd: number;
+  totalPriceUsd: number;
+  estimatedWeeks: number;
+  pitchBody: string;
+  // Optional cover for the proposal — gradient / pattern like WIP
+  paletteFrom?: string;
+  paletteTo?: string;
+  status: "submitted" | "shortlisted" | "awarded" | "declined" | "withdrawn";
+  submittedAt: string;
+  decidedAt?: string;
+}
+
 export interface Commission {
   id: string;
   artistSlug: string;

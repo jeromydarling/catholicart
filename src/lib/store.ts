@@ -1,12 +1,15 @@
 import * as React from "react";
 import type {
+  ApprovalStep,
   Commission,
   CommissionMessage,
   ConnectAccount,
   ConnectStatus,
   Dispute,
   EscrowStage,
+  InstitutionalIntake,
   IpTerms,
+  Proposal,
   Review,
   ShippingRecord,
   Verification,
@@ -22,6 +25,7 @@ import { artistBySlug } from "../data/artists";
 import { seedCommissions } from "../data/seed-commissions";
 import { seedConnect } from "../data/seed-connect";
 import { seedReviews } from "../data/seed-reviews";
+import { seedIntakes, seedProposals } from "../data/seed-intakes";
 
 interface SignedUpArtist {
   name: string;
@@ -104,6 +108,16 @@ interface StoreState {
     note?: string,
   ) => Dispute | null;
 
+  // Institutional (B2B) intakes + proposals
+  intakes: InstitutionalIntake[];
+  proposals: Proposal[];
+  getIntake: (id: string) => InstitutionalIntake | null;
+  submitIntake: (input: Omit<InstitutionalIntake, "id" | "status" | "proposalIds" | "commissionIds" | "createdAt" | "updatedAt"> & { status?: InstitutionalIntake["status"] }) => InstitutionalIntake;
+  submitProposal: (input: Omit<Proposal, "id" | "status" | "submittedAt">) => Proposal | null;
+  setApprovalStep: (intakeId: string, role: string, status: ApprovalStep["status"], note?: string) => InstitutionalIntake | null;
+  awardProposal: (intakeId: string, proposalId: string) => InstitutionalIntake | null;
+  setIntakeStatus: (intakeId: string, status: InstitutionalIntake["status"]) => InstitutionalIntake | null;
+
   // Artist signup
   signedUpArtist: SignedUpArtist | null;
   signUpArtist: (a: SignedUpArtist) => void;
@@ -148,6 +162,8 @@ interface Persisted {
   connectAccounts: Record<string, ConnectAccount>;
   reviews: Review[];
   disputes: Dispute[];
+  intakes: InstitutionalIntake[];
+  proposals: Proposal[];
 }
 
 const EMPTY: Persisted = {
@@ -157,6 +173,8 @@ const EMPTY: Persisted = {
   connectAccounts: {},
   reviews: [],
   disputes: [],
+  intakes: [],
+  proposals: [],
 };
 
 function load(): Persisted {
@@ -171,6 +189,8 @@ function load(): Persisted {
         connectAccounts: seedConnect(),
         reviews: seedReviews(),
         disputes: [],
+        intakes: seedIntakes(),
+        proposals: seedProposals(),
       };
     }
     const parsed = JSON.parse(raw) as Partial<Persisted>;
@@ -181,6 +201,8 @@ function load(): Persisted {
       connectAccounts: parsed.connectAccounts ?? seedConnect(),
       reviews: parsed.reviews ?? seedReviews(),
       disputes: parsed.disputes ?? [],
+      intakes: parsed.intakes ?? seedIntakes(),
+      proposals: parsed.proposals ?? seedProposals(),
     };
   } catch {
     return EMPTY;
@@ -696,6 +718,113 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             disputes: s.disputes.map((d) => (d.id === disputeId ? next : d)),
           };
         });
+        return updated;
+      },
+
+      // ===== Institutional intakes + proposals =====
+      intakes: state.intakes,
+      proposals: state.proposals,
+
+      getIntake: (id) => state.intakes.find((i) => i.id === id) ?? null,
+
+      submitIntake: (input) => {
+        const intake: InstitutionalIntake = {
+          ...input,
+          id: makeId("ink"),
+          status: input.status ?? "open",
+          proposalIds: [],
+          commissionIds: [],
+          createdAt: nowIso(),
+          updatedAt: nowIso(),
+        };
+        setState((s) => ({ ...s, intakes: [intake, ...s.intakes] }));
+        return intake;
+      },
+
+      submitProposal: (input) => {
+        const intake = state.intakes.find((i) => i.id === input.intakeId);
+        if (!intake) return null;
+        if (intake.status !== "open" && intake.status !== "shortlisting") return null;
+        const p: Proposal = {
+          ...input,
+          id: makeId("prp"),
+          status: "submitted",
+          submittedAt: nowIso(),
+        };
+        setState((s) => ({
+          ...s,
+          proposals: [p, ...s.proposals],
+          intakes: s.intakes.map((i) =>
+            i.id === input.intakeId
+              ? { ...i, proposalIds: [...i.proposalIds, p.id], updatedAt: nowIso() }
+              : i,
+          ),
+        }));
+        return p;
+      },
+
+      setApprovalStep: (intakeId, role, status, note) => {
+        let updated: InstitutionalIntake | null = null;
+        setState((s) => ({
+          ...s,
+          intakes: s.intakes.map((i) => {
+            if (i.id !== intakeId) return i;
+            const next: InstitutionalIntake = {
+              ...i,
+              approvalChain: i.approvalChain.map((step) =>
+                step.role === role
+                  ? { ...step, status, decidedAt: nowIso(), note }
+                  : step,
+              ),
+              updatedAt: nowIso(),
+            };
+            updated = next;
+            return next;
+          }),
+        }));
+        return updated;
+      },
+
+      awardProposal: (intakeId, proposalId) => {
+        let updated: InstitutionalIntake | null = null;
+        setState((s) => ({
+          ...s,
+          proposals: s.proposals.map((p) =>
+            p.intakeId === intakeId
+              ? {
+                  ...p,
+                  status:
+                    p.id === proposalId ? ("awarded" as const) : ("declined" as const),
+                  decidedAt: nowIso(),
+                }
+              : p,
+          ),
+          intakes: s.intakes.map((i) => {
+            if (i.id !== intakeId) return i;
+            const next: InstitutionalIntake = {
+              ...i,
+              awardedProposalId: proposalId,
+              status: "awarded" as const,
+              updatedAt: nowIso(),
+            };
+            updated = next;
+            return next;
+          }),
+        }));
+        return updated;
+      },
+
+      setIntakeStatus: (intakeId, status) => {
+        let updated: InstitutionalIntake | null = null;
+        setState((s) => ({
+          ...s,
+          intakes: s.intakes.map((i) => {
+            if (i.id !== intakeId) return i;
+            const next: InstitutionalIntake = { ...i, status, updatedAt: nowIso() };
+            updated = next;
+            return next;
+          }),
+        }));
         return updated;
       },
 

@@ -1,14 +1,18 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Building2, Crown, ShieldCheck, Mail } from "lucide-react";
+import { ArrowRight, Building2, Crown, FileText, Mail, ShieldCheck } from "lucide-react";
 import { listDioceses } from "../data/artist-tags";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { useStore } from "../lib/store";
+import { formatPrice } from "../lib/utils";
 
 export default function Partnerships() {
   const dioceses = listDioceses();
+  const { intakes, proposals } = useStore();
+  const openIntakes = intakes.filter((i) => i.status === "open" || i.status === "shortlisting");
   return (
     <PageShell>
       <section className="container pt-12 sm:pt-16">
@@ -26,6 +30,75 @@ export default function Partnerships() {
         </p>
         <Ornament className="my-10" />
       </section>
+
+      {/* Submit a brief CTA */}
+      <section className="container mb-16">
+        <div className="rounded-md border border-burgundy-500/30 bg-gradient-to-br from-parchment-50 to-burgundy-500/5 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-8">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-burgundy-500/10 text-burgundy-500">
+            <FileText className="h-6 w-6" />
+          </div>
+          <div className="grow">
+            <h2 className="font-display text-2xl sm:text-3xl text-ink leading-tight">
+              Post a brief. Receive proposals from the guild.
+            </h2>
+            <p className="mt-2 font-serif text-base text-ink-muted leading-relaxed max-w-2xl">
+              For bulk and multi-stakeholder commissions: one description, an
+              approval chain, NET-30 invoicing, and proposals from artists vetted
+              for the work.
+            </p>
+          </div>
+          <Button asChild size="lg" className="shrink-0">
+            <Link to="/partnerships/new">
+              Submit an institutional brief <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Open RFPs */}
+      {openIntakes.length > 0 && (
+        <section className="container mb-20">
+          <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+            Open RFPs
+          </div>
+          <h2 className="font-display text-3xl sm:text-4xl text-ink leading-tight mb-8">
+            Briefs accepting proposals
+          </h2>
+          <ul className="grid lg:grid-cols-2 gap-5">
+            {openIntakes.map((i) => {
+              const intakeProposals = proposals.filter((p) => p.intakeId === i.id);
+              return (
+                <li key={i.id}>
+                  <Link
+                    to={`/partnerships/${i.id}`}
+                    className="block rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6 hover:shadow-plate transition-shadow focusable"
+                  >
+                    <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+                        {i.diocese ?? i.institutionName}
+                      </div>
+                      <Badge variant={i.status === "open" ? "gold" : "lapis"}>
+                        {i.status === "open" ? "Open" : "Shortlisting"}
+                      </Badge>
+                    </div>
+                    <h3 className="mt-2 font-display text-xl text-ink leading-tight">
+                      {i.title}
+                    </h3>
+                    <p className="mt-3 font-serif text-sm text-ink-soft leading-relaxed line-clamp-3">
+                      {i.brief}
+                    </p>
+                    <dl className="mt-4 grid grid-cols-3 gap-3 font-sans text-xs">
+                      <Field label="Works">{i.quantity}</Field>
+                      <Field label="Total budget">{i.budgetTotalUsd ? formatPrice(i.budgetTotalUsd) : "—"}</Field>
+                      <Field label="Proposals">{intakeProposals.length}</Field>
+                    </dl>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       {/* Three offerings */}
       <section className="container">
@@ -134,8 +207,22 @@ function Offering({
 }
 
 function countContinents(_n: number) {
-  // Seed dioceses span North America (Pittsburgh, Santa Fe, Mexico),
-  // South America (Recife), Europe (Tivoli, Plymouth, Galway, Oslo,
-  // Lyon, Edinburgh, Granada), and Asia (Seoul).
   return 4;
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <dt className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+        {label}
+      </dt>
+      <dd className="mt-0.5 font-display text-base text-ink tabular-nums">{children}</dd>
+    </div>
+  );
 }
