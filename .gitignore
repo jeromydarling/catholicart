@@ -19,3 +19,7 @@ tools/1code/
 .env
 .env.local
 .env.*.local
+
+# Project-scoped MCP config (contains API keys). The template
+# .mcp.json.example is committed.
+.mcp.json
