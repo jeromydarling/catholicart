@@ -10,6 +10,7 @@ import ArtistSignup from "./pages/ArtistSignup";
 import Dashboard from "./pages/Dashboard";
 import Outbox from "./pages/Outbox";
 import Preferences from "./pages/Preferences";
+import Compare from "./pages/Compare";
 import Ledger from "./pages/Ledger";
 import Certificate from "./pages/Certificate";
 import Catalog from "./pages/Catalog";
@@ -49,6 +50,7 @@ export default function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/outbox" element={<Outbox />} />
       <Route path="/preferences" element={<Preferences />} />
+      <Route path="/compare" element={<Compare />} />
       <Route path="/ledger" element={<Ledger />} />
       <Route path="/certificate/:id" element={<Certificate />} />
       <Route path="/catalog" element={<Catalog />} />

@@ -15,6 +15,7 @@ import {
 import { ArtworkPlate } from "../components/ArtworkPlate";
 import { Ornament } from "../components/Ornament";
 import { formatPrice, initials } from "../lib/utils";
+import { similarArtists } from "../lib/recommend";
 
 export default function ArtistProfile() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -388,7 +389,56 @@ export default function ArtistProfile() {
           </TabsContent>
         </Tabs>
       </section>
+
+      <SimilarArtists slug={artist.slug} />
     </PageShell>
+  );
+}
+
+function SimilarArtists({ slug }: { slug: string }) {
+  const similar = similarArtists(slug, 4);
+  if (similar.length === 0) return null;
+  return (
+    <section className="container my-20 sm:my-28">
+      <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+        Similar hands
+      </div>
+      <h2 className="font-display text-2xl sm:text-3xl text-ink leading-tight mb-6">
+        Other artists in this tradition
+      </h2>
+      <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {similar.map((a) => {
+          const cat = categoryBySlug(a.categories[0]);
+          return (
+            <li key={a.slug}>
+              <Link
+                to={`/artists/${a.slug}`}
+                className="block rounded-md border border-ink/10 bg-parchment-50 shadow-card p-4 hover:shadow-plate transition-shadow focusable"
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="h-12 w-12 rounded-full grid place-items-center text-parchment-50 font-display text-base shrink-0"
+                    style={{
+                      background: `linear-gradient(135deg, ${a.portraitFrom}, ${a.portraitTo})`,
+                    }}
+                  >
+                    {initials(a.name)}
+                  </div>
+                  <div className="grow min-w-0">
+                    <div className="font-display text-base text-ink truncate">
+                      {a.name}
+                    </div>
+                    <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted truncate">
+                      {cat?.shortName} · {a.city}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
