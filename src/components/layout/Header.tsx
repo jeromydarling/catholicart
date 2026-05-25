@@ -227,7 +227,6 @@ function MegaMenuTrigger({
       type="button"
       onMouseEnter={onOpen}
       onClick={onToggle}
-      onFocus={onOpen}
       aria-haspopup="true"
       aria-expanded={isOpen}
       className={cn(

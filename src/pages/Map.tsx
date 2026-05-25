@@ -53,9 +53,16 @@ export default function MapPage() {
       </section>
 
       <section className="container mt-12 max-w-md">
+        <label htmlFor="diocese-search" className="sr-only">
+          Search dioceses
+        </label>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted" />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-muted"
+            aria-hidden
+          />
           <Input
+            id="diocese-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search dioceses…"

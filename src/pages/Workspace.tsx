@@ -195,11 +195,15 @@ export default function Workspace() {
                 className="mt-7 pt-5 border-t border-ink/10 space-y-3"
               >
                 <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <Label className="text-[11px] uppercase tracking-[0.22em] text-ink-muted">
+                  <Label
+                    htmlFor="workspace-composer"
+                    className="text-[11px] uppercase tracking-[0.22em] text-ink-muted"
+                  >
                     Reply as {persona === "patron" ? commission.patronName : artist?.name}
                   </Label>
                 </div>
                 <Textarea
+                  id="workspace-composer"
                   rows={3}
                   value={composeBody}
                   onChange={(e) => setComposeBody(e.target.value)}

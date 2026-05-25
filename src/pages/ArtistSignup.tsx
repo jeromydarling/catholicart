@@ -383,11 +383,13 @@ function Field({
   label: string;
   children: React.ReactNode;
 }) {
+  // Wrap the input in a <label> for implicit association — works with
+  // screen readers without needing manual htmlFor/id wiring at every site.
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <Label className="block space-y-2">
+      <span className="block">{label}</span>
       {children}
-    </div>
+    </Label>
   );
 }
 

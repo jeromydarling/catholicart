@@ -230,7 +230,11 @@ function SubscribeBlock() {
                 if (email) setSubmitted(email);
               }}
             >
+              <label htmlFor="journal-subscribe-email" className="sr-only">
+                Email address
+              </label>
               <input
+                id="journal-subscribe-email"
                 name="email"
                 type="email"
                 required

@@ -253,9 +253,9 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <Label className="block space-y-2">
+      <span className="block">{label}</span>
       {children}
-    </div>
+    </Label>
   );
 }

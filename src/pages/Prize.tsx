@@ -338,13 +338,19 @@ function Field({
   name?: string;
   required?: boolean;
 }) {
+  const id = `prize-${name ?? label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className={`space-y-1.5 ${full ? "sm:col-span-2" : ""}`}>
-      <label className="font-sans text-xs font-medium text-ink-soft tracking-wide">
+      <label
+        htmlFor={id}
+        className="font-sans text-xs font-medium text-ink-soft tracking-wide"
+      >
         {label}
+        {required && <span aria-hidden className="text-burgundy-500"> *</span>}
       </label>
       {textarea ? (
         <textarea
+          id={id}
           name={name}
           required={required}
           placeholder={placeholder}
@@ -353,6 +359,7 @@ function Field({
         />
       ) : (
         <input
+          id={id}
           name={name}
           required={required}
           type={type ?? "text"}
