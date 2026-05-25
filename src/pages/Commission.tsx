@@ -83,6 +83,10 @@ export default function Commission() {
               const deadline = String(data.get("deadline") || "");
               const feastSlug = String(data.get("feastSlug") || "");
               const feastName = String(data.get("feastName") || "");
+              const ipTerms = String(data.get("ipTerms") || "patron-exclusive") as
+                | "patron-exclusive"
+                | "shared-prints"
+                | "artist-retains";
               const c = createCommission({
                 artistSlug: artist.slug,
                 patronName: String(data.get("name") || ""),
@@ -97,6 +101,7 @@ export default function Commission() {
                     : undefined,
                 parishOrChapel:
                   String(data.get("parishOrChapel") || "") || undefined,
+                ipTerms,
               });
               navigate(`/workspace/${c.id}`);
             }}
@@ -152,6 +157,28 @@ export default function Commission() {
             <FeastDeadlinePicker
               minWeeks={tier.turnaroundWeeks[0] ?? 6}
             />
+
+            <Field label="Reproduction rights">
+              <select
+                name="ipTerms"
+                defaultValue="patron-exclusive"
+                className="flex h-11 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm focusable"
+              >
+                <option value="patron-exclusive">
+                  Patron-exclusive — I own all rights (recommended)
+                </option>
+                <option value="shared-prints">
+                  Shared — artist may sell prints
+                </option>
+                <option value="artist-retains">
+                  Artist retains reproduction rights
+                </option>
+              </select>
+              <p className="mt-2 font-serif text-sm text-ink-muted italic">
+                You can renegotiate later. The artist will see your selection
+                when reviewing the request.
+              </p>
+            </Field>
 
             <div className="pt-2 rounded-md border border-ink/10 bg-parchment-100 p-4">
               <div className="flex items-start gap-3">

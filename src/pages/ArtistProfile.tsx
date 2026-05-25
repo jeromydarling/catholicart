@@ -16,6 +16,8 @@ import { ArtworkPlate } from "../components/ArtworkPlate";
 import { Ornament } from "../components/Ornament";
 import { formatPrice, initials } from "../lib/utils";
 import { similarArtists } from "../lib/recommend";
+import { useStore } from "../lib/store";
+import { StarRating } from "../components/StarRating";
 
 export default function ArtistProfile() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -390,6 +392,7 @@ export default function ArtistProfile() {
         </Tabs>
       </section>
 
+      <ReviewsSection slug={artist.slug} />
       <SimilarArtists slug={artist.slug} />
     </PageShell>
   );
@@ -460,6 +463,141 @@ function Stat({
         </span>
       </div>
       <div className="mt-1 font-display text-base text-ink">{value}</div>
+    </div>
+  );
+}
+
+function ReviewsSection({ slug }: { slug: string }) {
+  const store = useStore();
+  const reviews = store.reviewsForArtist(slug);
+  const commissions = store.commissions.filter((c) => c.artistSlug === slug);
+  const delivered = commissions.filter(
+    (c) => c.stage === "delivered" || c.stage === "blessed",
+  );
+
+  // Track-record metrics
+  const totalDelivered = delivered.length;
+  const onTime = delivered.filter((c) => {
+    if (!c.preferredDeadline || !c.completedAt) return true;
+    return new Date(c.completedAt).getTime() <= new Date(c.preferredDeadline).getTime();
+  }).length;
+  const onTimePct = totalDelivered > 0 ? Math.round((onTime / totalDelivered) * 100) : null;
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      : null;
+  const avgTurnaroundWeeks = (() => {
+    const completed = delivered.filter((c) => c.completedAt);
+    if (completed.length === 0) return null;
+    const total = completed.reduce((s, c) => {
+      const start = new Date(c.createdAt).getTime();
+      const end = new Date(c.completedAt!).getTime();
+      return s + (end - start);
+    }, 0);
+    return Math.round(total / completed.length / (1000 * 60 * 60 * 24 * 7));
+  })();
+
+  if (totalDelivered === 0 && reviews.length === 0) return null;
+
+  return (
+    <section className="container my-20 sm:my-28">
+      <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+        Track record
+      </div>
+      <h2 className="font-display text-2xl sm:text-3xl text-ink leading-tight mb-6">
+        The patron's evidence
+      </h2>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
+        <MetricCard label="Commissions delivered" value={totalDelivered.toString()} />
+        <MetricCard
+          label="On-time"
+          value={onTimePct != null ? `${onTimePct}%` : "—"}
+        />
+        <MetricCard
+          label="Avg turnaround"
+          value={avgTurnaroundWeeks != null ? `${avgTurnaroundWeeks} wk` : "—"}
+        />
+        <MetricCard
+          label="Avg rating"
+          value={
+            avgRating != null ? (
+              <span className="flex items-center gap-2 tabular-nums">
+                {avgRating.toFixed(1)}
+                <StarRating value={avgRating} size="sm" />
+              </span>
+            ) : (
+              "—"
+            )
+          }
+        />
+      </div>
+
+      {reviews.length > 0 ? (
+        <ul className="space-y-5">
+          {reviews.map((r) => (
+            <li
+              key={r.id}
+              className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5"
+            >
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <StarRating value={r.rating} size="sm" />
+                  <span className="font-sans text-xs uppercase tracking-[0.18em] text-ink-muted tabular-nums">
+                    {r.rating}/5
+                  </span>
+                </div>
+                <div className="font-sans text-[11px] uppercase tracking-[0.18em] text-ink-muted">
+                  {r.patronName} ·{" "}
+                  {new Date(r.createdAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+              <p className="mt-3 font-serif text-base text-ink-soft leading-relaxed italic">
+                "{r.body}"
+              </p>
+              {r.artistReply && (
+                <div className="mt-4 pt-4 border-t border-ink/10">
+                  <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-1.5">
+                    Reply from the artist
+                  </div>
+                  <p className="font-serif text-sm text-ink-soft leading-relaxed">
+                    {r.artistReply.body}
+                  </p>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="rounded-md border border-dashed border-ink/15 p-8 text-center">
+          <p className="font-serif text-ink-muted">
+            Patrons haven't written reviews yet. The artist's track record above is the
+            evidence so far.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-4 sm:p-5">
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+        {label}
+      </div>
+      <div className="mt-2 font-display text-2xl text-ink leading-none">
+        {value}
+      </div>
     </div>
   );
 }

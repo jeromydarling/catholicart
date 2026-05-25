@@ -113,6 +113,56 @@ export interface BlessingRecord {
   parishOrChapel?: string;
 }
 
+// ── Reviews ──────────────────────────────────────────────────────
+export interface Review {
+  id: string;
+  commissionId: string;
+  artistSlug: string;
+  patronName: string;
+  rating: 1 | 2 | 3 | 4 | 5;
+  body: string;
+  createdAt: string;
+  // Patron's reply if the artist responded
+  artistReply?: { body: string; createdAt: string };
+}
+
+// ── Disputes ─────────────────────────────────────────────────────
+export type DisputeStatus =
+  | "open"
+  | "resolved-mediated"      // both parties agreed via conversation
+  | "resolved-refund"        // mediator refunded held funds
+  | "resolved-release"       // mediator released held funds
+  | "withdrawn";
+
+export interface Dispute {
+  id: string;
+  commissionId: string;
+  openedBy: "patron" | "artist";
+  reason: string;
+  status: DisputeStatus;
+  openedAt: string;
+  resolvedAt?: string;
+  resolutionNote?: string;
+}
+
+// ── Shipping ─────────────────────────────────────────────────────
+export interface ShippingRecord {
+  carrier: string;             // "FedEx", "UPS", "USPS", "DHL", "Hand-carry"
+  trackingNumber?: string;
+  insuredFor?: number;         // declared value
+  shippedAt: string;
+  estimatedArrival?: string;   // ISO date
+  deliveredAt?: string;
+  notes?: string;
+}
+
+// ── IP / reproduction rights ─────────────────────────────────────
+export type IpTerms =
+  | "patron-exclusive"     // Patron owns the work; artist cannot reproduce
+  | "shared-prints"        // Both parties can reproduce; artist may sell prints
+  | "artist-retains"       // Artist retains all reproduction rights; patron owns the original
+  | "shared-custom";       // Custom terms recorded in customNote
+
 export interface Commission {
   id: string;
   artistSlug: string;
@@ -145,6 +195,9 @@ export interface Commission {
   createdAt: string;
   completedAt?: string;
   cancelledAt?: string;
+  shipping?: ShippingRecord;
+  ipTerms?: IpTerms;
+  ipCustomNote?: string;
 }
 
 // === Stripe Connect (mocked) ===

@@ -4,7 +4,11 @@ import type {
   CommissionMessage,
   ConnectAccount,
   ConnectStatus,
+  Dispute,
   EscrowStage,
+  IpTerms,
+  Review,
+  ShippingRecord,
   Verification,
   VerifierRole,
   WipUpdate,
@@ -17,6 +21,7 @@ import { notify } from "./email/notify";
 import { artistBySlug } from "../data/artists";
 import { seedCommissions } from "../data/seed-commissions";
 import { seedConnect } from "../data/seed-connect";
+import { seedReviews } from "../data/seed-reviews";
 
 interface SignedUpArtist {
   name: string;
@@ -36,6 +41,7 @@ export interface CreateCommissionInput {
   patronSaint?: string;
   parishOrChapel?: string;
   diocese?: string;
+  ipTerms?: IpTerms;
 }
 
 export interface VerificationInput {
@@ -78,6 +84,25 @@ interface StoreState {
     record: Omit<BlessingRecord, "recordedAt">,
   ) => Commission | null;
   cancelCommission: (id: string) => Commission | null;
+  recordShipping: (id: string, record: Omit<ShippingRecord, "shippedAt">) => Commission | null;
+  setIpTerms: (id: string, terms: IpTerms, customNote?: string) => Commission | null;
+
+  // Reviews
+  reviews: Review[];
+  reviewsForArtist: (artistSlug: string) => Review[];
+  reviewForCommission: (commissionId: string) => Review | null;
+  submitReview: (input: { commissionId: string; rating: Review["rating"]; body: string }) => Review | null;
+  artistReplyToReview: (reviewId: string, body: string) => Review | null;
+
+  // Disputes
+  disputes: Dispute[];
+  disputesForCommission: (commissionId: string) => Dispute[];
+  openDispute: (input: { commissionId: string; openedBy: "patron" | "artist"; reason: string }) => Dispute | null;
+  resolveDispute: (
+    disputeId: string,
+    resolution: "resolved-mediated" | "resolved-refund" | "resolved-release" | "withdrawn",
+    note?: string,
+  ) => Dispute | null;
 
   // Artist signup
   signedUpArtist: SignedUpArtist | null;
@@ -121,6 +146,8 @@ interface Persisted {
   signedUpArtist: SignedUpArtist | null;
   verifications: Verification[];
   connectAccounts: Record<string, ConnectAccount>;
+  reviews: Review[];
+  disputes: Dispute[];
 }
 
 const EMPTY: Persisted = {
@@ -128,6 +155,8 @@ const EMPTY: Persisted = {
   signedUpArtist: null,
   verifications: [],
   connectAccounts: {},
+  reviews: [],
+  disputes: [],
 };
 
 function load(): Persisted {
@@ -140,6 +169,8 @@ function load(): Persisted {
         signedUpArtist: null,
         verifications: [],
         connectAccounts: seedConnect(),
+        reviews: seedReviews(),
+        disputes: [],
       };
     }
     const parsed = JSON.parse(raw) as Partial<Persisted>;
@@ -148,6 +179,8 @@ function load(): Persisted {
       signedUpArtist: parsed.signedUpArtist ?? null,
       verifications: parsed.verifications ?? [],
       connectAccounts: parsed.connectAccounts ?? seedConnect(),
+      reviews: parsed.reviews ?? seedReviews(),
+      disputes: parsed.disputes ?? [],
     };
   } catch {
     return EMPTY;
@@ -220,6 +253,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           patronSaint: input.patronSaint,
           parishOrChapel: input.parishOrChapel,
           diocese: input.diocese,
+          ipTerms: input.ipTerms ?? "patron-exclusive",
           platformFeePct: PLATFORM_FEE_PCT,
           stage: "scoping",
           escrow: [],
@@ -505,6 +539,163 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ],
         }));
         if (updated) notify({ kind: "commission.cancelled", commission: updated, artist: artistBySlug(updated.artistSlug) ?? undefined });
+        return updated;
+      },
+
+      recordShipping: (id, record) => {
+        const updated = patchCommission(id, (c) => ({
+          ...c,
+          shipping: { ...record, shippedAt: nowIso() },
+          messages: [
+            ...c.messages,
+            {
+              id: makeId("msg"),
+              authorRole: "system",
+              authorName: "Ars Sacra",
+              body: `Shipped via ${record.carrier}${record.trackingNumber ? ` · ${record.trackingNumber}` : ""}.`,
+              createdAt: nowIso(),
+            },
+          ],
+        }));
+        return updated;
+      },
+
+      setIpTerms: (id, terms, customNote) => {
+        return patchCommission(id, (c) => ({
+          ...c,
+          ipTerms: terms,
+          ipCustomNote: customNote,
+        }));
+      },
+
+      // ===== Reviews =====
+      reviews: state.reviews,
+      reviewsForArtist: (slug) => state.reviews.filter((r) => r.artistSlug === slug),
+      reviewForCommission: (id) => state.reviews.find((r) => r.commissionId === id) ?? null,
+
+      submitReview: ({ commissionId, rating, body }) => {
+        const c = state.commissions.find((x) => x.id === commissionId);
+        if (!c) return null;
+        // Only after delivered or blessed
+        if (c.stage !== "delivered" && c.stage !== "blessed") return null;
+        // One review per commission
+        if (state.reviews.some((r) => r.commissionId === commissionId)) return null;
+        const review: Review = {
+          id: makeId("rev"),
+          commissionId,
+          artistSlug: c.artistSlug,
+          patronName: c.patronName,
+          rating,
+          body,
+          createdAt: nowIso(),
+        };
+        setState((s) => ({ ...s, reviews: [review, ...s.reviews] }));
+        return review;
+      },
+
+      artistReplyToReview: (reviewId, body) => {
+        let updated: Review | null = null;
+        setState((s) => ({
+          ...s,
+          reviews: s.reviews.map((r) => {
+            if (r.id !== reviewId) return r;
+            const next: Review = {
+              ...r,
+              artistReply: { body, createdAt: nowIso() },
+            };
+            updated = next;
+            return next;
+          }),
+        }));
+        return updated;
+      },
+
+      // ===== Disputes =====
+      disputes: state.disputes,
+      disputesForCommission: (id) => state.disputes.filter((d) => d.commissionId === id),
+
+      openDispute: ({ commissionId, openedBy, reason }) => {
+        const c = state.commissions.find((x) => x.id === commissionId);
+        if (!c) return null;
+        // Can't dispute a cancelled commission
+        if (c.stage === "cancelled") return null;
+        const d: Dispute = {
+          id: makeId("dsp"),
+          commissionId,
+          openedBy,
+          reason,
+          status: "open",
+          openedAt: nowIso(),
+        };
+        setState((s) => ({
+          ...s,
+          disputes: [d, ...s.disputes],
+          // Attach a system message to the commission
+          commissions: s.commissions.map((co) =>
+            co.id === commissionId
+              ? {
+                  ...co,
+                  messages: [
+                    ...co.messages,
+                    {
+                      id: makeId("msg"),
+                      authorRole: "system" as const,
+                      authorName: "Ars Sacra",
+                      body: `Dispute opened by the ${openedBy}: "${reason}". A guild mediator will reach out within 48 hours.`,
+                      createdAt: nowIso(),
+                    },
+                  ],
+                }
+              : co,
+          ),
+        }));
+        return d;
+      },
+
+      resolveDispute: (disputeId, resolution, note) => {
+        let updated: Dispute | null = null;
+        setState((s) => {
+          const disp = s.disputes.find((d) => d.id === disputeId);
+          if (!disp) return s;
+          const next: Dispute = {
+            ...disp,
+            status: resolution,
+            resolvedAt: nowIso(),
+            resolutionNote: note,
+          };
+          updated = next;
+          const commissions = s.commissions.map((c) =>
+            c.id === disp.commissionId
+              ? {
+                  ...c,
+                  // If mediator refunded, mark held funds as refunded
+                  escrow:
+                    resolution === "resolved-refund"
+                      ? c.escrow.map((m) =>
+                          m.status === "held"
+                            ? { ...m, status: "refunded" as const }
+                            : m,
+                        )
+                      : c.escrow,
+                  messages: [
+                    ...c.messages,
+                    {
+                      id: makeId("msg"),
+                      authorRole: "system" as const,
+                      authorName: "Ars Sacra",
+                      body: `Dispute ${resolution.replace("resolved-", "resolved by ")}.${note ? ` ${note}` : ""}`,
+                      createdAt: nowIso(),
+                    },
+                  ],
+                }
+              : c,
+          );
+          return {
+            ...s,
+            commissions,
+            disputes: s.disputes.map((d) => (d.id === disputeId ? next : d)),
+          };
+        });
         return updated;
       },
 

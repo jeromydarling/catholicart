@@ -23,6 +23,7 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { EscrowMeter } from "../components/EscrowMeter";
+import { StarRating } from "../components/StarRating";
 import { useStore } from "../lib/store";
 import { computePricing, PLATFORM_FEE_PCT } from "../lib/pricing";
 import { cn, deriveTitle, formatPrice, initials } from "../lib/utils";
@@ -264,6 +265,24 @@ export default function Workspace() {
             persona={persona}
             artistName={artist?.name ?? "Artist"}
           />
+
+          {/* Shipping (artist's tool, post-delivery) */}
+          {(commission.stage === "delivered" || commission.stage === "blessed") && (
+            <ShippingBlock commission={commission} persona={persona} />
+          )}
+
+          {/* Review (patron's tool, post-delivery) */}
+          {(commission.stage === "delivered" || commission.stage === "blessed") && (
+            <ReviewBlock commission={commission} persona={persona} />
+          )}
+
+          {/* IP terms display */}
+          <IpTermsBlock commission={commission} persona={persona} />
+
+          {/* Dispute (open to both at any non-terminal stage) */}
+          {commission.stage !== "cancelled" && (
+            <DisputeBlock commission={commission} persona={persona} />
+          )}
 
           {/* Certificate of authenticity (only when complete) */}
           {commission.certificate && (
@@ -1126,3 +1145,390 @@ function formatDateShort(iso: string) {
 
 // Unused-import suppression for strict TS — these helpers might be inlined later.
 useEffect; ArrowRight;
+
+// ─────────────────────────────────────────────────────────────
+// Review block — patron leaves a rating + body after delivered/blessed.
+// ─────────────────────────────────────────────────────────────
+function ReviewBlock({
+  commission,
+  persona,
+}: {
+  commission: Commission;
+  persona: Persona;
+}) {
+  const store = useStore();
+  const existing = store.reviewForCommission(commission.id);
+  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5 | null>(null);
+  const [body, setBody] = useState("");
+  const [reply, setReply] = useState("");
+
+  if (existing) {
+    return (
+      <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-3">
+          Patron's review
+        </div>
+        <div className="flex items-center gap-3 mb-3">
+          <StarRating value={existing.rating} size="md" />
+          <span className="font-sans text-xs uppercase tracking-[0.18em] text-ink-muted tabular-nums">
+            {existing.rating}/5
+          </span>
+        </div>
+        <p className="font-serif text-[15px] text-ink-soft leading-relaxed italic">
+          "{existing.body}"
+        </p>
+        <div className="mt-2 font-sans text-[11px] uppercase tracking-[0.18em] text-ink-muted">
+          {existing.patronName} ·{" "}
+          {new Date(existing.createdAt).toLocaleDateString()}
+        </div>
+
+        {existing.artistReply ? (
+          <div className="mt-4 pt-4 border-t border-ink/10">
+            <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-2">
+              Artist's reply
+            </div>
+            <p className="font-serif text-sm text-ink-soft leading-relaxed">
+              {existing.artistReply.body}
+            </p>
+          </div>
+        ) : persona === "artist" ? (
+          <div className="mt-4 pt-4 border-t border-ink/10 space-y-2">
+            <Label htmlFor="rev-reply" className="text-[10px] uppercase tracking-[0.22em]">
+              Reply to the patron
+            </Label>
+            <Textarea
+              id="rev-reply"
+              rows={3}
+              value={reply}
+              onChange={(e) => setReply(e.target.value)}
+              placeholder="A word of thanks, or context."
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!reply.trim()}
+              onClick={() => {
+                store.artistReplyToReview(existing.id, reply.trim());
+                setReply("");
+              }}
+            >
+              Send reply
+            </Button>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  // No review yet — only patron can leave one
+  if (persona !== "patron") {
+    return (
+      <div className="rounded-md border border-dashed border-ink/15 bg-parchment-50 p-5 sm:p-6">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
+          Patron's review
+        </div>
+        <p className="font-serif text-sm text-ink-muted">
+          Once {commission.patronName} writes a review it will appear here
+          and on your profile.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6">
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
+        Leave a review
+      </div>
+      <div className="font-display text-lg text-ink leading-tight mb-3">
+        How did the commission feel?
+      </div>
+      <div className="space-y-3">
+        <StarRating
+          value={rating ?? 0}
+          onChange={setRating}
+          size="lg"
+          label="Rating"
+        />
+        <Textarea
+          rows={4}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="A few sentences. Other patrons will read this when deciding."
+        />
+        <Button
+          className="w-full"
+          disabled={!rating || !body.trim()}
+          onClick={() => {
+            if (!rating) return;
+            store.submitReview({ commissionId: commission.id, rating, body: body.trim() });
+            setRating(null);
+            setBody("");
+          }}
+        >
+          Publish review
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Shipping block — artist records carrier + tracking
+// ─────────────────────────────────────────────────────────────
+function ShippingBlock({
+  commission,
+  persona,
+}: {
+  commission: Commission;
+  persona: Persona;
+}) {
+  const store = useStore();
+  const [carrier, setCarrier] = useState("");
+  const [tracking, setTracking] = useState("");
+  const [insured, setInsured] = useState("");
+
+  if (commission.shipping) {
+    const s = commission.shipping;
+    return (
+      <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
+          Shipping
+        </div>
+        <div className="font-display text-base text-ink leading-tight">
+          {s.carrier}
+          {s.trackingNumber && (
+            <>
+              {" · "}
+              <span className="font-mono text-sm">{s.trackingNumber}</span>
+            </>
+          )}
+        </div>
+        <div className="mt-1 font-sans text-xs text-ink-muted tabular-nums">
+          Shipped {new Date(s.shippedAt).toLocaleDateString()}
+          {s.insuredFor != null && ` · Insured for $${s.insuredFor.toLocaleString()}`}
+        </div>
+      </div>
+    );
+  }
+
+  if (persona !== "artist") {
+    return (
+      <div className="rounded-md border border-dashed border-ink/15 p-5 sm:p-6">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
+          Shipping
+        </div>
+        <p className="font-serif text-sm text-ink-muted">
+          Awaiting the artist's shipping record. Tracking number will appear
+          here once shipped.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6">
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
+        Record shipping
+      </div>
+      <p className="font-serif text-sm text-ink-muted mb-3">
+        Carrier + tracking. The patron is notified automatically. We strongly
+        recommend insurance for any work over $1,000.
+      </p>
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="ship-carrier">Carrier</Label>
+          <select
+            id="ship-carrier"
+            value={carrier}
+            onChange={(e) => setCarrier(e.target.value)}
+            className="flex h-11 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm focusable"
+          >
+            <option value="">Select carrier…</option>
+            <option>FedEx</option>
+            <option>UPS</option>
+            <option>USPS</option>
+            <option>DHL</option>
+            <option>Hand-carry</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="ship-tracking">Tracking number (optional)</Label>
+          <Input
+            id="ship-tracking"
+            value={tracking}
+            onChange={(e) => setTracking(e.target.value)}
+            placeholder="e.g. 1Z999AA1..."
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="ship-insured">Insured for (USD, optional)</Label>
+          <Input
+            id="ship-insured"
+            type="number"
+            min={0}
+            value={insured}
+            onChange={(e) => setInsured(e.target.value)}
+            placeholder="Declared value"
+          />
+        </div>
+        <Button
+          className="w-full"
+          variant="outline"
+          disabled={!carrier}
+          onClick={() => {
+            store.recordShipping(commission.id, {
+              carrier,
+              trackingNumber: tracking.trim() || undefined,
+              insuredFor: insured ? Number(insured) : undefined,
+            });
+            setCarrier("");
+            setTracking("");
+            setInsured("");
+          }}
+        >
+          Mark shipped
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// IP terms display — read-only for now in the prototype.
+// ─────────────────────────────────────────────────────────────
+function IpTermsBlock({ commission }: { commission: Commission; persona: Persona }) {
+  const map: Record<string, { title: string; blurb: string }> = {
+    "patron-exclusive": {
+      title: "Patron-exclusive",
+      blurb:
+        "The patron owns the original and all reproduction rights. The artist may not sell prints or reproductions.",
+    },
+    "shared-prints": {
+      title: "Shared prints",
+      blurb:
+        "Both parties may reproduce. The artist may sell limited-edition prints; the patron may reproduce for personal/devotional use.",
+    },
+    "artist-retains": {
+      title: "Artist retains rights",
+      blurb:
+        "The patron owns the physical work. The artist retains all reproduction rights.",
+    },
+    "shared-custom": {
+      title: "Custom terms",
+      blurb: commission.ipCustomNote ?? "Negotiated terms recorded in the commission notes.",
+    },
+  };
+  const t = commission.ipTerms ? map[commission.ipTerms] : map["patron-exclusive"];
+  return (
+    <div className="rounded-md border border-ink/10 bg-parchment-50 p-5">
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
+        Reproduction rights
+      </div>
+      <div className="font-display text-base text-ink">{t.title}</div>
+      <p className="mt-1 font-serif text-sm text-ink-soft leading-snug">
+        {t.blurb}
+      </p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Dispute block — either party can open one
+// ─────────────────────────────────────────────────────────────
+function DisputeBlock({
+  commission,
+  persona,
+}: {
+  commission: Commission;
+  persona: Persona;
+}) {
+  const store = useStore();
+  const disputes = store.disputesForCommission(commission.id);
+  const openDispute = disputes.find((d) => d.status === "open");
+  const [opening, setOpening] = useState(false);
+  const [reason, setReason] = useState("");
+
+  if (openDispute) {
+    return (
+      <div className="rounded-md border border-burgundy-500/30 bg-burgundy-500/5 p-5">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-burgundy-500 mb-2">
+          Dispute open
+        </div>
+        <p className="font-serif text-sm text-ink-soft leading-relaxed">
+          Opened by the {openDispute.openedBy} on{" "}
+          {new Date(openDispute.openedAt).toLocaleDateString()}: "
+          {openDispute.reason}"
+        </p>
+        <p className="mt-2 font-sans text-xs italic text-ink-muted">
+          A guild mediator will reach out within 48 hours. Held escrow funds
+          are paused.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-ink/10 bg-parchment-50 p-5">
+      {opening ? (
+        <div className="space-y-3">
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-burgundy-500">
+            Open a dispute
+          </div>
+          <p className="font-serif text-sm text-ink-soft">
+            Mediation is free and confidential. Describe what's wrong; a
+            guild reader will follow up within 48 hours.
+          </p>
+          <Textarea
+            rows={3}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="What needs to be resolved?"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="default"
+              disabled={!reason.trim()}
+              onClick={() => {
+                store.openDispute({
+                  commissionId: commission.id,
+                  openedBy: persona,
+                  reason: reason.trim(),
+                });
+                setReason("");
+                setOpening(false);
+              }}
+            >
+              Open dispute
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setOpening(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-1">
+              Need help?
+            </div>
+            <p className="font-serif text-sm text-ink-muted leading-snug">
+              Open a dispute to bring in a guild mediator. Held funds pause
+              until resolved.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="shrink-0"
+            onClick={() => setOpening(true)}
+          >
+            Open dispute
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

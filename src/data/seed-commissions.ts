@@ -161,7 +161,8 @@ export function seedCommissions(): Commission[] {
     platformFeePct: c3Pricing.platformFeePct,
     platformFeeUsd: c3Pricing.platformFeeUsd,
     totalDueUsd: c3Pricing.totalDueUsd,
-    preferredDeadline: "2026-02-18",
+    // Set deadline a few weeks after completedAt so on-time = true
+    preferredDeadline: new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10),
     parishOrChapel: "St. Bartholomew, Charleston SC",
     stage: "delivered",
     escrow: withEscrow(1800, ["released", "released", "released"], [120, 60, 30]),
