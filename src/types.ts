@@ -234,12 +234,42 @@ export interface Proposal {
   totalPriceUsd: number;
   estimatedWeeks: number;
   pitchBody: string;
-  // Optional cover for the proposal — gradient / pattern like WIP
   paletteFrom?: string;
   paletteTo?: string;
   status: "submitted" | "shortlisted" | "awarded" | "declined" | "withdrawn";
   submittedAt: string;
   decidedAt?: string;
+}
+
+// ── Artist availability ─────────────────────────────────────────
+// Per-artist monthly toggle: "accepting" / "full" / "away".
+// Keyed by "YYYY-MM" so it survives JSON serialization cleanly.
+export type AvailabilityMonthStatus = "accepting" | "full" | "away";
+
+export interface ArtistAvailability {
+  artistSlug: string;
+  // Per-month overrides; missing keys default to "accepting".
+  months: Record<string, AvailabilityMonthStatus>; // key = "2026-05"
+  // Maximum number of concurrent in-progress commissions before the
+  // artist is auto-marked unavailable.
+  concurrentCap?: number;
+  updatedAt: string;
+}
+
+// ── Apprenticeship applications ─────────────────────────────────
+export interface ApprenticeshipApplication {
+  id: string;
+  applicantName: string;
+  applicantEmail: string;
+  applicantAge?: number;
+  craft: CategorySlug;
+  desiredMasterSlug?: string;       // artist they'd like to apprentice with
+  parishOrCommunity?: string;
+  pastorEmail?: string;
+  portfolioUrl?: string;
+  letter: string;                    // their pitch in their own words
+  status: "submitted" | "shortlisted" | "interviewed" | "offered" | "declined" | "matched";
+  createdAt: string;
 }
 
 export interface Commission {

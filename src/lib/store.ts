@@ -1,6 +1,9 @@
 import * as React from "react";
 import type {
+  ApprenticeshipApplication,
   ApprovalStep,
+  ArtistAvailability,
+  AvailabilityMonthStatus,
   Commission,
   CommissionMessage,
   ConnectAccount,
@@ -108,6 +111,16 @@ interface StoreState {
     note?: string,
   ) => Dispute | null;
 
+  // Artist availability
+  availability: Record<string, ArtistAvailability>;
+  getAvailability: (artistSlug: string) => ArtistAvailability | null;
+  setMonthAvailability: (artistSlug: string, monthKey: string, status: AvailabilityMonthStatus) => ArtistAvailability;
+  setConcurrentCap: (artistSlug: string, cap: number | null) => ArtistAvailability;
+
+  // Apprenticeship applications
+  apprenticeships: ApprenticeshipApplication[];
+  submitApprenticeship: (input: Omit<ApprenticeshipApplication, "id" | "status" | "createdAt">) => ApprenticeshipApplication;
+
   // Institutional (B2B) intakes + proposals
   intakes: InstitutionalIntake[];
   proposals: Proposal[];
@@ -164,6 +177,8 @@ interface Persisted {
   disputes: Dispute[];
   intakes: InstitutionalIntake[];
   proposals: Proposal[];
+  availability: Record<string, ArtistAvailability>;
+  apprenticeships: ApprenticeshipApplication[];
 }
 
 const EMPTY: Persisted = {
@@ -175,6 +190,8 @@ const EMPTY: Persisted = {
   disputes: [],
   intakes: [],
   proposals: [],
+  availability: {},
+  apprenticeships: [],
 };
 
 function load(): Persisted {
@@ -191,6 +208,8 @@ function load(): Persisted {
         disputes: [],
         intakes: seedIntakes(),
         proposals: seedProposals(),
+        availability: {},
+        apprenticeships: [],
       };
     }
     const parsed = JSON.parse(raw) as Partial<Persisted>;
@@ -203,6 +222,8 @@ function load(): Persisted {
       disputes: parsed.disputes ?? [],
       intakes: parsed.intakes ?? seedIntakes(),
       proposals: parsed.proposals ?? seedProposals(),
+      availability: parsed.availability ?? {},
+      apprenticeships: parsed.apprenticeships ?? [],
     };
   } catch {
     return EMPTY;
@@ -719,6 +740,59 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           };
         });
         return updated;
+      },
+
+      // ===== Artist availability =====
+      availability: state.availability,
+      getAvailability: (slug) => state.availability[slug] ?? null,
+      setMonthAvailability: (slug, monthKey, status) => {
+        const existing =
+          state.availability[slug] ?? {
+            artistSlug: slug,
+            months: {},
+            updatedAt: nowIso(),
+          };
+        const next: ArtistAvailability = {
+          ...existing,
+          months: { ...existing.months, [monthKey]: status },
+          updatedAt: nowIso(),
+        };
+        setState((s) => ({
+          ...s,
+          availability: { ...s.availability, [slug]: next },
+        }));
+        return next;
+      },
+      setConcurrentCap: (slug, cap) => {
+        const existing =
+          state.availability[slug] ?? {
+            artistSlug: slug,
+            months: {},
+            updatedAt: nowIso(),
+          };
+        const next: ArtistAvailability = {
+          ...existing,
+          concurrentCap: cap ?? undefined,
+          updatedAt: nowIso(),
+        };
+        setState((s) => ({
+          ...s,
+          availability: { ...s.availability, [slug]: next },
+        }));
+        return next;
+      },
+
+      // ===== Apprenticeships =====
+      apprenticeships: state.apprenticeships,
+      submitApprenticeship: (input) => {
+        const a: ApprenticeshipApplication = {
+          ...input,
+          id: makeId("app"),
+          status: "submitted",
+          createdAt: nowIso(),
+        };
+        setState((s) => ({ ...s, apprenticeships: [a, ...s.apprenticeships] }));
+        return a;
       },
 
       // ===== Institutional intakes + proposals =====

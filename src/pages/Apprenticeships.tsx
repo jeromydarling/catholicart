@@ -1,11 +1,19 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
-import { ArrowRight, GraduationCap, HandCoins, Users, Mail } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { ArrowRight, CheckCircle2, GraduationCap, HandCoins, Mail, Users } from "lucide-react";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { Label } from "../components/ui/label";
+import { categories } from "../data/categories";
+import { artists } from "../data/artists";
+import { useStore } from "../lib/store";
 import { initials } from "../lib/utils";
+import type { CategorySlug } from "../types";
 
 interface Grantee {
   name: string;
@@ -178,32 +186,7 @@ export default function Apprenticeships() {
       </section>
 
       {/* Apply */}
-      <section className="bg-ink text-parchment-50 mt-24">
-        <div className="container py-20 sm:py-24 max-w-3xl">
-          <h2
-            className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.05]"
-            style={{ textWrap: "balance" } as React.CSSProperties}
-          >
-            Apply, propose, recommend.
-          </h2>
-          <p className="mt-6 font-serif text-lg text-parchment-100 leading-relaxed">
-            Three ways to begin. Apprentices apply. Masters propose
-            apprentices they want to teach. Pastors recommend the talented
-            young person they know. We read everything.
-          </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Button asChild size="lg" variant="gold">
-              <a href="mailto:apprenticeships@arssacra.local">
-                <Mail className="h-4 w-4 mr-2" />
-                Apply
-              </a>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="bg-transparent text-parchment-50 border-parchment-50/40 hover:bg-parchment-50/10 hover:border-parchment-50/70">
-              <Link to="/manifesto">Read the manifesto</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <ApplySection />
 
       <section className="container my-20 max-w-2xl text-center">
         <Ornament className="my-8" />
@@ -212,6 +195,177 @@ export default function Apprenticeships() {
         </p>
       </section>
     </PageShell>
+  );
+}
+
+function ApplySection() {
+  const { submitApprenticeship } = useStore();
+  const [submitted, setSubmitted] = useState<null | { name: string }>(null);
+
+  return (
+    <section className="bg-ink text-parchment-50 mt-24">
+      <div className="container py-20 sm:py-24 max-w-3xl">
+        <AnimatePresence mode="wait">
+          {submitted ? (
+            <motion.div
+              key="done"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="text-center"
+            >
+              <div className="grid h-14 w-14 mx-auto place-items-center rounded-full bg-gold-500/20 text-gold-300">
+                <CheckCircle2 className="h-7 w-7" />
+              </div>
+              <h2
+                className="mt-6 font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.05]"
+                style={{ textWrap: "balance" } as React.CSSProperties}
+              >
+                Received, {submitted.name.split(" ")[0]}.
+              </h2>
+              <p className="mt-6 font-serif text-lg text-parchment-100 leading-relaxed max-w-2xl mx-auto">
+                We read every application. If your craft and a master line up,
+                we'll write back inside three weeks. If not, we'll tell you so
+                you can keep looking.
+              </p>
+              <p className="mt-8 font-sans text-[10px] uppercase tracking-[0.22em] text-parchment-100/60">
+                Prototype · no email is sent
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+            >
+              <h2
+                className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-[1.05]"
+                style={{ textWrap: "balance" } as React.CSSProperties}
+              >
+                Apply, propose, recommend.
+              </h2>
+              <p className="mt-6 font-serif text-lg text-parchment-100 leading-relaxed">
+                Three ways to begin. Apprentices apply. Masters propose
+                apprentices they want to teach. Pastors recommend the talented
+                young person they know. We read everything.
+              </p>
+
+              <form
+                className="mt-10 space-y-5"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const d = new FormData(e.currentTarget);
+                  const name = String(d.get("name") || "");
+                  submitApprenticeship({
+                    applicantName: name,
+                    applicantEmail: String(d.get("email") || ""),
+                    applicantAge: d.get("age") ? Number(d.get("age")) : undefined,
+                    craft: String(d.get("craft") || "sacred-painting") as CategorySlug,
+                    desiredMasterSlug: String(d.get("master") || "") || undefined,
+                    parishOrCommunity: String(d.get("parish") || "") || undefined,
+                    pastorEmail: String(d.get("pastorEmail") || "") || undefined,
+                    portfolioUrl: String(d.get("portfolio") || "") || undefined,
+                    letter: String(d.get("letter") || ""),
+                  });
+                  setSubmitted({ name });
+                  window.scrollTo({ top: 0 });
+                }}
+              >
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DarkField label="Your name">
+                    <Input name="name" required placeholder="Full name" />
+                  </DarkField>
+                  <DarkField label="Your email">
+                    <Input name="email" type="email" required placeholder="you@email.org" />
+                  </DarkField>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DarkField label="Your age (optional)">
+                    <Input name="age" type="number" min={14} max={99} placeholder="e.g. 23" />
+                  </DarkField>
+                  <DarkField label="The craft">
+                    <select
+                      name="craft"
+                      required
+                      defaultValue="sacred-painting"
+                      className="flex h-11 w-full rounded-sm border border-parchment-50/30 bg-parchment-50/10 text-parchment-50 px-3 font-sans text-sm focusable"
+                    >
+                      {categories.map((c) => (
+                        <option key={c.slug} value={c.slug} className="text-ink">
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </DarkField>
+                </div>
+                <DarkField label="A master you'd like to apprentice with (optional)">
+                  <select
+                    name="master"
+                    defaultValue=""
+                    className="flex h-11 w-full rounded-sm border border-parchment-50/30 bg-parchment-50/10 text-parchment-50 px-3 font-sans text-sm focusable"
+                  >
+                    <option value="" className="text-ink">No preference — match me</option>
+                    {artists.map((a) => (
+                      <option key={a.slug} value={a.slug} className="text-ink">
+                        {a.honorific ? `${a.honorific} ` : ""}
+                        {a.name} · {a.city}
+                      </option>
+                    ))}
+                  </select>
+                </DarkField>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <DarkField label="Your parish or community (optional)">
+                    <Input name="parish" placeholder="e.g. St. Cecilia's, Cleveland OH" />
+                  </DarkField>
+                  <DarkField label="Pastor's email (optional)">
+                    <Input name="pastorEmail" type="email" placeholder="pastor@parish.org" />
+                  </DarkField>
+                </div>
+                <DarkField label="Portfolio URL (optional)">
+                  <Input name="portfolio" type="url" placeholder="https://… or instagram.com/…" />
+                </DarkField>
+                <DarkField label="Letter">
+                  <Textarea
+                    name="letter"
+                    required
+                    rows={6}
+                    placeholder="In your own words. Why this craft, why now, what you'd give up to learn it. We read every word."
+                  />
+                </DarkField>
+
+                <div className="pt-2 flex flex-wrap gap-3">
+                  <Button type="submit" size="lg" variant="gold">
+                    <Mail className="h-4 w-4 mr-2" /> Submit application
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="bg-transparent text-parchment-50 border-parchment-50/40 hover:bg-parchment-50/10 hover:border-parchment-50/70">
+                    <Link to="/manifesto">Read the manifesto</Link>
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+}
+
+function DarkField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Label className="block space-y-1.5 text-parchment-100">
+      <span className="block font-sans text-xs uppercase tracking-[0.18em] text-parchment-100/70">
+        {label}
+      </span>
+      {children}
+    </Label>
   );
 }
 

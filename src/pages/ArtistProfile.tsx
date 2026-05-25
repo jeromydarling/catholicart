@@ -201,7 +201,7 @@ export default function ArtistProfile() {
                 )}
               </div>
 
-              <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
+              <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl">
                 <Stat
                   icon={<Hourglass className="h-4 w-4" />}
                   label="Practicing"
@@ -217,6 +217,7 @@ export default function ArtistProfile() {
                   label="Custom"
                   value={artist.customPricing ? "Welcome" : "Tiers only"}
                 />
+                <AvailabilityStat slug={artist.slug} />
               </div>
             </motion.div>
 
@@ -597,6 +598,50 @@ function MetricCard({
       </div>
       <div className="mt-2 font-display text-2xl text-ink leading-none">
         {value}
+      </div>
+    </div>
+  );
+}
+
+// Computes "Accepting" / "In demand" / "Full" from in-flight load + month overrides.
+function AvailabilityStat({ slug }: { slug: string }) {
+  const store = useStore();
+  const avail = store.getAvailability(slug);
+  const cap = avail?.concurrentCap ?? 3;
+  const inFlight = store.commissions.filter(
+    (c) =>
+      c.artistSlug === slug &&
+      c.stage !== "delivered" &&
+      c.stage !== "blessed" &&
+      c.stage !== "cancelled",
+  ).length;
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const monthStatus = avail?.months[monthKey] ?? "accepting";
+
+  let label = "Accepting";
+  let value = `${inFlight} in flight`;
+  if (monthStatus === "away") {
+    label = "Away";
+    value = "Resumes next month";
+  } else if (monthStatus === "full" || inFlight >= cap) {
+    label = "Currently full";
+    value = `${inFlight}/${cap} active`;
+  } else if (inFlight >= cap - 1) {
+    label = "In demand";
+    value = `${inFlight}/${cap} active`;
+  }
+  return (
+    <div className="flex items-start gap-2 rounded-md bg-parchment-100 px-3 py-2.5">
+      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-sm bg-parchment-50 text-burgundy-500 mt-0.5">
+        <Hourglass className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+          {label}
+        </div>
+        <div className="mt-0.5 font-display text-sm text-ink tabular-nums truncate">
+          {value}
+        </div>
       </div>
     </div>
   );
