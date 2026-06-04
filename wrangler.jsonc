@@ -47,7 +47,10 @@
       "name": "EMAIL",
       "remote": true
     }
-  ]
+  ],
+  "triggers": {
+    "crons": ["0 */6 * * *"]
+  }
   /*
    * Secrets (set via cf-worker-secret-bulk workflow, NOT in this file):
    *   VITE_MAPBOX_TOKEN     — public Mapbox token for the map

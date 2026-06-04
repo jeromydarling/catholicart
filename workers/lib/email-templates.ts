@@ -145,8 +145,11 @@ export function quoteSentToPatron(
     unsubscribeUrl: unsub(c.patron_email, site),
   });
   return {
+    // The patron's own commission quote is transactional — unsubscribing
+    // from "milestone" mail (catch-up on other people's commissions)
+    // shouldn't black-hole the response to their own request.
     recipients: [{ email: c.patron_email, name: c.patron_name, role: 'patron' }],
-    category: 'milestone',
+    category: 'transactional',
     rendered: { subject, preheader, html, text: htmlToText(html) },
   };
 }

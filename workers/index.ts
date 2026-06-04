@@ -87,4 +87,16 @@ app.all('/api/*', (c) => c.json({ ok: false, error: 'not found' }, 404));
 // Fallback: serve the SPA for anything that isn't an API or asset.
 app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));
 
-export default app;
+// Scheduled handler — runs every 6 hours (cron in wrangler.jsonc).
+// Cleans up the magic_links table; without this it grows unbounded
+// because /api/auth/login inserts a row per login attempt.
+export default {
+  fetch: app.fetch,
+  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+    const cutoff = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    await env.DB
+      .prepare(`DELETE FROM magic_links WHERE expires_at < ?`)
+      .bind(cutoff)
+      .run();
+  },
+} satisfies ExportedHandler<Env>;

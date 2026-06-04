@@ -74,6 +74,7 @@ app.post('/logout', requireAuth(), async (c) => {
 });
 
 app.get('/me', async (c) => {
+  c.header('Cache-Control', 'no-store');
   return c.json({ user: c.var.user ?? null });
 });
 
