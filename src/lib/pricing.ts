@@ -1,15 +1,18 @@
 // Ars Sacra economic engine.
 //
-// Honest pricing: the artist receives 100% of the price they quote.
-// The platform fee is added on top, paid by the patron. This is the
-// inversion of the typical marketplace model — and the brand promise.
+// The artist receives 100% of the price they quote, paid across
+// three escrow milestones (deposit → midpoint → final). A small 2%
+// platform contribution — a tithe to keep the guild open — is
+// settled at the very end, after final release. Patrons are never
+// charged the contribution along the way; the artist's milestones
+// are pure.
 //
-// Funds are held in three escrow milestones, released by the patron
-// as the work moves from deposit → midpoint → final delivery.
+// This is the brand promise: the platform is free for the good of
+// the world. Two cents on the dollar at the close, no more.
 
 import type { EscrowMilestone } from "../types";
 
-export const PLATFORM_FEE_PCT = 0.10; // 10% on top, paid by the patron
+export const PLATFORM_FEE_PCT = 0.02; // 2%, settled at final release
 
 export const ESCROW_SPLIT: { stage: EscrowMilestone["stage"]; label: string; pct: number }[] = [
   { stage: "deposit",  label: "Deposit",         pct: 0.25 },

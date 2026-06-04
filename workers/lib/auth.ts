@@ -78,9 +78,9 @@ export async function consumeMagicLink(
   if (!row) return null;
 
   // Find or create user
-  let user = await first<{ id: string; email: string }>(
+  let user = await first<{ id: string; email: string; role: string }>(
     env.DB,
-    `SELECT id, email FROM users WHERE email = ?`,
+    `SELECT id, email, role FROM users WHERE email = ?`,
     row.email,
   );
   if (!user) {
@@ -90,8 +90,26 @@ export async function consumeMagicLink(
     )
       .bind(id, row.email, row.email.split('@')[0])
       .run();
-    user = { id, email: row.email };
+    user = { id, email: row.email, role: 'patron' };
   }
+
+  // Auto-link an artist row if the operator pre-registered this email
+  // via POST /api/artists/:slug/claim. Promotes the user to 'artist'
+  // role at the same time so they see the artist dashboard.
+  const linked = await env.DB
+    .prepare(
+      `UPDATE artists SET user_id = ?
+         WHERE user_email = ? AND user_id IS NULL`,
+    )
+    .bind(user.id, row.email)
+    .run();
+  if ((linked.meta?.changes ?? 0) > 0 && user.role !== 'operator') {
+    await env.DB
+      .prepare(`UPDATE users SET role = 'artist' WHERE id = ? AND role != 'operator'`)
+      .bind(user.id)
+      .run();
+  }
+
   return { user_id: user.id, email: user.email };
 }
 

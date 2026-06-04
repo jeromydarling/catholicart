@@ -521,7 +521,7 @@ function StageAction({
     return (
       <Card
         title="Send a quote"
-        note="Set what you want to be paid in full. The patron pays the platform fee on top — you receive 100%."
+        note="Set what you want to be paid in full. You receive 100% across the three milestones. A small 2% guild tithe is settled by the patron at the end — not from your share."
       >
         <div className="space-y-3">
           <div className="space-y-1.5">
@@ -557,7 +557,7 @@ function StageAction({
               </div>
               <div className="flex items-baseline justify-between text-xs">
                 <span className="text-ink-muted">
-                  Platform fee · {Math.round(PLATFORM_FEE_PCT * 100)}%
+                  Guild tithe · {Math.round(PLATFORM_FEE_PCT * 100)}% at the end
                 </span>
                 <span className="tabular-nums text-ink-muted">
                   {formatPrice(previewPricing.platformFeeUsd)}

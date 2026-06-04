@@ -188,10 +188,11 @@ export default function Commission() {
                     Funds held in escrow. Released only by you.
                   </div>
                   <p className="mt-1 font-serif text-sm text-ink-soft leading-relaxed">
-                    The artist receives 100% of the price they quote. Our{" "}
-                    {Math.round(PLATFORM_FEE_PCT * 100)}% platform fee is added
-                    on top — never deducted from the artist. Payment is split
-                    across three milestones (deposit, midpoint, final).
+                    The artist receives 100% of the price they quote — paid
+                    across three milestones (deposit, midpoint, final). The
+                    guild is free for the good of the world; a small{" "}
+                    {Math.round(PLATFORM_FEE_PCT * 100)}% tithe is settled at
+                    the end to keep the lights on.
                   </p>
                 </div>
               </div>

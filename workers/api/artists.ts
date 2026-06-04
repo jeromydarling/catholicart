@@ -2,8 +2,10 @@
 // recommend similar. Backed by D1 + FTS5.
 
 import { Hono } from 'hono';
+import { z } from 'zod';
 import type { Env, AppVariables } from '../types';
-import { all, first } from '../lib/db';
+import { all, first, run } from '../lib/db';
+import { requireRole } from '../lib/auth';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -203,6 +205,52 @@ app.get('/:slug/similar', async (c) => {
     LIMIT 4`;
   const rows = await all<ArtistRow & { score: number }>(c.env.DB, sql, a.id, a.id, a.starting_at, a.id);
   return c.json({ artists: rows.filter((r) => r.score > 0).map(serialize) });
+});
+
+// POST /api/artists/:slug/claim — operator-only. Pre-registers the
+// email an artist will sign in with. When they sign in via magic-link,
+// `consumeMagicLink` finds the matching artists.user_email and links
+// the user_id automatically, then promotes the user to 'artist' role.
+const ClaimBody = z.object({ email: z.string().email() });
+app.post('/:slug/claim', requireRole('operator'), async (c) => {
+  const slug = c.req.param('slug');
+  const parsed = ClaimBody.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ ok: false, error: 'invalid email' }, 400);
+
+  const artist = await first<{ id: string; user_id: string | null }>(
+    c.env.DB,
+    `SELECT id, user_id FROM artists WHERE slug = ?`,
+    slug,
+  );
+  if (!artist) return c.json({ ok: false, error: 'artist not found' }, 404);
+
+  const email = parsed.data.email.toLowerCase();
+
+  // If a user with this email is already signed up, link immediately
+  // and skip the wait-for-sign-in dance.
+  const existingUser = await first<{ id: string; role: string }>(
+    c.env.DB,
+    `SELECT id, role FROM users WHERE email = ?`,
+    email,
+  );
+
+  await run(c.env.DB,
+    `UPDATE artists SET user_email = ?, user_id = COALESCE(?, user_id) WHERE id = ?`,
+    email, existingUser?.id ?? null, artist.id,
+  );
+
+  if (existingUser && existingUser.role !== 'operator') {
+    await run(c.env.DB,
+      `UPDATE users SET role = 'artist' WHERE id = ? AND role != 'operator'`,
+      existingUser.id,
+    );
+  }
+
+  return c.json({
+    ok: true,
+    linked_now: Boolean(existingUser),
+    artist_id: artist.id,
+  });
 });
 
 function serialize(a: ArtistRow) {

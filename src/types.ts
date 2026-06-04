@@ -306,7 +306,7 @@ export interface Commission {
   scope: string;            // Patron's plain-language description
   artistQuoteNote?: string; // Artist's reply / clarifications
   artistTotalUsd?: number;  // What the artist quotes (artist receives 100% of this)
-  platformFeePct: number;   // e.g. 0.10
+  platformFeePct: number;   // 0.02 — guild tithe, settled at final release
   platformFeeUsd?: number;  // computed once artist quotes
   totalDueUsd?: number;     // artistTotalUsd + platformFeeUsd
   preferredDeadline?: string;

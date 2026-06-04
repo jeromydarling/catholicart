@@ -364,7 +364,7 @@ function PayoutsPanel({
       </div>
       <div className="mt-4 pt-4 border-t border-ink/10 grid grid-cols-3 gap-4 text-center">
         <KV label="Artist receives" value="100%" tone="olive" />
-        <KV label="Platform fee" value="10%" tone="ink" />
+        <KV label="Guild tithe (at the end)" value="2%" tone="ink" />
         <KV label="Stripe fees" value="absorbed" tone="ink" />
       </div>
       <p className="mt-3 font-serif text-xs italic text-ink-muted leading-relaxed">

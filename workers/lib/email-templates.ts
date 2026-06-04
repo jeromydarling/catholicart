@@ -137,7 +137,7 @@ export function quoteSentToPatron(
         : '') +
       `<table role="presentation" style="width:100%;margin-top:18px;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px">
 <tr><td style="color:#8d6e72;padding:6px 0">Artist receives</td><td style="text-align:right;color:#3a1418">${fmtPrice(c.artist_total_usd ?? 0)}</td></tr>
-<tr><td style="color:#8d6e72;padding:6px 0">Platform fee · ${Math.round(c.platform_fee_pct * 100)}%</td><td style="text-align:right;color:#8d6e72">${fmtPrice(c.platform_fee_usd ?? 0)}</td></tr>
+<tr><td style="color:#8d6e72;padding:6px 0">Guild tithe · ${Math.round(c.platform_fee_pct * 100)}% at the end</td><td style="text-align:right;color:#8d6e72">${fmtPrice(c.platform_fee_usd ?? 0)}</td></tr>
 <tr><td style="color:#3a1418;padding:8px 0 0;border-top:1px solid rgba(58,20,24,0.1)"><strong>Total</strong></td><td style="text-align:right;color:#6e1b1b;padding-top:8px;border-top:1px solid rgba(58,20,24,0.1)"><strong>${fmtPrice(c.total_due_usd ?? 0)}</strong></td></tr>
 </table>`,
     cta: { label: 'Review and fund the deposit', href: `${site}/workspace/${c.id}` },

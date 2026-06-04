@@ -39,8 +39,8 @@ export default function Landing() {
   return (
     <PageShell>
       <Seo
-        title="Ars Sacra · Commission Catholic art from a verified guild"
-        description="A marketplace for commissioning sacred art from pastor-endorsed Catholic artists. Iconography, painting, sculpture, vestments, metalwork, glass, and song. Funds held in escrow; the artist receives 100% of the price they quote."
+        title="Ars Sacra · A covenant between artist and patron"
+        description="A guild for commissioning Catholic sacred art, free for the good of the world. The artist receives 100% of the price they quote; a small 2% tithe is settled at the very end. Iconography, painting, sculpture, glass, music, verse."
         path="/"
         jsonLd={{
           "@context": "https://schema.org",
@@ -65,22 +65,22 @@ export default function Landing() {
             className="max-w-xl lg:max-w-2xl pb-52 sm:pb-44 lg:pb-32 pt-16 sm:pt-20"
           >
             <div className="font-sans text-[11px] uppercase tracking-[0.32em] text-gold-300 mb-4 sm:mb-5">
-              Beauty is the front line.
+              Free for the good of the world.
             </div>
             <h1
               className="font-display text-[2.5rem] sm:text-6xl md:text-7xl lg:text-[5rem] leading-[1.04] tracking-tight text-parchment-50 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]"
               style={{ textWrap: "balance" } as React.CSSProperties}
             >
-              If you lose the war on beauty,
+              A covenant between
               <span className="block italic text-gold-300 mt-1">
-                you lose the culture.
+                artist and patron.
               </span>
             </h1>
             <p className="mt-4 sm:mt-5 max-w-md lg:max-w-lg font-serif text-[15px] sm:text-lg lg:text-xl text-parchment-100 leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
-              For 1,500 years the faithful commissioned the most beautiful
-              civilization on earth. Today most Catholics buy mass-produced
-              kitsch. If we want the culture back, we commission again —
-              and put our money where our mouth is.
+              The guild is free. You write to an artist about what you want
+              made; they answer with a quote and a vision. The artist keeps
+              every cent. A 2% guild tithe is settled at the very end —
+              just enough to keep the lights on.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="gold">
