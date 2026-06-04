@@ -1,42 +1,37 @@
-// Cloudflare Worker entry point.
-//
-// During this transition, the Worker's only job is to serve the SPA's
-// static assets via the ASSETS binding. SPA-style routing (with
-// not_found_handling = "single-page-application") means any path that
-// isn't a real asset falls back to index.html so React Router can
-// handle it.
-//
-// Phase 2 will add /api/* routes here (Hono router) once D1 + auth are
-// wired. For now, anything not matched by /api/ goes to the SPA.
+// Cloudflare Worker entry — Hono router mounted on /api/*, everything
+// else falls through to the SPA static assets.
 
-interface Env {
-  ASSETS: Fetcher;
-  // DB?: D1Database;
-  // BUCKET?: R2Bucket;
-  // AI?: Ai;
-  // CACHE?: KVNamespace;
-}
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import type { Env, AppVariables } from './types';
+import { withAuth } from './lib/auth';
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const url = new URL(request.url);
+import auth from './api/auth';
+import artists from './api/artists';
+import commissions from './api/commissions';
+import reference from './api/reference';
+import intakes from './api/intakes';
+import upload from './api/upload';
+import misc from './api/misc';
 
-    // Future: /api/* → Workers API routes
-    if (url.pathname.startsWith("/api/")) {
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          error: "API not yet implemented",
-          path: url.pathname,
-        }),
-        {
-          status: 501,
-          headers: { "content-type": "application/json" },
-        },
-      );
-    }
+const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
-    // Everything else: static assets / SPA fallback
-    return env.ASSETS.fetch(request);
-  },
-} satisfies ExportedHandler<Env>;
+app.use('*', cors({ origin: (origin) => origin ?? '*', credentials: true }));
+app.use('*', withAuth());
+
+// API surface
+app.get('/api/health', (c) =>
+  c.json({ ok: true, time: new Date().toISOString() }),
+);
+app.route('/api/auth', auth);
+app.route('/api/artists', artists);
+app.route('/api/commissions', commissions);
+app.route('/api', reference);              // /api/categories, /api/saints, etc.
+app.route('/api/intakes', intakes);
+app.route('/api/upload', upload);
+app.route('/api', misc);                    // /api/ledger, /api/preferences/*, /api/subscribe, /api/apprenticeships
+
+// Fallback: serve the SPA for anything that isn't an API or asset.
+app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));
+
+export default app;

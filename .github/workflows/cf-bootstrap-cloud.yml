@@ -1,0 +1,151 @@
+name: cf · bootstrap cloud resources (one-time)
+
+# Creates the D1 database, R2 bucket, and KV namespaces for the
+# catholicart Worker, then commits the resource IDs into
+# wrangler.jsonc and runs the initial D1 migration.
+#
+# Idempotent: re-running is safe — existing resources are detected and
+# reused.
+#
+# Run this once after the Worker is first deployed. Triggered via the
+# GitHub UI (Actions tab) since the MCP can't fire workflow_dispatch.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install wrangler
+        run: npm install -g wrangler@latest
+
+      - name: Create / find resources
+        id: resources
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+
+          # ── D1 database ────────────────────────────────────────────
+          echo "──────── D1: catholicart ────────"
+          if wrangler d1 list --json | jq -e '.[] | select(.name == "catholicart")' > /dev/null; then
+            echo "  already exists, fetching ID…"
+            D1_ID=$(wrangler d1 list --json | jq -r '.[] | select(.name == "catholicart") | .uuid')
+          else
+            echo "  creating…"
+            D1_OUTPUT=$(wrangler d1 create catholicart)
+            D1_ID=$(echo "$D1_OUTPUT" | grep -oE '"database_id": "[a-f0-9-]+' | grep -oE '[a-f0-9-]{36}' | head -1)
+            if [ -z "$D1_ID" ]; then
+              # Fallback: list after create
+              D1_ID=$(wrangler d1 list --json | jq -r '.[] | select(.name == "catholicart") | .uuid')
+            fi
+          fi
+          echo "  D1_ID=$D1_ID"
+          echo "d1_id=$D1_ID" >> "$GITHUB_OUTPUT"
+
+          # ── R2 bucket ──────────────────────────────────────────────
+          echo
+          echo "──────── R2: catholicart-wip ────────"
+          if wrangler r2 bucket list --json 2>/dev/null | jq -e '.[] | select(.name == "catholicart-wip")' > /dev/null; then
+            echo "  already exists"
+          else
+            wrangler r2 bucket create catholicart-wip
+          fi
+
+          # ── KV namespaces ──────────────────────────────────────────
+          echo
+          echo "──────── KV: catholicart-cache ────────"
+          KV_CACHE_LIST=$(wrangler kv namespace list)
+          KV_CACHE_ID=$(echo "$KV_CACHE_LIST" | jq -r '.[] | select(.title == "catholicart-cache" or .title == "catholicart-CACHE") | .id' | head -1)
+          if [ -z "$KV_CACHE_ID" ]; then
+            KV_CACHE_OUTPUT=$(wrangler kv namespace create catholicart-cache)
+            KV_CACHE_ID=$(echo "$KV_CACHE_OUTPUT" | grep -oE '"id": "[a-f0-9]+' | grep -oE '[a-f0-9]{32}' | head -1)
+            if [ -z "$KV_CACHE_ID" ]; then
+              KV_CACHE_ID=$(wrangler kv namespace list | jq -r '.[] | select(.title | contains("catholicart-cache")) | .id' | head -1)
+            fi
+          fi
+          echo "  KV_CACHE_ID=$KV_CACHE_ID"
+          echo "kv_cache_id=$KV_CACHE_ID" >> "$GITHUB_OUTPUT"
+
+          echo
+          echo "──────── KV: catholicart-sessions ────────"
+          KV_SESSIONS_LIST=$(wrangler kv namespace list)
+          KV_SESSIONS_ID=$(echo "$KV_SESSIONS_LIST" | jq -r '.[] | select(.title == "catholicart-sessions" or .title == "catholicart-SESSIONS") | .id' | head -1)
+          if [ -z "$KV_SESSIONS_ID" ]; then
+            KV_SESSIONS_OUTPUT=$(wrangler kv namespace create catholicart-sessions)
+            KV_SESSIONS_ID=$(echo "$KV_SESSIONS_OUTPUT" | grep -oE '"id": "[a-f0-9]+' | grep -oE '[a-f0-9]{32}' | head -1)
+            if [ -z "$KV_SESSIONS_ID" ]; then
+              KV_SESSIONS_ID=$(wrangler kv namespace list | jq -r '.[] | select(.title | contains("catholicart-sessions")) | .id' | head -1)
+            fi
+          fi
+          echo "  KV_SESSIONS_ID=$KV_SESSIONS_ID"
+          echo "kv_sessions_id=$KV_SESSIONS_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Patch wrangler.jsonc with real IDs
+        run: |
+          set -euo pipefail
+          D1_ID='${{ steps.resources.outputs.d1_id }}'
+          KV_CACHE_ID='${{ steps.resources.outputs.kv_cache_id }}'
+          KV_SESSIONS_ID='${{ steps.resources.outputs.kv_sessions_id }}'
+
+          # Replace the first __SET_BY_BOOTSTRAP_WORKFLOW__ with D1 ID,
+          # then the two KV ones (CACHE, then SESSIONS in file order).
+          python3 <<PY
+          import re
+          p = 'wrangler.jsonc'
+          s = open(p).read()
+          # D1: the database_id in the d1_databases block
+          s = re.sub(
+            r'("database_name": "catholicart",\s*"database_id": ")__SET_BY_BOOTSTRAP_WORKFLOW__(")',
+            r'\1$D1_ID\2', s
+          )
+          # KV CACHE: binding CACHE, id placeholder
+          s = re.sub(
+            r'("binding": "CACHE",\s*"id": ")__SET_BY_BOOTSTRAP_WORKFLOW__(")',
+            r'\1$KV_CACHE_ID\2', s
+          )
+          # KV SESSIONS
+          s = re.sub(
+            r'("binding": "SESSIONS",\s*"id": ")__SET_BY_BOOTSTRAP_WORKFLOW__(")',
+            r'\1$KV_SESSIONS_ID\2', s
+          )
+          open(p, 'w').write(s)
+          print("patched wrangler.jsonc:")
+          print(s)
+          PY
+
+      - name: Run D1 migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          for f in migrations/d1/*.sql; do
+            echo "→ applying $f"
+            wrangler d1 execute catholicart --remote --file="$f" || true
+          done
+
+      - name: Commit + push wrangler.jsonc
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet wrangler.jsonc; then
+            echo "no changes"; exit 0
+          fi
+          git add wrangler.jsonc
+          git commit -m "ops: wire D1 + KV resource IDs into wrangler.jsonc
+
+Auto-committed by cf-bootstrap-cloud workflow after creating
+the catholicart D1 database and KV namespaces."
+          git push origin HEAD
