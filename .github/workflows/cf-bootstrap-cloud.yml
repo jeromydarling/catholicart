@@ -1,0 +1,154 @@
+name: cf · bootstrap cloud resources (one-time)
+
+# Idempotent bootstrap. Creates the D1 database, R2 bucket, and KV
+# namespaces for the catholicart Worker; writes the real resource IDs
+# into wrangler.jsonc; runs all D1 migrations; commits the updated
+# wrangler.jsonc back to the branch.
+#
+# Re-running is safe — existing resources are detected and reused.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install wrangler + jq
+        run: |
+          npm install -g wrangler@latest
+          which jq || sudo apt-get install -y jq
+
+      # ── D1 database ──────────────────────────────────────────────
+      - name: Create / find D1 database
+        id: d1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          # Always: create (idempotent — wrangler may exit non-zero if it
+          # already exists) then read from list to get the ID.
+          wrangler d1 create catholicart || echo "(already exists)"
+          # List + parse via jq. Wrangler d1 list --json returns array
+          # of { name, uuid, created_at, ... }.
+          ID=$(wrangler d1 list --json | jq -r '.[] | select(.name == "catholicart") | .uuid // .id' | head -1)
+          if [ -z "$ID" ] || [ "$ID" = "null" ]; then
+            echo "::error::could not find catholicart D1 after create"
+            exit 1
+          fi
+          echo "D1_ID=$ID"
+          echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+      # ── R2 bucket ────────────────────────────────────────────────
+      - name: Create / verify R2 bucket
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          wrangler r2 bucket create catholicart-wip || echo "(already exists)"
+          wrangler r2 bucket list | grep catholicart-wip && echo "✓ bucket present"
+
+      # ── KV: cache + sessions ─────────────────────────────────────
+      - name: Create / find KV namespaces
+        id: kv
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+
+          for NAME in catholicart-cache catholicart-sessions; do
+            wrangler kv namespace create "$NAME" || echo "($NAME already exists)"
+          done
+
+          NS_LIST=$(wrangler kv namespace list)
+          CACHE_ID=$(echo "$NS_LIST" | jq -r '.[] | select(.title == "catholicart-cache") | .id' | head -1)
+          SESSIONS_ID=$(echo "$NS_LIST" | jq -r '.[] | select(.title == "catholicart-sessions") | .id' | head -1)
+
+          if [ -z "$CACHE_ID" ] || [ "$CACHE_ID" = "null" ]; then
+            echo "::error::could not find catholicart-cache KV"
+            echo "$NS_LIST"
+            exit 1
+          fi
+          if [ -z "$SESSIONS_ID" ] || [ "$SESSIONS_ID" = "null" ]; then
+            echo "::error::could not find catholicart-sessions KV"
+            exit 1
+          fi
+          echo "cache_id=$CACHE_ID" >> "$GITHUB_OUTPUT"
+          echo "sessions_id=$SESSIONS_ID" >> "$GITHUB_OUTPUT"
+          echo "CACHE_ID=$CACHE_ID"
+          echo "SESSIONS_ID=$SESSIONS_ID"
+
+      # ── Patch wrangler.jsonc ─────────────────────────────────────
+      - name: Patch wrangler.jsonc with real IDs
+        env:
+          D1_ID: ${{ steps.d1.outputs.id }}
+          CACHE_ID: ${{ steps.kv.outputs.cache_id }}
+          SESSIONS_ID: ${{ steps.kv.outputs.sessions_id }}
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import os, re
+          p = 'wrangler.jsonc'
+          s = open(p).read()
+          d1 = os.environ['D1_ID']
+          cache = os.environ['CACHE_ID']
+          sessions = os.environ['SESSIONS_ID']
+          # D1: database_id placeholder after database_name = "catholicart"
+          s = re.sub(
+            r'("database_name":\s*"catholicart",\s*"database_id":\s*")__SET_BY_BOOTSTRAP_WORKFLOW__(")',
+            lambda m: m.group(1) + d1 + m.group(2), s
+          )
+          # KV CACHE
+          s = re.sub(
+            r'("binding":\s*"CACHE",\s*"id":\s*")__SET_BY_BOOTSTRAP_WORKFLOW__(")',
+            lambda m: m.group(1) + cache + m.group(2), s
+          )
+          # KV SESSIONS
+          s = re.sub(
+            r'("binding":\s*"SESSIONS",\s*"id":\s*")__SET_BY_BOOTSTRAP_WORKFLOW__(")',
+            lambda m: m.group(1) + sessions + m.group(2), s
+          )
+          open(p, 'w').write(s)
+          print("patched wrangler.jsonc")
+          PY
+          grep -E '"database_id"|"id"' wrangler.jsonc
+
+      # ── Run migrations ───────────────────────────────────────────
+      - name: Run D1 migrations
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          for f in migrations/d1/*.sql; do
+            echo "→ applying $f"
+            wrangler d1 execute catholicart --remote --file="$f"
+          done
+
+      # ── Commit + push ────────────────────────────────────────────
+      - name: Commit updated wrangler.jsonc
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet wrangler.jsonc; then
+            echo "no diff to commit"; exit 0
+          fi
+          git add wrangler.jsonc
+          git commit -m "ops: wire D1 + KV resource IDs into wrangler.jsonc
+
+Auto-committed by cf-bootstrap-cloud workflow."
+          git push origin HEAD

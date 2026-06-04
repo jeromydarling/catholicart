@@ -11,27 +11,55 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "vars": {
+    "SITE_URL": "https://catholicart.workers.dev",
+    "EMAIL_FROM": "Ars Sacra <hello@arssacra.com>"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "catholicart",
+      "database_id": "__SET_BY_BOOTSTRAP_WORKFLOW__"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "catholicart-wip"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "__SET_BY_BOOTSTRAP_WORKFLOW__"
+    },
+    {
+      "binding": "SESSIONS",
+      "id": "__SET_BY_BOOTSTRAP_WORKFLOW__"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "remote": true
+    }
+  ]
   /*
-   * Bindings will be added as we wire each phase of the full-Cloudflare
-   * stack. Examples (uncomment + fill in once the resources exist):
+   * Secrets (set via cf-worker-secret-bulk workflow, NOT in this file):
+   *   VITE_MAPBOX_TOKEN     — public Mapbox token for the map
+   *   VITE_MAPBOX_STYLE     — optional custom Mapbox style URL
+   *   VITE_SENTRY_DSN       — optional Sentry DSN for client errors
+   *   AUTH_SECRET           — server-side, for signing session JWTs
+   *   STRIPE_SECRET_KEY     — server-side, for Stripe (last)
+   *   STRIPE_WEBHOOK_SECRET — server-side, for webhook signature verify
    *
-   * "d1_databases": [
-   *   { "binding": "DB", "database_name": "catholicart", "database_id": "<uuid>" }
-   * ],
-   *
-   * "r2_buckets": [
-   *   { "binding": "BUCKET", "bucket_name": "catholicart-wip-images" }
-   * ],
-   *
-   * "ai": { "binding": "AI" },
-   *
-   * "kv_namespaces": [
-   *   { "binding": "CACHE", "id": "<id>" }
-   * ],
-   *
-   * "vars": {
-   *   "RESEND_API_KEY_NAME": "RESEND_API_KEY"
-   * }
+   * Outbound email uses the `send_email` binding above (Cloudflare
+   * Email Service). The sender domain in EMAIL_FROM must be
+   * onboarded at https://dash.cloudflare.com/?to=/:account/email/
+   * with SPF + DKIM verified. No API key required.
    */
 }
