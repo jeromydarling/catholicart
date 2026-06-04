@@ -107,10 +107,11 @@ export async function sendEmail(env: Env, event: OutboxEvent): Promise<{
       failure = (e as Error).message;
     }
   } else if (recipients.length > 0 && !env.RESEND_API_KEY) {
-    // No Resend key configured — record as "sent" but log a warning.
-    // In dev this lets the rest of the system work without sending real mail.
-    status = 'sent';
-    failure = 'RESEND_API_KEY not set; recorded but not delivered';
+    // No Resend key configured — mark as failed honestly so the
+    // sender (or smoke check) can see it. Outbox still records the
+    // payload so the email is queryable / retryable later.
+    status = 'failed';
+    failure = 'RESEND_API_KEY not set; email not delivered';
   }
 
   // Audit log

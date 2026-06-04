@@ -111,6 +111,26 @@ const CHECKS = [
         : fail('mapbox_token empty — set VITE_MAPBOX_TOKEN via cf-worker-secret-bulk');
     },
   },
+  {
+    name: 'Secrets — RESEND_API_KEY set (magic-link email)',
+    run: async () => {
+      const r = await get('/api/config');
+      if (!r.ok) return fail(r);
+      return r.data.flags?.resend_configured
+        ? pass('resend wired')
+        : fail('not set — magic-link emails will be queued but not delivered');
+    },
+  },
+  {
+    name: 'Secrets — AUTH_SECRET set (session signing)',
+    run: async () => {
+      const r = await get('/api/config');
+      if (!r.ok) return fail(r);
+      return r.data.flags?.auth_secret_configured
+        ? pass('auth secret wired')
+        : fail('not set — sessions will use insecure dev default');
+    },
+  },
 ];
 
 async function get(path) {

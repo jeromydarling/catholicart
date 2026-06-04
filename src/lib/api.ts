@@ -29,6 +29,11 @@ export const api = {
       mapbox_style: string;
       sentry_dsn: string;
       site_url: string;
+      flags?: {
+        resend_configured?: boolean;
+        auth_secret_configured?: boolean;
+        stripe_configured?: boolean;
+      };
     }>('/api/config'),
 
   // Auth

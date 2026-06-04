@@ -29,14 +29,21 @@ app.get('/api/health', (c) =>
 // runtime rather than baking them into the Vite bundle. This lets
 // `wrangler secret put VITE_MAPBOX_TOKEN` propagate without a
 // rebuild.
+//
+// Also includes `flags` — booleans indicating whether server-side
+// secrets are wired. Never includes the secret values themselves.
 app.get('/api/config', (c) => {
-  // Cache 60s — values change rarely, this saves a roundtrip per page.
   c.header('Cache-Control', 'public, max-age=60, s-maxage=60');
   return c.json({
     mapbox_token: c.env.VITE_MAPBOX_TOKEN ?? '',
     mapbox_style: c.env.VITE_MAPBOX_STYLE ?? '',
     sentry_dsn: c.env.VITE_SENTRY_DSN ?? '',
     site_url: c.env.SITE_URL,
+    flags: {
+      resend_configured: Boolean(c.env.RESEND_API_KEY),
+      auth_secret_configured: Boolean(c.env.AUTH_SECRET),
+      stripe_configured: Boolean(c.env.STRIPE_SECRET_KEY),
+    },
   });
 });
 app.route('/api/auth', auth);

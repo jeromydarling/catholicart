@@ -96,6 +96,28 @@ const CHECKS: { name: string; run: () => Promise<{ ok: boolean; message?: string
         : { ok: false, message: "mapbox_token empty — set VITE_MAPBOX_TOKEN" };
     },
   },
+  {
+    name: "Secrets — RESEND_API_KEY set",
+    run: async () => {
+      const r = await api.config();
+      if (!r.ok) return { ok: false, message: String(r.error) };
+      const f = (r.data as { flags?: { resend_configured?: boolean } }).flags;
+      return f?.resend_configured
+        ? { ok: true, message: "resend wired" }
+        : { ok: false, message: "not set — magic-link emails will be queued but not delivered" };
+    },
+  },
+  {
+    name: "Secrets — AUTH_SECRET set",
+    run: async () => {
+      const r = await api.config();
+      if (!r.ok) return { ok: false, message: String(r.error) };
+      const f = (r.data as { flags?: { auth_secret_configured?: boolean } }).flags;
+      return f?.auth_secret_configured
+        ? { ok: true, message: "auth secret wired" }
+        : { ok: false, message: "not set — sessions will use insecure dev default" };
+    },
+  },
 ];
 
 export default function ApiStatus() {
