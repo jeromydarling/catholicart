@@ -66,11 +66,15 @@ export default function Commission() {
           <span className="mx-2">›</span> Commission
         </div>
         <h1 className="font-display text-4xl sm:text-5xl tracking-tight text-ink leading-[1.05]">
-          {isCustom ? "Custom commission" : `Commission ${artist.name.split(" ")[0]}`}
+          {isCustom
+            ? `A letter to ${artist.name.split(" ")[0]}`
+            : `A letter to ${artist.name.split(" ")[0]}`}
         </h1>
         <p className="mt-4 font-serif text-lg text-ink-muted max-w-2xl">
-          Tell the artist what you long for. They will reply with questions,
-          a refined quote, and a turnaround estimate before you pay anything.
+          Write to the artist the way you'd write to a friend who happens
+          to be able to make this. Tell them what you long for and{" "}
+          <em>why</em>. They will answer first with a vision, then with a
+          quote — before any money changes hands.
         </p>
         <Ornament className="my-10" />
 
@@ -133,16 +137,23 @@ export default function Commission() {
               </Select>
             </Field>
 
-            <Field label="Describe what you long for">
+            <Field label="Your letter">
               <Textarea
                 name="description"
                 required
-                rows={6}
-                placeholder="The saint, the season, the recipient, the room. The mood. The size, if it matters. Be plain — they are listening."
+                rows={10}
+                minLength={120}
+                placeholder="Dear ___,
+
+I am writing because…
+
+Tell them: who this is for. Why it matters. The saint, the
+feast, the room it will live in, the moment. Be particular.
+Be plain. They are listening."
               />
               <p className="mt-2 font-serif text-sm text-ink-muted italic">
-                The more particular, the better. Include scripture or
-                feast-day references if they apply.
+                A few paragraphs are right. The artist will read this
+                carefully and reply with a vision before the quote.
               </p>
             </Field>
 
@@ -200,7 +211,7 @@ export default function Commission() {
 
             <div className="pt-4 flex flex-wrap items-center gap-3">
               <Button type="submit" size="lg">
-                Send to {artist.name.split(" ")[0]}{" "}
+                Send your letter to {artist.name.split(" ")[0]}{" "}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button asChild variant="link">
@@ -208,8 +219,9 @@ export default function Commission() {
               </Button>
             </div>
             <p className="font-serif text-xs italic text-ink-muted max-w-md">
-              You will not be charged yet. The artist will reply with a quote
-              and you'll fund the deposit only when you accept.
+              Nothing is charged yet. The artist's first reply is a vision —
+              what they see when they read your letter. The quote follows.
+              You fund the deposit only when the vision rings true.
             </p>
           </form>
 

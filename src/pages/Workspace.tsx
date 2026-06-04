@@ -176,11 +176,15 @@ export default function Workspace() {
 
       {/* Two-column workspace */}
       <section className="container grid lg:grid-cols-12 gap-8 lg:gap-10 pb-20">
-        {/* LEFT: timeline */}
+        {/* LEFT: studio reel + thread */}
         <div className="lg:col-span-7 space-y-6">
+          {/* The artist's hand made visible. Appears the moment the
+              first WIP is posted; the thread takes second place. */}
+          {commission.wip.length > 0 && <StudioReel wip={commission.wip} />}
+
           <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-7">
             <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-4">
-              Studio thread
+              {commission.wip.length > 0 ? "Conversation" : "Studio thread"}
             </div>
             <ol className="space-y-5">
               {timeline.map((item, i) =>
@@ -470,6 +474,7 @@ function StageAction({
 }) {
   const store = useStore();
   const [quoteUsd, setQuoteUsd] = useState<string>("");
+  const [quoteVision, setQuoteVision] = useState<string>("");
   const [quoteNote, setQuoteNote] = useState<string>("");
   const [wipCaption, setWipCaption] = useState<string>("");
   const [midpointNote, setMidpointNote] = useState<string>("");
@@ -520,10 +525,34 @@ function StageAction({
     }
     return (
       <Card
-        title="Send a quote"
-        note="Set what you want to be paid in full. You receive 100% across the three milestones. A small 2% guild tithe is settled by the patron at the end — not from your share."
+        title="Write back. Then quote."
+        note="Begin with what you saw when you read their letter — the image, the saint, the silence. The price follows the vision; it does not lead it."
       >
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="quote-vision">Your vision</Label>
+            <Textarea
+              id="quote-vision"
+              rows={7}
+              value={quoteVision}
+              onChange={(e) => setQuoteVision(e.target.value)}
+              placeholder="What do you see when you read their letter? The figure, the gesture, the ground, the light. A few paragraphs are enough."
+            />
+            <p className="font-serif text-xs italic text-ink-muted">
+              At least a few sentences — this is the artist's first
+              answer to the patron, before any number.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="quote-note">Practical note (optional)</Label>
+            <Textarea
+              id="quote-note"
+              rows={3}
+              value={quoteNote}
+              onChange={(e) => setQuoteNote(e.target.value)}
+              placeholder="Materials, dimensions, turnaround — anything specific to the price."
+            />
+          </div>
           <div className="space-y-1.5">
             <Label htmlFor="quote-usd">Your price (USD)</Label>
             <Input
@@ -534,17 +563,7 @@ function StageAction({
               inputMode="numeric"
               value={quoteUsd}
               onChange={(e) => setQuoteUsd(e.target.value)}
-              placeholder="e.g. 1500"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="quote-note">A note to the patron</Label>
-            <Textarea
-              id="quote-note"
-              rows={4}
-              value={quoteNote}
-              onChange={(e) => setQuoteNote(e.target.value)}
-              placeholder="Materials, dimensions, turnaround, what you'd ask for…"
+              placeholder="What you want to be paid, in full"
             />
           </div>
           {previewPricing && (
@@ -573,19 +592,21 @@ function StageAction({
           )}
           <Button
             className="w-full"
-            disabled={!previewPricing || !quoteNote.trim()}
+            disabled={!previewPricing || quoteVision.trim().length < 80}
             onClick={() => {
               if (!previewPricing) return;
               store.artistQuote(
                 commission.id,
                 previewPricing.artistTotalUsd,
                 quoteNote.trim(),
+                quoteVision.trim(),
               );
               setQuoteUsd("");
+              setQuoteVision("");
               setQuoteNote("");
             }}
           >
-            Send quote <ArrowRight className="ml-2 h-4 w-4" />
+            Send vision and quote <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </Card>
@@ -1017,6 +1038,92 @@ function MessageRow({
         </div>
       </div>
     </li>
+  );
+}
+
+// The studio reel — the visible spine of the workspace once work has
+// begun. Newest update sits at the top, full-bleed; older updates
+// shrink to a quiet gallery beneath. The escrow buttons exist
+// elsewhere; this is the artist's hand.
+function StudioReel({ wip }: { wip: Commission["wip"] }) {
+  const sorted = [...wip].sort(
+    (a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime(),
+  );
+  const [head, ...rest] = sorted;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="rounded-md border border-ink/10 bg-parchment-50 shadow-card overflow-hidden"
+    >
+      <div className="px-5 sm:px-7 pt-5 sm:pt-6 pb-4 flex items-baseline justify-between gap-4 flex-wrap">
+        <div>
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600">
+            From the studio
+          </div>
+          <div className="mt-1 font-display text-xl text-ink">
+            The work as it comes.
+          </div>
+        </div>
+        <div className="font-sans text-[11px] uppercase tracking-[0.18em] text-ink-muted tabular-nums">
+          {sorted.length} {sorted.length === 1 ? "update" : "updates"}
+        </div>
+      </div>
+      {head && (
+        <figure className="border-t border-ink/10">
+          <div
+            className="aspect-[16/10] relative"
+            style={{
+              background: `linear-gradient(135deg, ${head.paletteFrom}, ${head.paletteTo})`,
+            }}
+          >
+            <div
+              className="absolute inset-0 opacity-30 mix-blend-overlay"
+              style={{
+                backgroundImage:
+                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.5'/></svg>\")",
+              }}
+              aria-hidden
+            />
+            <div className="absolute inset-0 grid place-items-center text-parchment-50/85">
+              <PatternHint pattern={head.pattern} />
+            </div>
+          </div>
+          <figcaption className="px-5 sm:px-7 py-4 bg-parchment-50">
+            <p className="font-serif text-base text-ink leading-relaxed">
+              {head.caption}
+            </p>
+            <div className="mt-2 font-sans text-[11px] uppercase tracking-[0.18em] text-ink-muted">
+              {formatTimestamp(head.postedAt)}
+            </div>
+          </figcaption>
+        </figure>
+      )}
+      {rest.length > 0 && (
+        <div className="border-t border-ink/10 p-4 sm:p-5">
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-3">
+            Earlier
+          </div>
+          <ul className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {rest.map((w) => (
+              <li
+                key={w.id}
+                className="aspect-square rounded-sm overflow-hidden relative ring-1 ring-ink/10"
+                style={{
+                  background: `linear-gradient(135deg, ${w.paletteFrom}, ${w.paletteTo})`,
+                }}
+                title={w.caption}
+              >
+                <div className="absolute inset-0 grid place-items-center text-parchment-50/70">
+                  <PatternHint pattern={w.pattern} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </motion.div>
   );
 }
 

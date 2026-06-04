@@ -73,6 +73,7 @@ interface StoreState {
     id: string,
     artistTotalUsd: number,
     quoteNote: string,
+    vision: string,
     platformFeePct?: number,
   ) => Commission | null;
   fundEscrow: (id: string, stage: EscrowStage) => Commission | null;
@@ -344,7 +345,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         return c;
       },
 
-      artistQuote: (id, artistTotalUsd, quoteNote, feePct) => {
+      artistQuote: (id, artistTotalUsd, quoteNote, vision, feePct) => {
         const pricing = computePricing(artistTotalUsd, feePct ?? PLATFORM_FEE_PCT);
         const updated = patchCommission(id, (c) => ({
           ...c,
@@ -357,18 +358,30 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           escrow: pricing.escrow,
           messages: [
             ...c.messages,
+            // The vision arrives first — what the artist sees when they
+            // read the patron's letter.
             {
               id: makeId("msg"),
               authorRole: "artist",
               authorName: "Artist",
-              body: quoteNote,
+              body: vision,
               createdAt: nowIso(),
             },
+            // Then the practicalities — price + timeline.
+            ...(quoteNote.trim()
+              ? [{
+                  id: makeId("msg"),
+                  authorRole: "artist" as const,
+                  authorName: "Artist",
+                  body: quoteNote,
+                  createdAt: nowIso(),
+                }]
+              : []),
             {
               id: makeId("msg"),
               authorRole: "system",
               authorName: "Ars Sacra",
-              body: `Artist quoted $${pricing.artistTotalUsd.toLocaleString()}. Three milestones funded as work progresses.`,
+              body: `Quote: $${pricing.artistTotalUsd.toLocaleString()} to the artist, paid across three milestones. A 2% guild tithe is settled at the end.`,
               createdAt: nowIso(),
             },
           ],

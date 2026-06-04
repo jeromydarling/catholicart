@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+// ShieldCheck is still used by the row (verified artist).
 import { artists, isVerified } from "../data/artists";
 import { artistBySlug } from "../data/artists";
 import { categoryBySlug } from "../data/categories";
@@ -33,8 +34,9 @@ const STAGE_COPY: Record<
   cancelled:         { label: "Cancelled",       tone: "burgundy" },
 };
 
-// The Ledger — radical transparency. Every commission ever made on Ars
-// Sacra, the dollar amounts, the fees we took. This is the marketing.
+// The Ledger — a quiet record of every work made through the guild.
+// Not a dashboard. Closer to a parish bulletin: who, what, when,
+// where it will live. The numbers are present but not the point.
 export default function Ledger() {
   const { commissions } = useStore();
   const [filter, setFilter] = useState<"all" | "delivered" | "in-flight" | CategorySlug>(
@@ -95,60 +97,59 @@ export default function Ledger() {
   return (
     <PageShell>
       <Seo
-        title="The Ledger — every commission, every dollar, public"
-        description="Radical transparency. Every commission Ars Sacra has facilitated, every dollar paid to artists, every fee we kept. Updated in real time."
+        title="The Ledger — works made through the guild"
+        description="A quiet, public record of every commission made through Ars Sacra. The work, the artist, the patron, where it will live. Updated in real time."
         path="/ledger"
       />
       <section className="container pt-12 sm:pt-16">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
-          Radical transparency
+          A public record
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight text-ink leading-[1.05]">
-          The Ledger
+          Works made through the guild.
         </h1>
         <p className="mt-4 font-serif text-lg text-ink-muted max-w-2xl leading-relaxed">
-          Every commission. Every dollar to the artist. Every dollar we kept.
-          Public. Updated in real time. We have nothing to hide.
+          A quiet ledger of every commission — who made it, who it was
+          for, where it will live. The numbers are present so nothing is
+          hidden, but the work is the point.
         </p>
         <Ornament className="my-10" />
       </section>
 
-      {/* Headline numbers */}
+      {/* Quiet totals — small, single line, no big numbers competing
+          with the works themselves. */}
       <section className="container">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Stat
-            label="Commissions completed"
-            value={stats.completedCount.toString()}
-            tone="ink"
-          />
-          <Stat
-            label="In flight now"
-            value={stats.inFlightCount.toString()}
-            tone="ink"
-          />
-          <Stat
-            label="Paid to artists"
-            value={formatPrice(stats.totalToArtists)}
-            tone="olive"
-            big
-          />
-          <Stat
-            label="Platform fees received"
-            value={formatPrice(stats.totalPlatform)}
-            tone="burgundy"
-            big
-          />
-        </div>
-        <div className="mt-4 rounded-md border border-ink/10 bg-parchment-50 p-4 sm:p-5 flex items-start gap-3">
-          <ShieldCheck className="h-5 w-5 text-olive-600 shrink-0 mt-0.5" />
-          <p className="font-serif text-sm text-ink-soft leading-relaxed">
-            <strong className="text-ink">
-              Right now, {formatPrice(stats.heldRightNow)} is in escrow
-            </strong>{" "}
-            — held for active commissions, never co-mingled with operating
-            funds. Released only when patrons approve each milestone.
-          </p>
-        </div>
+        <p className="font-serif text-sm sm:text-base text-ink-muted leading-relaxed max-w-3xl">
+          <span className="text-ink font-medium tabular-nums">
+            {stats.completedCount}
+          </span>{" "}
+          {stats.completedCount === 1 ? "work" : "works"} completed
+          {stats.inFlightCount > 0 && (
+            <>
+              ;{" "}
+              <span className="text-ink font-medium tabular-nums">
+                {stats.inFlightCount}
+              </span>{" "}
+              in the studio
+            </>
+          )}
+          .{" "}
+          {stats.totalToArtists > 0 && (
+            <>
+              <span className="tabular-nums">{formatPrice(stats.totalToArtists)}</span>{" "}
+              has gone to the artists; the guild has kept{" "}
+              <span className="tabular-nums">{formatPrice(stats.totalPlatform)}</span>{" "}
+              from those works.
+            </>
+          )}
+          {stats.heldRightNow > 0 && (
+            <>
+              {" "}
+              <span className="tabular-nums">{formatPrice(stats.heldRightNow)}</span>{" "}
+              is currently held in escrow for active commissions.
+            </>
+          )}
+        </p>
       </section>
 
       {/* Filter */}
@@ -196,39 +197,6 @@ export default function Ledger() {
         </p>
       </section>
     </PageShell>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  tone,
-  big,
-}: {
-  label: string;
-  value: string;
-  tone: "ink" | "burgundy" | "olive";
-  big?: boolean;
-}) {
-  return (
-    <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-4 sm:p-5">
-      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
-        {label}
-      </div>
-      <div
-        className={`mt-2 font-display tabular-nums ${
-          big ? "text-3xl sm:text-4xl" : "text-2xl sm:text-3xl"
-        } ${
-          tone === "olive"
-            ? "text-olive-600"
-            : tone === "burgundy"
-              ? "text-burgundy-500"
-              : "text-ink"
-        }`}
-      >
-        {value}
-      </div>
-    </div>
   );
 }
 
@@ -291,10 +259,9 @@ function LedgerRow({ commission: c, i }: { commission: Commission; i: number }) 
           {c.artistTotalUsd != null && (
             <div className="mt-3 flex items-baseline justify-between gap-3 flex-wrap">
               <div className="font-sans text-xs text-ink-muted tabular-nums">
-                <span className="text-olive-600 font-medium">
-                  {formatPrice(c.artistTotalUsd)} to artist
-                </span>{" "}
-                · {formatPrice(c.platformFeeUsd ?? 0)} platform
+                <span className="text-olive-600">
+                  {formatPrice(c.artistTotalUsd)} to the artist
+                </span>
                 {released > 0 && released < (c.artistTotalUsd ?? 0) && (
                   <>
                     {" "}· <span>{formatPrice(released)} released so far</span>

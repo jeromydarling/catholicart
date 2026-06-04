@@ -140,9 +140,12 @@ app.get('/:id', requireAuth(), async (c) => {
 });
 
 // POST /api/commissions/:id/quote — artist (or operator) sends a quote.
+// `vision` arrives first — what the artist saw when they read the
+// patron's letter. `note` is optional and pricing-specific.
 const QuoteBody = z.object({
   artist_total_usd: z.number().int().min(100).max(1_000_000),
-  note: z.string().min(1).max(10_000),
+  vision: z.string().min(80).max(10_000),
+  note: z.string().max(10_000).default(''),
 });
 app.post('/:id/quote', requireAuth(), async (c) => {
   const u = c.var.user!;
@@ -180,13 +183,22 @@ app.post('/:id/quote', requireAuth(), async (c) => {
     );
   }
 
+  // The vision arrives first — the artist's answer to the patron's
+  // letter, before any number.
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', ?, ?)`,
-    newId('msg'), id, u.email.split('@')[0], parsed.data.note,
+    newId('msg'), id, u.email.split('@')[0], parsed.data.vision,
   );
+  // Then the practicalities, if the artist sent any.
+  if (parsed.data.note.trim()) {
+    await run(c.env.DB,
+      `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', ?, ?)`,
+      newId('msg'), id, u.email.split('@')[0], parsed.data.note,
+    );
+  }
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
-    newId('msg'), id, `Artist quoted $${p.artistTotalUsd.toLocaleString()}. Three milestones funded as work progresses.`,
+    newId('msg'), id, `Quote: $${p.artistTotalUsd.toLocaleString()} to the artist, paid across three milestones. A ${Math.round(p.platformFeePct * 100)}% guild tithe is settled at the end.`,
   );
 
   const artist = await first<{ name: string }>(c.env.DB, `SELECT name FROM artists WHERE id = ?`, cm.artist_id);
