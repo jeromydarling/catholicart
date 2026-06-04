@@ -1,0 +1,132 @@
+name: cf · set pages env vars (batch)
+
+# Set multiple Cloudflare Pages env vars in one shot. Leave any input
+# blank to skip that variable. Values are masked in logs.
+#
+# Applies to both production and preview unless you change env_target.
+#
+# After running, also run cf-pages-redeploy so the new values take
+# effect on the live site.
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: "Pages project name"
+        required: true
+        default: "catholicart"
+        type: string
+      env_target:
+        description: "Target environment(s)"
+        required: true
+        default: "both"
+        type: choice
+        options:
+          - both
+          - production
+          - preview
+      vite_mapbox_token:
+        description: "VITE_MAPBOX_TOKEN (pk.ey…). Blank to skip."
+        required: false
+        type: string
+      vite_mapbox_style:
+        description: "VITE_MAPBOX_STYLE (mapbox://styles/…). Blank to skip."
+        required: false
+        type: string
+      vite_sentry_dsn:
+        description: "VITE_SENTRY_DSN (https://…@…ingest.sentry.io/…). Blank to skip."
+        required: false
+        type: string
+      vite_supabase_url:
+        description: "VITE_SUPABASE_URL. Blank to skip (set later)."
+        required: false
+        type: string
+      vite_supabase_anon_key:
+        description: "VITE_SUPABASE_ANON_KEY. Blank to skip (set later)."
+        required: false
+        type: string
+
+jobs:
+  set:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set env vars on Pages project
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ inputs.project_name }}
+          ENV_TARGET: ${{ inputs.env_target }}
+          V_MAPBOX_TOKEN: ${{ inputs.vite_mapbox_token }}
+          V_MAPBOX_STYLE: ${{ inputs.vite_mapbox_style }}
+          V_SENTRY_DSN: ${{ inputs.vite_sentry_dsn }}
+          V_SUPABASE_URL: ${{ inputs.vite_supabase_url }}
+          V_SUPABASE_ANON_KEY: ${{ inputs.vite_supabase_anon_key }}
+        run: |
+          set -euo pipefail
+
+          # Mask anything non-empty so it doesn't appear in logs.
+          for v in "$V_MAPBOX_TOKEN" "$V_MAPBOX_STYLE" "$V_SENTRY_DSN" \
+                   "$V_SUPABASE_URL" "$V_SUPABASE_ANON_KEY"; do
+            [ -n "$v" ] && echo "::add-mask::$v"
+          done
+
+          # Build the targets list
+          if [ "$ENV_TARGET" = "both" ]; then
+            TARGETS="production preview"
+          else
+            TARGETS="$ENV_TARGET"
+          fi
+
+          # Build the JSON object of new vars (skipping blanks)
+          NEW_VARS=$(jq -n \
+            --arg mt "$V_MAPBOX_TOKEN" \
+            --arg ms "$V_MAPBOX_STYLE" \
+            --arg sd "$V_SENTRY_DSN" \
+            --arg su "$V_SUPABASE_URL" \
+            --arg sk "$V_SUPABASE_ANON_KEY" '
+              {} +
+              (if $mt != "" then { VITE_MAPBOX_TOKEN: { type: "plain_text", value: $mt } } else {} end) +
+              (if $ms != "" then { VITE_MAPBOX_STYLE: { type: "plain_text", value: $ms } } else {} end) +
+              (if $sd != "" then { VITE_SENTRY_DSN:   { type: "plain_text", value: $sd } } else {} end) +
+              (if $su != "" then { VITE_SUPABASE_URL: { type: "plain_text", value: $su } } else {} end) +
+              (if $sk != "" then { VITE_SUPABASE_ANON_KEY: { type: "plain_text", value: $sk } } else {} end)
+            ')
+
+          if [ "$(echo "$NEW_VARS" | jq 'length')" = "0" ]; then
+            echo "No variables provided; nothing to do."
+            exit 0
+          fi
+
+          echo "Setting these variables (values masked):"
+          echo "$NEW_VARS" | jq 'keys'
+
+          # Fetch current project config
+          CONFIG=$(curl -fsS \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects/$PROJECT")
+
+          for TARGET in $TARGETS; do
+            echo "→ $TARGET"
+
+            PATCH=$(jq -n \
+              --argjson new "$NEW_VARS" \
+              --arg target "$TARGET" \
+              --argjson cfg "$CONFIG" '
+                {
+                  deployment_configs: (
+                    $cfg.result.deployment_configs
+                    | .[$target].env_vars |= (. // {}) + $new
+                  )
+                }
+              ')
+
+            curl -fsS \
+              -X PATCH \
+              -H "Authorization: Bearer $CF_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "$PATCH" \
+              "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects/$PROJECT" \
+              | jq '{ success, errors }'
+          done
+
+          echo "✓ Done. Run cf-pages-redeploy to apply."
