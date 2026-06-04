@@ -85,28 +85,55 @@ echo -n "re_..."              | wrangler secret put RESEND_API_KEY
 
 ## 4. Verify
 
-Hit `https://catholicart.workers.dev/api/health` — should return
-`{ ok: true, time: "..." }`.
+**Easiest:** visit `https://catholicart.workers.dev/api-status` —
+it runs 9 live checks and shows pass/fail for each (Worker reachable,
+8 categories seeded, 20 saints, 12 dioceses, 4 orders, 12 artists,
+FTS5 search working, auth endpoint responsive, ledger responsive).
 
-Hit `https://catholicart.workers.dev/api/categories` — should return
-the 9 categories from the seed.
+**Or manually:**
 
-Hit `https://catholicart.workers.dev/api/artists` — should return 12
-artists with their portraits, cities, starting_at prices, etc.
+- `/api/health` returns `{ ok: true, time }`
+- `/api/categories` returns 8 categories
+- `/api/saints` returns 20 saints
+- `/api/artists` returns 12 artists
+- `/api/artists?q=Maria` returns Maria Chrysostom (FTS5)
 
-Then visit `/signin` in a browser, enter your email, and click the
-link in the email Resend sends you. You should land back on the site
-signed in.
+Then visit `/signin`, enter your email, and click the link in the
+email Resend sends you. You should land back on the site signed in
+with the cookie set. (`/api/auth/me` confirms.)
 
-## 5. What's left
+## 5. What's left — incremental migration playbook
 
-This branch sets up the **back-end foundation**. The SPA still uses
-`localStorage` for state. Next steps (a follow-up PR):
+This PR sets up the **back-end foundation**. The SPA still uses
+`localStorage` for state. The pattern for migrating each feature:
 
-- **Wire the SPA to the API**: rewrite `src/lib/store.ts` so its
-  methods call `api.*` instead of mutating localStorage. The new
-  `src/lib/api.ts` already exposes the full surface. Each page would
-  add minor loading states.
+1. **Pick a page** (e.g. `/browse`).
+2. **Inside that page only**, replace `useStore()` reads with a
+   `useEffect` that calls `api.listArtists()`, store in local React
+   state. Add a loading skeleton + error state.
+3. **Replace mutations** with `api.*` calls. Each becomes async; show
+   a brief spinner on the action button while it runs.
+4. **Test signed in + signed out**. If the endpoint requires auth and
+   the user isn't signed in, the page should bounce to `/signin`.
+5. **Verify** by visiting both `/?api=on` (forced API mode) and
+   `/?api=off` (forced localStorage mode) — keep both wired during
+   migration so a regression doesn't break the site.
+
+Pages in order of payoff:
+
+| Order | Page | Endpoint | Risk |
+|---|---|---|---|
+| 1 | `/browse` | `api.listArtists` | Low (read-only) |
+| 2 | `/artists/:slug` | `api.artist(slug)` + `api.similar(slug)` | Low |
+| 3 | `/commission/:slug` | `api.createCommission` | Medium |
+| 4 | `/workspace/:id` | `api.commission(id)` + lifecycle calls | High (the big one) |
+| 5 | `/ledger` | `api.ledger()` | Low |
+| 6 | `/partnerships` + intake | `api.listIntakes` etc. | Medium |
+| 7 | `/journal` subscribe + `/apprenticeships` apply | `api.subscribeJournal` + `api.applyApprenticeship` | Low (already two pages) |
+| 8 | `/admin` | needs operator role + auth | Medium |
+
+Still deferred:
+
 - **Stripe Connect** for real artist payouts + escrow milestones.
   Stripe webhook handler scaffolded in `supabase/functions/` from the
   earlier work — port to a Worker route at `/api/stripe/webhook`.
