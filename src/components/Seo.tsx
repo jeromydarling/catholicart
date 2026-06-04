@@ -17,7 +17,12 @@ interface SeoProps {
   articlePublishedAt?: string;
 }
 
-const SITE = "https://arssacra.local";
+// Production site URL. Vite resolves VITE_SITE_URL at build time; falls
+// back to the workers.dev URL so generated <link rel="canonical"> and
+// og:url always point somewhere that resolves.
+const SITE =
+  (import.meta.env.VITE_SITE_URL as string | undefined) ??
+  "https://catholicart.jer-f84.workers.dev";
 const DEFAULT_OG = `${SITE}/og-default.png`;
 
 export function Seo({

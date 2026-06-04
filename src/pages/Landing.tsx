@@ -46,7 +46,7 @@ export default function Landing() {
           "@context": "https://schema.org",
           "@type": "Organization",
           name: "Ars Sacra",
-          url: "https://arssacra.local",
+          url: "https://catholicart.jer-f84.workers.dev",
           slogan: "Ad maiorem Dei gloriam, per pulchritudinem.",
           description:
             "A guild and marketplace for commissioning Catholic sacred art from pastor-endorsed artists.",

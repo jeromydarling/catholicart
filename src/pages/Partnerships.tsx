@@ -172,9 +172,9 @@ export default function Partnerships() {
           table within a week.
         </p>
         <Button asChild size="lg" className="mt-8">
-          <a href="mailto:partnerships@arssacra.local">
+          <a href="mailto:partnerships@arssacra.com">
             <Mail className="h-4 w-4 mr-2" />
-            partnerships@arssacra.local
+            partnerships@arssacra.com
           </a>
         </Button>
       </section>

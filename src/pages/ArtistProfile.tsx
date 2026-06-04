@@ -66,7 +66,7 @@ export default function ArtistProfile() {
           memberOf: {
             "@type": "Organization",
             name: "Ars Sacra",
-            url: "https://arssacra.local",
+            url: "https://catholicart.jer-f84.workers.dev",
           },
         }}
       />

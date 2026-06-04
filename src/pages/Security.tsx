@@ -130,13 +130,13 @@ export default function Security() {
           <h2 className="font-display text-2xl text-ink">Disclose responsibly.</h2>
           <p className="mt-2 font-serif text-base text-ink-muted leading-relaxed">
             Found a vulnerability? We want to know first. Write to{" "}
-            <strong className="text-ink">security@arssacra.local</strong> with
+            <strong className="text-ink">security@arssacra.com</strong> with
             steps to reproduce. We acknowledge within 48 hours and credit you
             in the disclosure log.
           </p>
           <Button asChild className="mt-4">
-            <a href="mailto:security@arssacra.local">
-              <Mail className="h-4 w-4 mr-2" /> security@arssacra.local
+            <a href="mailto:security@arssacra.com">
+              <Mail className="h-4 w-4 mr-2" /> security@arssacra.com
             </a>
           </Button>
         </div>
