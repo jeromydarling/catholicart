@@ -44,14 +44,15 @@ export async function loadConfig(): Promise<ClientConfig> {
         sentry_dsn: data.sentry_dsn || BUILD_TIME_FALLBACK.sentry_dsn,
         site_url: data.site_url || BUILD_TIME_FALLBACK.site_url,
       };
+      return cached;
     } catch {
-      // Offline / dev without Worker / endpoint missing → use whatever
-      // we have from the build.
-      cached = BUILD_TIME_FALLBACK;
+      // Offline / dev without Worker / transient 5xx. Return the build
+      // fallback for THIS call only — don't poison `cached`, so the
+      // next call retries.
+      return BUILD_TIME_FALLBACK;
     } finally {
       inflight = null;
     }
-    return cached!;
   })();
 
   return inflight;

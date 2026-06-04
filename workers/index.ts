@@ -16,7 +16,34 @@ import misc from './api/misc';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
-app.use('*', cors({ origin: (origin) => origin ?? '*', credentials: true }));
+// CORS allow-list. With `credentials: true`, reflecting any Origin is
+// CSRF-equivalent — we lock to known same-origin / future-custom-domain
+// hosts. Same-origin requests from the SPA carry no Origin header on
+// some paths; we allow those through.
+const ALLOWED_ORIGINS = new Set([
+  'https://catholicart.jer-f84.workers.dev',
+  'https://arssacra.com',
+  'https://www.arssacra.com',
+  // local dev
+  'http://localhost:5173',
+  'http://localhost:8787',
+]);
+app.use('*', cors({
+  origin: (origin) => (origin && ALLOWED_ORIGINS.has(origin) ? origin : ''),
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type'],
+  maxAge: 600,
+}));
+
+// Baseline security headers on every response.
+app.use('*', async (c, next) => {
+  await next();
+  c.header('X-Content-Type-Options', 'nosniff');
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+  c.header('X-Frame-Options', 'DENY');
+});
+
 app.use('*', withAuth());
 
 // API surface
@@ -53,6 +80,9 @@ app.route('/api', reference);              // /api/categories, /api/saints, etc.
 app.route('/api/intakes', intakes);
 app.route('/api/upload', upload);
 app.route('/api', misc);                    // /api/ledger, /api/preferences/*, /api/subscribe, /api/apprenticeships
+
+// Unmatched /api/* returns JSON 404 (not the SPA shell).
+app.all('/api/*', (c) => c.json({ ok: false, error: 'not found' }, 404));
 
 // Fallback: serve the SPA for anything that isn't an API or asset.
 app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));

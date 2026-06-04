@@ -4,7 +4,9 @@
 
 import type { Recipient, RenderedEmail, EmailCategory } from './email';
 
-const SITE = 'https://catholicart.workers.dev';
+// Each renderer takes the runtime `site` (Worker env.SITE_URL); no
+// hardcoded URL — keeps the workers.dev host (or future custom domain)
+// as the single source of truth.
 const CONTAINER = "background:#f5ebd7;padding:32px 16px;font-family:Georgia,'Times New Roman',serif;color:#3a1418;";
 const CARD = 'max-width:560px;margin:0 auto;background:#fdf7ea;border:1px solid rgba(58,20,24,0.1);border-radius:6px;overflow:hidden;';
 const PAD = 'padding:32px 36px;';
@@ -48,7 +50,11 @@ function renderLayout(opts: LayoutOpts): string {
   const cta = opts.cta
     ? `<p style="margin:28px 0 8px"><a href="${opts.cta.href}" style="${CTA}">${esc(opts.cta.label)}</a></p>`
     : '';
-  const lede = opts.lede ? `<p style="${LEDE}">${opts.lede}</p>` : '';
+  // Escape lede to prevent XSS via callers that interpolate untrusted
+  // values (e.g. artist names, patron names). Callers that need
+  // structural HTML in their body still get it via `opts.body` (which
+  // is intentionally raw — callers there must build clean HTML).
+  const lede = opts.lede ? `<p style="${LEDE}">${esc(opts.lede)}</p>` : '';
   const eyebrow = opts.eyebrow ? `<div style="${EYEBROW}">${esc(opts.eyebrow)}</div>` : '';
   const footerCategory = opts.footerCategory ? `<span>${esc(opts.footerCategory)}</span> · ` : '';
   const unsubLink = opts.unsubscribeUrl
@@ -115,14 +121,16 @@ export function quoteSentToPatron(
   c: CommissionLite,
   artistName: string,
 ): { recipients: Recipient[]; category: EmailCategory; rendered: RenderedEmail } {
-  const subject = `${artistName} sent a quote — ${fmtPrice(c.total_due_usd ?? 0)}`;
+  // Header injection defense: strip CR/LF, cap length.
+  const safeArtist = artistName.replace(/[\r\n]/g, ' ').slice(0, 120);
+  const subject = `${safeArtist} sent a quote — ${fmtPrice(c.total_due_usd ?? 0)}`;
   const preheader = 'Review the quote and fund the deposit to begin.';
   const html = renderLayout({
     site,
     preheader,
     eyebrow: 'Quote received',
     title: 'The artist has replied.',
-    lede: `${artistName} sent a quote for your commission. Read it, then fund the deposit to begin the work.`,
+    lede: `${safeArtist} sent a quote for your commission. Read it, then fund the deposit to begin the work.`,
     body:
       (c.artist_quote_note
         ? `<p style="font-family:Georgia,serif;font-style:italic;font-size:16px;line-height:1.6;color:#3a1418;margin:20px 0 8px;border-left:3px solid #a8893f;padding-left:14px">${esc(c.artist_quote_note)}</p>`

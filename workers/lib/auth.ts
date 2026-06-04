@@ -24,8 +24,19 @@ interface SessionPayload {
   exp: number;
 }
 
-function key(secret: string): Uint8Array {
+function keyOrFail(env: Env): Uint8Array {
+  const secret = env.AUTH_SECRET;
+  if (!secret || secret.length < 16) {
+    throw new Error('AUTH_SECRET missing or too short — refusing to sign or verify sessions');
+  }
   return new TextEncoder().encode(secret);
+}
+
+async function jwtRevKey(jwt: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(jwt));
+  return 's:' + Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 export async function issueMagicLink(env: Env, email: string): Promise<string> {
@@ -43,19 +54,28 @@ export async function consumeMagicLink(
   env: Env,
   token: string,
 ): Promise<{ user_id: string; email: string } | null> {
-  const row = await first<{
-    token: string;
-    email: string;
-    expires_at: string;
-    used_at: string | null;
-  }>(env.DB, `SELECT * FROM magic_links WHERE token = ?`, token);
-  if (!row) return null;
-  if (row.used_at) return null;
-  if (new Date(row.expires_at).getTime() < Date.now()) return null;
-
-  await env.DB.prepare(`UPDATE magic_links SET used_at = ? WHERE token = ?`)
-    .bind(nowIso(), token)
+  // Atomic consume: only one concurrent claim wins. Combines the
+  // expiry + used_at check into the UPDATE itself, so a race that
+  // reads the row and the marker simultaneously can't double-claim.
+  const now = nowIso();
+  const claim = await env.DB
+    .prepare(
+      `UPDATE magic_links
+         SET used_at = ?
+         WHERE token = ?
+           AND used_at IS NULL
+           AND expires_at > ?`,
+    )
+    .bind(now, token, now)
     .run();
+  if ((claim.meta?.changes ?? 0) !== 1) return null;
+
+  const row = await first<{ email: string }>(
+    env.DB,
+    `SELECT email FROM magic_links WHERE token = ?`,
+    token,
+  );
+  if (!row) return null;
 
   // Find or create user
   let user = await first<{ id: string; email: string }>(
@@ -87,7 +107,6 @@ export async function createSession(
   }>(env.DB, `SELECT id, email, role FROM users WHERE id = ?`, userId);
   if (!user) throw new Error('user not found');
 
-  const secret = env.AUTH_SECRET ?? 'insecure-dev-secret-set-AUTH_SECRET';
   const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_S;
   const jwt = await new SignJWT({
     email: user.email,
@@ -97,17 +116,19 @@ export async function createSession(
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(exp)
-    .sign(key(secret));
+    .sign(keyOrFail(env));
 
-  // Also record in KV so we can revoke server-side.
-  await env.SESSIONS.put(`s:${jwt}`, user.id, {
+  // Record in KV so we can revoke server-side. KV key is a hash of
+  // the JWT to stay under the 512-byte key limit regardless of how
+  // claims grow.
+  await env.SESSIONS.put(await jwtRevKey(jwt), user.id, {
     expirationTtl: SESSION_TTL_S,
   });
 
   setCookie(c, COOKIE, jwt, {
     httpOnly: true,
     secure: true,
-    sameSite: 'Lax',
+    sameSite: 'Strict',
     path: '/',
     maxAge: SESSION_TTL_S,
   });
@@ -120,13 +141,13 @@ export async function loadSession(
   const jwt = getCookie(c, COOKIE);
   if (!jwt) return null;
 
-  // Check KV first for revocation
-  const valid = await env.SESSIONS.get(`s:${jwt}`);
+  // Check KV first for revocation. Hash JWT to stay under KV key limit.
+  const revKey = await jwtRevKey(jwt);
+  const valid = await env.SESSIONS.get(revKey);
   if (!valid) return null;
 
   try {
-    const secret = env.AUTH_SECRET ?? 'insecure-dev-secret-set-AUTH_SECRET';
-    const { payload } = await jwtVerify(jwt, key(secret));
+    const { payload } = await jwtVerify(jwt, keyOrFail(env));
     const p = payload as unknown as SessionPayload;
     return {
       id: p.sub,
@@ -141,7 +162,7 @@ export async function loadSession(
 export async function clearSession(env: Env, c: Context): Promise<void> {
   const jwt = getCookie(c, COOKIE);
   if (jwt) {
-    await env.SESSIONS.delete(`s:${jwt}`);
+    await env.SESSIONS.delete(await jwtRevKey(jwt));
   }
   deleteCookie(c, COOKIE, { path: '/' });
 }

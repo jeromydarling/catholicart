@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { Env, AppVariables } from '../types';
 import { all, first, newId, nowIso, run } from '../lib/db';
+import { requireAuth, requireRole } from '../lib/auth';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -51,12 +52,19 @@ const CreateIntake = z.object({
   })).default([]),
 });
 
-app.post('/', async (c) => {
+// Intakes can be submitted by any authenticated user (institutional
+// contacts go through the normal magic-link sign-in first). Rate-
+// limited via the login flow's per-email cap; not separately limited
+// here.
+app.post('/', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const parsed = CreateIntake.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false, error: parsed.error.flatten() }, 400);
 
   const id = newId('ink');
   const d = parsed.data;
+  // Force contact_email to the session's email — prevents impersonation.
+  d.contact_email = u.email;
   await run(c.env.DB,
     `INSERT INTO intakes (
        id, kind, institution_name, diocese, contact_name, contact_email, contact_role,
@@ -88,7 +96,8 @@ const ProposalBody = z.object({
   pitch_body: z.string().min(1),
 });
 
-app.post('/:id/proposals', async (c) => {
+app.post('/:id/proposals', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const parsed = ProposalBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false, error: parsed.error.flatten() }, 400);
@@ -101,10 +110,15 @@ app.post('/:id/proposals', async (c) => {
     return c.json({ ok: false, error: 'intake not accepting proposals' }, 400);
   }
 
-  const artist = await first<{ id: string; portrait_from: string; portrait_to: string }>(
-    c.env.DB, `SELECT id, portrait_from, portrait_to FROM artists WHERE slug = ?`, parsed.data.artist_slug,
+  const artist = await first<{ id: string; user_id: string | null; portrait_from: string; portrait_to: string }>(
+    c.env.DB, `SELECT id, user_id, portrait_from, portrait_to FROM artists WHERE slug = ?`, parsed.data.artist_slug,
   );
   if (!artist) return c.json({ ok: false, error: 'artist not found' }, 404);
+  // Only the artist themselves (linked via artists.user_id) or an
+  // operator can submit a proposal on the artist's behalf.
+  if (u.role !== 'operator' && artist.user_id !== u.id) {
+    return c.json({ ok: false, error: 'forbidden' }, 403);
+  }
 
   const propId = newId('prp');
   await run(c.env.DB,
@@ -122,7 +136,7 @@ app.post('/:id/proposals', async (c) => {
 });
 
 const ApprovalUpdate = z.object({ status: z.enum(['approved', 'declined']), note: z.string().optional() });
-app.patch('/:id/approvals/:role', async (c) => {
+app.patch('/:id/approvals/:role', requireRole('operator'), async (c) => {
   const id = c.req.param('id');
   const role = c.req.param('role');
   const parsed = ApprovalUpdate.safeParse(await c.req.json().catch(() => null));
@@ -134,9 +148,18 @@ app.patch('/:id/approvals/:role', async (c) => {
   return c.json({ ok: true });
 });
 
-app.post('/:id/award/:proposalId', async (c) => {
+app.post('/:id/award/:proposalId', requireRole('operator'), async (c) => {
   const id = c.req.param('id');
   const propId = c.req.param('proposalId');
+  // Verify the proposal actually belongs to this intake to avoid
+  // declaring a foreign proposal the winner (dangling pointer).
+  const p = await first<{ id: string }>(
+    c.env.DB,
+    `SELECT id FROM proposals WHERE id = ? AND intake_id = ?`,
+    propId, id,
+  );
+  if (!p) return c.json({ ok: false, error: 'proposal not in this intake' }, 400);
+
   await run(c.env.DB,
     `UPDATE proposals SET status = CASE WHEN id = ? THEN 'awarded' ELSE 'declined' END, decided_at = ? WHERE intake_id = ?`,
     propId, nowIso(), id,

@@ -3,12 +3,28 @@
 
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { jwtVerify } from 'jose';
 import type { Env, AppVariables } from '../types';
 import { all, first, newId, nowIso, run } from '../lib/db';
 import { sendEmail } from '../lib/email';
 import { welcomeSubscriber } from '../lib/email-templates';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
+
+// HMAC-signed token gating preference read/write so anonymous callers
+// can't enumerate or trample anyone's subscription state. Tokens are
+// embedded into unsubscribe URLs at email-send time.
+async function verifyPrefToken(env: Env, tok: string): Promise<string | null> {
+  try {
+    const s = env.AUTH_SECRET;
+    if (!s || s.length < 16) return null;
+    const { payload } = await jwtVerify(tok, new TextEncoder().encode(s));
+    if ((payload as { sc?: string }).sc !== 'prefs') return null;
+    return typeof payload.sub === 'string' ? payload.sub : null;
+  } catch {
+    return null;
+  }
+}
 
 // ─── GET /api/ledger — public stats ─────────────────────────────────
 app.get('/ledger', async (c) => {
@@ -51,9 +67,18 @@ app.get('/ledger', async (c) => {
   });
 });
 
-// ─── Email preferences (token-less; signed link semantics deferred) ─
+// ─── Email preferences (HMAC token in unsubscribe URL) ─────────────
+// Read and write both require a signed token whose `sub` matches the
+// target email. The token is issued at email-send time as `?t=<jwt>`.
 app.get('/preferences/:email', async (c) => {
   const email = decodeURIComponent(c.req.param('email')).toLowerCase();
+  const tok = c.req.query('t') ?? '';
+  const sub = await verifyPrefToken(c.env, tok);
+  // Sub matches email OR authenticated session matches email.
+  const sessionMatch = c.var.user?.email?.toLowerCase() === email;
+  if (sub !== email && !sessionMatch) {
+    return c.json({ ok: false, error: 'unauthorized' }, 401);
+  }
   const row = await first(c.env.DB,
     `SELECT * FROM email_preferences WHERE email = ?`, email);
   if (row) return c.json({ preferences: row });
@@ -75,11 +100,18 @@ const PrefsBody = z.object({
   milestone: z.boolean(),
   digest: z.boolean(),
   marketing: z.boolean(),
+  token: z.string().optional(),
 });
 app.put('/preferences', async (c) => {
   const parsed = PrefsBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false }, 400);
   const d = parsed.data;
+  const targetEmail = d.email.toLowerCase();
+  const sub = d.token ? await verifyPrefToken(c.env, d.token) : null;
+  const sessionMatch = c.var.user?.email?.toLowerCase() === targetEmail;
+  if (sub !== targetEmail && !sessionMatch) {
+    return c.json({ ok: false, error: 'unauthorized' }, 401);
+  }
   await run(c.env.DB,
     `INSERT INTO email_preferences (email, unsubscribe_all, milestone, digest, marketing, updated_at)
      VALUES (?, ?, ?, ?, ?, ?)
@@ -89,7 +121,7 @@ app.put('/preferences', async (c) => {
        digest = excluded.digest,
        marketing = excluded.marketing,
        updated_at = excluded.updated_at`,
-    d.email.toLowerCase(), d.unsubscribe_all ? 1 : 0, d.milestone ? 1 : 0,
+    targetEmail, d.unsubscribe_all ? 1 : 0, d.milestone ? 1 : 0,
     d.digest ? 1 : 0, d.marketing ? 1 : 0, nowIso(),
   );
   return c.json({ ok: true });

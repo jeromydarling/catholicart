@@ -1,5 +1,15 @@
 // Commission lifecycle: create, quote, fund, release, mark midpoint /
 // final, post WIP, message, record blessing, cancel, dispute, review.
+//
+// SECURITY MODEL
+// Every state-changing endpoint requires an authenticated session.
+// Role checks: `loadParticipantRole` returns 'patron' | 'artist' |
+// 'operator' | null. patron-only actions (fund, release, blessing,
+// cancel-by-patron, review) reject for any other role; artist-only
+// actions (quote, midpoint, final, wip) reject for any other role.
+// 'operator' can do anything (admin override). Stage transitions are
+// guarded inside the UPDATE itself (`WHERE stage = ?`) so concurrent
+// requests can't both win.
 
 import { Hono } from 'hono';
 import { z } from 'zod';
@@ -12,24 +22,47 @@ import { quoteSentToPatron } from '../lib/email-templates';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
+type ParticipantRole = 'patron' | 'artist' | 'operator';
+
+async function loadParticipantRole(
+  env: Env,
+  commissionId: string,
+  user: { id: string; email: string; role: string },
+): Promise<{ role: ParticipantRole | null; commission: { id: string; stage: string; artist_id: string; patron_id: string | null; patron_email: string } | null }> {
+  const cm = await first<{ id: string; stage: string; artist_id: string; patron_id: string | null; patron_email: string }>(
+    env.DB,
+    `SELECT id, stage, artist_id, patron_id, patron_email FROM commissions WHERE id = ?`,
+    commissionId,
+  );
+  if (!cm) return { role: null, commission: null };
+  if (user.role === 'operator') return { role: 'operator', commission: cm };
+  if (cm.patron_id === user.id || cm.patron_email.toLowerCase() === user.email.toLowerCase()) {
+    return { role: 'patron', commission: cm };
+  }
+  const artist = await first<{ user_id: string | null }>(env.DB, `SELECT user_id FROM artists WHERE id = ?`, cm.artist_id);
+  if (artist?.user_id && artist.user_id === user.id) return { role: 'artist', commission: cm };
+  return { role: null, commission: cm };
+}
+
 const CreateBody = z.object({
   artist_slug: z.string(),
   patron_name: z.string().min(1),
-  patron_email: z.string().email(),
   setting: z.string().optional(),
-  scope: z.string().min(1),
+  scope: z.string().min(1).max(10_000),
   category_slug: z.string().optional(),
-  preferred_deadline: z.string().optional(),
+  preferred_deadline: z.string().regex(/^\d{4}-\d{2}-\d{2}/).optional(),
   feast_slug: z.string().optional(),
   feast_name: z.string().optional(),
-  feast_date: z.string().optional(),
+  feast_date: z.string().regex(/^\d{4}-\d{2}-\d{2}/).optional(),
   parish_or_chapel: z.string().optional(),
   diocese: z.string().optional(),
   ip_terms: z.enum(['patron-exclusive', 'shared-prints', 'artist-retains', 'shared-custom']).default('patron-exclusive'),
 });
 
-// POST /api/commissions  — patron creates a new commission request.
-app.post('/', async (c) => {
+// POST /api/commissions  — authenticated patron creates a new commission request.
+// patron_email is always derived from the session; never accepted from the body.
+app.post('/', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const body = await c.req.json().catch(() => null);
   const parsed = CreateBody.safeParse(body);
   if (!parsed.success) return c.json({ ok: false, error: parsed.error.flatten() }, 400);
@@ -50,9 +83,9 @@ app.post('/', async (c) => {
      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scoping', ?)`,
     id,
     artist.id,
-    c.var.user?.id ?? null,
+    u.id,
     parsed.data.patron_name,
-    parsed.data.patron_email,
+    u.email,
     parsed.data.category_slug ?? null,
     parsed.data.setting ?? null,
     parsed.data.scope,
@@ -66,7 +99,6 @@ app.post('/', async (c) => {
     PLATFORM_FEE_PCT,
   );
 
-  // System + patron message
   await run(
     c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
@@ -89,43 +121,43 @@ app.get('/', requireAuth(), async (c) => {
     ? `SELECT * FROM commissions ORDER BY created_at DESC LIMIT 200`
     : `SELECT c.* FROM commissions c
        LEFT JOIN artists a ON a.id = c.artist_id
-       WHERE c.patron_id = ? OR a.user_id = ?
+       WHERE c.patron_id = ? OR c.patron_email = ? OR a.user_id = ?
        ORDER BY c.created_at DESC LIMIT 200`;
   const rows = u.role === 'operator'
     ? await all(c.env.DB, sql)
-    : await all(c.env.DB, sql, u.id, u.id);
+    : await all(c.env.DB, sql, u.id, u.email.toLowerCase(), u.id);
   return c.json({ commissions: rows });
 });
 
-// GET /api/commissions/:id — workspace details.
-app.get('/:id', async (c) => {
-  const c2 = await loadCommission(c.env.DB, c.req.param('id'));
-  if (!c2) return c.json({ ok: false, error: 'not found' }, 404);
-  return c.json({ commission: c2 });
+// GET /api/commissions/:id — participant or operator only.
+app.get('/:id', requireAuth(), async (c) => {
+  const u = c.var.user!;
+  const { role, commission } = await loadParticipantRole(c.env, c.req.param('id'), u);
+  if (!commission) return c.json({ ok: false, error: 'not found' }, 404);
+  if (!role) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const full = await loadCommission(c.env.DB, commission.id);
+  return c.json({ commission: full });
 });
 
-// POST /api/commissions/:id/quote — artist sends a quote.
+// POST /api/commissions/:id/quote — artist (or operator) sends a quote.
 const QuoteBody = z.object({
-  artist_total_usd: z.number().int().positive(),
-  note: z.string().min(1),
+  artist_total_usd: z.number().int().min(100).max(1_000_000),
+  note: z.string().min(1).max(10_000),
 });
-app.post('/:id/quote', async (c) => {
+app.post('/:id/quote', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
-  const body = await c.req.json().catch(() => null);
-  const parsed = QuoteBody.safeParse(body);
+  const parsed = QuoteBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false, error: parsed.error.flatten() }, 400);
 
-  const cm = await first<{
-    id: string; stage: string; patron_name: string; patron_email: string;
-    artist_id: string;
-  }>(c.env.DB, `SELECT id, stage, patron_name, patron_email, artist_id FROM commissions WHERE id = ?`, id);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
   if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
-  if (cm.stage !== 'scoping') return c.json({ ok: false, error: 'wrong stage' }, 400);
+  if (role !== 'artist' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
 
   const p = computePricing(parsed.data.artist_total_usd);
 
-  await run(
-    c.env.DB,
+  // Atomic stage guard: only transitions from 'scoping' succeed.
+  const advance = await c.env.DB.prepare(
     `UPDATE commissions SET
        stage = 'awaiting-deposit',
        artist_quote_note = ?,
@@ -133,9 +165,11 @@ app.post('/:id/quote', async (c) => {
        platform_fee_usd = ?,
        total_due_usd = ?,
        updated_at = ?
-     WHERE id = ?`,
-    parsed.data.note, p.artistTotalUsd, p.platformFeeUsd, p.totalDueUsd, nowIso(), id,
-  );
+     WHERE id = ? AND stage = 'scoping'`,
+  ).bind(parsed.data.note, p.artistTotalUsd, p.platformFeeUsd, p.totalDueUsd, nowIso(), id).run();
+  if ((advance.meta?.changes ?? 0) !== 1) {
+    return c.json({ ok: false, error: 'wrong stage' }, 409);
+  }
 
   for (const m of p.escrow) {
     await run(
@@ -147,15 +181,14 @@ app.post('/:id/quote', async (c) => {
   }
 
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', 'Artist', ?)`,
-    newId('msg'), id, parsed.data.note,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', ?, ?)`,
+    newId('msg'), id, u.email.split('@')[0], parsed.data.note,
   );
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
     newId('msg'), id, `Artist quoted $${p.artistTotalUsd.toLocaleString()}. Three milestones funded as work progresses.`,
   );
 
-  // Email patron
   const artist = await first<{ name: string }>(c.env.DB, `SELECT name FROM artists WHERE id = ?`, cm.artist_id);
   const cmFull = await first<any>(c.env.DB, `SELECT * FROM commissions WHERE id = ?`, id);
   if (cmFull) {
@@ -173,31 +206,39 @@ app.post('/:id/quote', async (c) => {
     await sendEmail(c.env, { kind: 'commission.quoted', payload: { id }, ...event });
   }
 
-  const updated = await loadCommission(c.env.DB, id);
-  return c.json({ commission: updated });
+  return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
-// POST /api/commissions/:id/escrow/:stage/fund — patron funds a milestone.
-app.post('/:id/escrow/:stage/fund', async (c) => {
+// POST /api/commissions/:id/escrow/:stage/fund — patron (or operator) funds a milestone.
+app.post('/:id/escrow/:stage/fund', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const stage = c.req.param('stage');
   if (!['deposit', 'midpoint', 'final'].includes(stage)) {
     return c.json({ ok: false, error: 'bad stage' }, 400);
   }
-  const milestone = await first<{ id: string; status: string }>(
-    c.env.DB, `SELECT id, status FROM commission_escrow WHERE commission_id = ? AND stage = ?`, id, stage,
-  );
-  if (!milestone) return c.json({ ok: false, error: 'milestone not found' }, 404);
-  if (milestone.status !== 'unfunded') return c.json({ ok: false, error: 'already funded' }, 400);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'patron' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
 
-  await run(c.env.DB,
-    `UPDATE commission_escrow SET status = 'held', funded_at = ? WHERE id = ?`,
-    nowIso(), milestone.id,
-  );
+  // Atomic fund: only one concurrent caller wins.
+  const claim = await c.env.DB
+    .prepare(
+      `UPDATE commission_escrow SET status = 'held', funded_at = ?
+         WHERE commission_id = ? AND stage = ? AND status = 'unfunded'`,
+    )
+    .bind(nowIso(), id, stage)
+    .run();
+  if ((claim.meta?.changes ?? 0) !== 1) {
+    return c.json({ ok: false, error: 'milestone not unfunded' }, 409);
+  }
 
-  // Stage transition: deposit funded → in-progress
   if (stage === 'deposit') {
-    await run(c.env.DB, `UPDATE commissions SET stage = 'in-progress', updated_at = ? WHERE id = ?`, nowIso(), id);
+    await run(c.env.DB,
+      `UPDATE commissions SET stage = 'in-progress', updated_at = ?
+         WHERE id = ? AND stage = 'awaiting-deposit'`,
+      nowIso(), id,
+    );
   }
 
   await run(c.env.DB,
@@ -208,30 +249,29 @@ app.post('/:id/escrow/:stage/fund', async (c) => {
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
-// POST /api/commissions/:id/escrow/:stage/release — patron releases.
-app.post('/:id/escrow/:stage/release', async (c) => {
+// POST /api/commissions/:id/escrow/:stage/release — patron (or operator) releases.
+// Release requires the milestone to be currently held — no auto-fund.
+app.post('/:id/escrow/:stage/release', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const stage = c.req.param('stage');
   if (!['deposit', 'midpoint', 'final'].includes(stage)) {
     return c.json({ ok: false, error: 'bad stage' }, 400);
   }
-  const milestone = await first<{ id: string; status: string; amount_usd: number }>(
-    c.env.DB, `SELECT id, status, amount_usd FROM commission_escrow WHERE commission_id = ? AND stage = ?`, id, stage,
-  );
-  if (!milestone) return c.json({ ok: false, error: 'milestone not found' }, 404);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'patron' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
 
-  // Auto-fund if not yet (so patron can release midpoint without a separate fund step)
-  if (milestone.status === 'unfunded') {
-    await run(c.env.DB,
-      `UPDATE commission_escrow SET status = 'held', funded_at = ? WHERE id = ?`,
-      nowIso(), milestone.id,
-    );
+  const claim = await c.env.DB
+    .prepare(
+      `UPDATE commission_escrow SET status = 'released', released_at = ?
+         WHERE commission_id = ? AND stage = ? AND status = 'held'`,
+    )
+    .bind(nowIso(), id, stage)
+    .run();
+  if ((claim.meta?.changes ?? 0) !== 1) {
+    return c.json({ ok: false, error: 'milestone not held' }, 409);
   }
-
-  await run(c.env.DB,
-    `UPDATE commission_escrow SET status = 'released', released_at = ? WHERE id = ?`,
-    nowIso(), milestone.id,
-  );
 
   let nextStage: string | null = null;
   let completed: string | null = null;
@@ -247,11 +287,10 @@ app.post('/:id/escrow/:stage/release', async (c) => {
     );
   }
 
-  // Issue certificate on final release
   if (stage === 'final') {
-    const cm = await first<{ scope: string }>(c.env.DB, `SELECT scope FROM commissions WHERE id = ?`, id);
+    const cmRow = await first<{ scope: string }>(c.env.DB, `SELECT scope FROM commissions WHERE id = ?`, id);
     const serial = `AS-${new Date().getFullYear()}-${id.slice(-6).toUpperCase()}`;
-    const title = (cm?.scope ?? '').split(/\n/)[0].slice(0, 80) || 'Untitled';
+    const title = (cmRow?.scope ?? '').split(/\n/)[0].slice(0, 80) || 'Untitled';
     await run(c.env.DB,
       `UPDATE commissions SET certificate_issued_at = ?, certificate_serial = ?, certificate_title = ? WHERE id = ?`,
       nowIso(), serial, title, id,
@@ -268,16 +307,32 @@ app.post('/:id/escrow/:stage/release', async (c) => {
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
+const NoteBody = z.object({ body: z.string().min(1).max(10_000) });
+
 // POST /api/commissions/:id/midpoint — artist marks midpoint.
-const NoteBody = z.object({ body: z.string().min(1) });
-app.post('/:id/midpoint', async (c) => {
+app.post('/:id/midpoint', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const parsed = NoteBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false }, 400);
-  await run(c.env.DB, `UPDATE commissions SET stage = 'midpoint-review', updated_at = ? WHERE id = ?`, nowIso(), id);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'artist' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
+
+  const advance = await c.env.DB
+    .prepare(
+      `UPDATE commissions SET stage = 'midpoint-review', updated_at = ?
+         WHERE id = ? AND stage = 'in-progress'`,
+    )
+    .bind(nowIso(), id)
+    .run();
+  if ((advance.meta?.changes ?? 0) !== 1) {
+    return c.json({ ok: false, error: 'wrong stage' }, 409);
+  }
+
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', 'Artist', ?)`,
-    newId('msg'), id, parsed.data.body,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', ?, ?)`,
+    newId('msg'), id, u.email.split('@')[0], parsed.data.body,
   );
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
@@ -287,14 +342,29 @@ app.post('/:id/midpoint', async (c) => {
 });
 
 // POST /api/commissions/:id/final — artist marks final.
-app.post('/:id/final', async (c) => {
+app.post('/:id/final', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const parsed = NoteBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false }, 400);
-  await run(c.env.DB, `UPDATE commissions SET stage = 'final-review', updated_at = ? WHERE id = ?`, nowIso(), id);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'artist' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
+
+  const advance = await c.env.DB
+    .prepare(
+      `UPDATE commissions SET stage = 'final-review', updated_at = ?
+         WHERE id = ? AND stage IN ('in-progress','midpoint-review')`,
+    )
+    .bind(nowIso(), id)
+    .run();
+  if ((advance.meta?.changes ?? 0) !== 1) {
+    return c.json({ ok: false, error: 'wrong stage' }, 409);
+  }
+
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', 'Artist', ?)`,
-    newId('msg'), id, parsed.data.body,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', ?, ?)`,
+    newId('msg'), id, u.email.split('@')[0], parsed.data.body,
   );
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
@@ -303,75 +373,120 @@ app.post('/:id/final', async (c) => {
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
-// POST /api/commissions/:id/messages — append a message.
+// POST /api/commissions/:id/messages — author derived from session, never trusted from body.
 const MsgBody = z.object({
-  author_role: z.enum(['patron', 'artist']),
-  author_name: z.string(),
-  body: z.string().min(1),
+  body: z.string().min(1).max(10_000),
 });
-app.post('/:id/messages', async (c) => {
+app.post('/:id/messages', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const parsed = MsgBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false }, 400);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role === null) return c.json({ ok: false, error: 'forbidden' }, 403);
+
+  const authorRole = role === 'operator' ? 'system' : role;
+  const authorName = role === 'operator' ? 'Ars Sacra' : u.email.split('@')[0];
+
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, ?, ?, ?)`,
-    newId('msg'), id, parsed.data.author_role, parsed.data.author_name, parsed.data.body,
+    newId('msg'), id, authorRole, authorName, parsed.data.body,
   );
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
 // POST /api/commissions/:id/wip — artist posts a WIP update.
 const WipBody = z.object({
-  caption: z.string().min(1),
-  palette_from: z.string().optional(),
-  palette_to: z.string().optional(),
-  pattern: z.string().optional(),
-  image_url: z.string().optional(),
+  caption: z.string().min(1).max(2000),
+  palette_from: z.string().max(16).optional(),
+  palette_to: z.string().max(16).optional(),
+  pattern: z.string().max(64).optional(),
+  image_url: z.string().max(2000).optional(),
 });
-app.post('/:id/wip', async (c) => {
+app.post('/:id/wip', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const parsed = WipBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false }, 400);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'artist' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
+
   await run(c.env.DB,
     `INSERT INTO commission_wip (id, commission_id, caption, image_url, palette_from, palette_to, pattern) VALUES (?, ?, ?, ?, ?, ?, ?)`,
     newId('wip'), id, parsed.data.caption, parsed.data.image_url ?? null,
     parsed.data.palette_from ?? null, parsed.data.palette_to ?? null, parsed.data.pattern ?? null,
   );
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', 'Artist', ?)`,
-    newId('msg'), id, `New studio update: ${parsed.data.caption}`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'artist', ?, ?)`,
+    newId('msg'), id, u.email.split('@')[0], `New studio update: ${parsed.data.caption}`,
   );
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
-// POST /api/commissions/:id/blessing
+// POST /api/commissions/:id/blessing — patron (or operator) records the blessing.
 const BlessingBody = z.object({
-  recorded_by: z.string().min(1),
-  parish_or_chapel: z.string().optional(),
-  note: z.string().optional(),
+  recorded_by: z.string().min(1).max(200),
+  parish_or_chapel: z.string().max(200).optional(),
+  note: z.string().max(2000).optional(),
 });
-app.post('/:id/blessing', async (c) => {
+app.post('/:id/blessing', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const parsed = BlessingBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false }, 400);
-  await run(c.env.DB,
-    `UPDATE commissions SET stage = 'blessed', blessing_recorded_at = ?, blessing_recorded_by = ?, blessing_parish_or_chapel = ?, blessing_note = ? WHERE id = ?`,
-    nowIso(), parsed.data.recorded_by, parsed.data.parish_or_chapel ?? null, parsed.data.note ?? null, id,
-  );
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'patron' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
+
+  const advance = await c.env.DB
+    .prepare(
+      `UPDATE commissions SET stage = 'blessed',
+         blessing_recorded_at = ?,
+         blessing_recorded_by = ?,
+         blessing_parish_or_chapel = ?,
+         blessing_note = ?
+         WHERE id = ? AND stage = 'delivered'`,
+    )
+    .bind(nowIso(), parsed.data.recorded_by, parsed.data.parish_or_chapel ?? null, parsed.data.note ?? null, id)
+    .run();
+  if ((advance.meta?.changes ?? 0) !== 1) {
+    return c.json({ ok: false, error: 'commission not yet delivered' }, 409);
+  }
+
+  // Sanitize for the system message body
+  const recBy = parsed.data.recorded_by.replace(/[\r\n]/g, ' ');
+  const parish = parsed.data.parish_or_chapel?.replace(/[\r\n]/g, ' ');
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
-    newId('msg'), id, `Blessing recorded by ${parsed.data.recorded_by}${parsed.data.parish_or_chapel ? ` at ${parsed.data.parish_or_chapel}` : ''}.`,
+    newId('msg'), id, `Blessing recorded by ${recBy}${parish ? ` at ${parish}` : ''}.`,
   );
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
-// POST /api/commissions/:id/cancel
-app.post('/:id/cancel', async (c) => {
+// POST /api/commissions/:id/cancel — patron, artist, or operator can cancel
+// while still in flight. Cannot cancel a delivered/blessed/already-cancelled
+// commission. Idempotent via stage guard.
+app.post('/:id/cancel', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
-  await run(c.env.DB,
-    `UPDATE commissions SET stage = 'cancelled', cancelled_at = ? WHERE id = ?`,
-    nowIso(), id,
-  );
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role === null) return c.json({ ok: false, error: 'forbidden' }, 403);
+
+  const advance = await c.env.DB
+    .prepare(
+      `UPDATE commissions SET stage = 'cancelled', cancelled_at = ?
+         WHERE id = ?
+           AND stage IN ('scoping','awaiting-deposit','in-progress','midpoint-review','final-review')`,
+    )
+    .bind(nowIso(), id)
+    .run();
+  if ((advance.meta?.changes ?? 0) !== 1) {
+    return c.json({ ok: false, error: 'cannot cancel from this stage' }, 409);
+  }
+
   await run(c.env.DB,
     `UPDATE commission_escrow SET status = 'refunded' WHERE commission_id = ? AND status = 'held'`,
     id,
@@ -383,42 +498,60 @@ app.post('/:id/cancel', async (c) => {
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
-// POST /api/commissions/:id/review
+// POST /api/commissions/:id/review — patron only.
 const ReviewBody = z.object({
   rating: z.number().int().min(1).max(5),
-  body: z.string().min(1),
+  body: z.string().min(1).max(10_000),
 });
-app.post('/:id/review', async (c) => {
+app.post('/:id/review', requireAuth(), async (c) => {
+  const u = c.var.user!;
   const id = c.req.param('id');
   const parsed = ReviewBody.safeParse(await c.req.json().catch(() => null));
   if (!parsed.success) return c.json({ ok: false }, 400);
 
-  const cm = await first<{ artist_id: string; patron_name: string; stage: string }>(
-    c.env.DB, `SELECT artist_id, patron_name, stage FROM commissions WHERE id = ?`, id,
-  );
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
   if (!cm) return c.json({ ok: false }, 404);
+  if (role !== 'patron' && role !== 'operator') return c.json({ ok: false, error: 'forbidden' }, 403);
   if (cm.stage !== 'delivered' && cm.stage !== 'blessed') {
     return c.json({ ok: false, error: 'commission not delivered yet' }, 400);
   }
-  const existing = await first(c.env.DB, `SELECT id FROM reviews WHERE commission_id = ?`, id);
-  if (existing) return c.json({ ok: false, error: 'already reviewed' }, 400);
+  // Full row needed for patron_name (we only loaded the participant-cm columns).
+  const cmFull = await first<{ patron_name: string }>(c.env.DB, `SELECT patron_name FROM commissions WHERE id = ?`, id);
+  if (!cmFull) return c.json({ ok: false }, 404);
 
-  await run(c.env.DB,
-    `INSERT INTO reviews (id, commission_id, artist_id, patron_name, rating, body) VALUES (?, ?, ?, ?, ?, ?)`,
-    newId('rev'), id, cm.artist_id, cm.patron_name, parsed.data.rating, parsed.data.body,
-  );
+  // UNIQUE constraint on reviews.commission_id makes the insert itself
+  // race-safe; we don't pre-check.
+  try {
+    await run(c.env.DB,
+      `INSERT INTO reviews (id, commission_id, artist_id, patron_name, rating, body) VALUES (?, ?, ?, ?, ?, ?)`,
+      newId('rev'), id, cm.artist_id, cmFull.patron_name, parsed.data.rating, parsed.data.body,
+    );
+  } catch (e) {
+    // Likely a UNIQUE violation — already reviewed.
+    return c.json({ ok: false, error: 'already reviewed' }, 409);
+  }
   return c.json({ commission: await loadCommission(c.env.DB, id) });
 });
 
 // ── helpers ──────────────────────────────────────────────────────────
+// loadCommission uses db.batch to parallelize the 4 follow-up queries
+// (commission, escrow, messages, wip) instead of running them serially.
 async function loadCommission(db: D1Database, id: string) {
-  const cm = await first<any>(db, `SELECT * FROM commissions WHERE id = ?`, id);
+  const [cmRes, escrowRes, msgsRes, wipRes] = await db.batch([
+    db.prepare(`SELECT * FROM commissions WHERE id = ?`).bind(id),
+    db.prepare(`SELECT * FROM commission_escrow WHERE commission_id = ? ORDER BY
+      CASE stage WHEN 'deposit' THEN 1 WHEN 'midpoint' THEN 2 WHEN 'final' THEN 3 END`).bind(id),
+    db.prepare(`SELECT * FROM commission_messages WHERE commission_id = ? ORDER BY created_at`).bind(id),
+    db.prepare(`SELECT * FROM commission_wip WHERE commission_id = ? ORDER BY posted_at`).bind(id),
+  ]);
+  const cm = (cmRes.results?.[0] as any) ?? null;
   if (!cm) return null;
-  const escrow = await all(db, `SELECT * FROM commission_escrow WHERE commission_id = ? ORDER BY
-    CASE stage WHEN 'deposit' THEN 1 WHEN 'midpoint' THEN 2 WHEN 'final' THEN 3 END`, id);
-  const messages = await all(db, `SELECT * FROM commission_messages WHERE commission_id = ? ORDER BY created_at`, id);
-  const wip = await all(db, `SELECT * FROM commission_wip WHERE commission_id = ? ORDER BY posted_at`, id);
-  return { ...cm, escrow, messages, wip };
+  return {
+    ...cm,
+    escrow: escrowRes.results ?? [],
+    messages: msgsRes.results ?? [],
+    wip: wipRes.results ?? [],
+  };
 }
 
 export default app;

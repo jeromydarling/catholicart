@@ -44,10 +44,22 @@ app.get('/', async (c) => {
   let join = '';
 
   if (q) {
-    // FTS5 against artists_fts. Returns rowid back into the join.
-    join += ' JOIN artists_fts ON artists.rowid = artists_fts.rowid';
-    where.push(`artists_fts MATCH ?`);
-    binds.push(q);
+    // FTS5 has its own query language (column:value, AND/OR, NEAR(),
+    // quoted phrases). Untrusted input there 500s the request or lets
+    // an attacker search hidden columns. Strip operators and wrap
+    // each token as a quoted phrase.
+    const safe = q
+      .replace(/["'()*:^]/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 8)
+      .map((t) => `"${t.replace(/"/g, '""')}"`)
+      .join(' ');
+    if (safe) {
+      join += ' JOIN artists_fts ON artists.rowid = artists_fts.rowid';
+      where.push(`artists_fts MATCH ?`);
+      binds.push(safe);
+    }
   }
   if (category) {
     join += ` JOIN artist_categories ac ON ac.artist_id = artists.id AND ac.category_slug = ?`;

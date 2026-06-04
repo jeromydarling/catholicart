@@ -15,6 +15,12 @@ const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 const LoginBody = z.object({ email: z.string().email() });
 
+// Rate limits — per-IP and per-email windows. Stored in KV CACHE so
+// limits span the global edge network.
+const RL_WINDOW_S = 60 * 60;          // 1 hour
+const RL_MAX_PER_IP = 10;             // 10 login requests / hr / IP
+const RL_MAX_PER_EMAIL = 3;           // 3 magic-links / hr / address
+
 app.post('/login', async (c) => {
   const body = await c.req.json().catch(() => null);
   const parsed = LoginBody.safeParse(body);
@@ -22,8 +28,26 @@ app.post('/login', async (c) => {
     return c.json({ ok: false, error: 'invalid email' }, 400);
   }
   const email = parsed.data.email.toLowerCase();
-  const link = await issueMagicLink(c.env, email);
+  const ip = c.req.header('cf-connecting-ip') ?? 'unknown';
 
+  const ipKey = `rl:login:ip:${ip}`;
+  const emailKey = `rl:login:em:${email}`;
+  const [ipCt, emCt] = await Promise.all([
+    c.env.CACHE.get(ipKey),
+    c.env.CACHE.get(emailKey),
+  ]);
+  // Quietly succeed when over the limit — don't leak rate-limit state
+  // to scrapers, and don't deny the user a way to retry later. They
+  // just won't get more mail this hour.
+  if (Number(ipCt ?? 0) >= RL_MAX_PER_IP || Number(emCt ?? 0) >= RL_MAX_PER_EMAIL) {
+    return c.json({ ok: true, message: 'Check your inbox for a sign-in link.' });
+  }
+  await Promise.all([
+    c.env.CACHE.put(ipKey, String(Number(ipCt ?? 0) + 1), { expirationTtl: RL_WINDOW_S }),
+    c.env.CACHE.put(emailKey, String(Number(emCt ?? 0) + 1), { expirationTtl: RL_WINDOW_S }),
+  ]);
+
+  const link = await issueMagicLink(c.env, email);
   const event = magicLinkToVerifier(c.env.SITE_URL, { email }, link, false);
   await sendEmail(c.env, { kind: 'auth.magic_link', payload: { email }, ...event });
 
@@ -33,12 +57,15 @@ app.post('/login', async (c) => {
 app.get('/verify', async (c) => {
   const token = c.req.query('token');
   if (!token) return c.json({ ok: false, error: 'missing token' }, 400);
-  const result = await consumeMagicLink(c.env, token);
-  if (!result) {
-    return c.redirect('/?auth=expired');
+  try {
+    const result = await consumeMagicLink(c.env, token);
+    if (!result) return c.redirect('/?auth=expired');
+    await createSession(c.env, c, result.user_id);
+    return c.redirect('/dashboard?auth=ok');
+  } catch {
+    // AUTH_SECRET missing or DB hiccup. Don't burn a fresh link.
+    return c.redirect('/?auth=failed');
   }
-  await createSession(c.env, c, result.user_id);
-  return c.redirect('/dashboard?auth=ok');
 });
 
 app.post('/logout', requireAuth(), async (c) => {
