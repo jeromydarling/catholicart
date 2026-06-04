@@ -8,6 +8,7 @@ import Workspace from "./pages/Workspace";
 import Connect from "./pages/Connect";
 import ArtistSignup from "./pages/ArtistSignup";
 import Dashboard from "./pages/Dashboard";
+import SignIn from "./pages/SignIn";
 import Outbox from "./pages/Outbox";
 import Preferences from "./pages/Preferences";
 import Compare from "./pages/Compare";
@@ -52,6 +53,7 @@ export default function App() {
       />
       <Route path="/signup/artist" element={<ArtistSignup />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/signin" element={<SignIn />} />
       <Route path="/outbox" element={<Outbox />} />
       <Route path="/preferences" element={<Preferences />} />
       <Route path="/compare" element={<Compare />} />
