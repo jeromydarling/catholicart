@@ -32,7 +32,7 @@ After merging PR #2:
 4. **Onboard the EMAIL_FROM domain** at
    https://dash.cloudflare.com/?to=/:account/email/ → add SPF + DKIM
    records (5-15 min for CF-managed DNS). No API key required.
-5. Visit `https://catholicart.workers.dev/api-status` → should be all green.
+5. Visit `https://catholicart.jer-f84.workers.dev/api-status` → should be all green.
 6. Visit `/signin` → enter email → click magic link → land on `/dashboard`.
 
 If any step fails, see the [Troubleshooting](#troubleshooting) table
@@ -122,7 +122,7 @@ runtime, so changes propagate without rebuilding the SPA.
 
 ## 4. Verify
 
-**Easiest:** visit `https://catholicart.workers.dev/api-status` —
+**Easiest:** visit `https://catholicart.jer-f84.workers.dev/api-status` —
 it runs 9 live checks and shows pass/fail for each (Worker reachable,
 8 categories seeded, 20 saints, 12 dioceses, 4 orders, 12 artists,
 FTS5 search working, auth endpoint responsive, ledger responsive).

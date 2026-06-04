@@ -14,7 +14,7 @@ on:
       base_url:
         description: 'Worker origin to test (default: prod)'
         required: false
-        default: 'https://catholicart.workers.dev'
+        default: 'https://catholicart.jer-f84.workers.dev'
   workflow_run:
     workflows: ['cf · bootstrap cloud resources (one-time)']
     types: [completed]
@@ -32,7 +32,7 @@ jobs:
       - name: Run smoke
         id: smoke
         env:
-          BASE: ${{ inputs.base_url || 'https://catholicart.workers.dev' }}
+          BASE: ${{ inputs.base_url || 'https://catholicart.jer-f84.workers.dev' }}
           # Auto-triggered runs (after bootstrap) skip secret-presence
           # checks since the user hasn't run secret-bulk yet. Manual
           # workflow_dispatch runs check everything.

@@ -14,7 +14,7 @@
 const BASE =
   process.argv.find((a) => a.startsWith('http')) ||
   process.env.BASE ||
-  'https://catholicart.workers.dev';
+  'https://catholicart.jer-f84.workers.dev';
 
 const JSON_OUT = process.argv.includes('--json');
 // --infra-only skips the secret-presence checks. Useful right after

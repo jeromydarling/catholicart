@@ -13,7 +13,7 @@
     "enabled": true
   },
   "vars": {
-    "SITE_URL": "https://catholicart.workers.dev",
+    "SITE_URL": "https://catholicart.jer-f84.workers.dev",
     "EMAIL_FROM": "Ars Sacra <hello@arssacra.com>"
   },
   "d1_databases": [

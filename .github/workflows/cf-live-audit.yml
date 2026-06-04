@@ -34,7 +34,7 @@ jobs:
           set +e
           for path in /api/health /api/categories /api/saints /api/dioceses /api/orders /api/artists '/api/artists?q=Maria' /api/auth/me /api/ledger /api/config; do
             echo "── $path"
-            curl -sS -w "  HTTP %{http_code}  %{time_total}s\n" -o /tmp/body "https://catholicart.workers.dev$path"
+            curl -sS -w "  HTTP %{http_code}  %{time_total}s\n" -o /tmp/body "https://catholicart.jer-f84.workers.dev$path"
             head -c 400 /tmp/body | sed 's/^/  /'
             echo
             echo
@@ -46,7 +46,7 @@ jobs:
           {
             echo "## Live audit"
             echo
-            echo "Base: https://catholicart.workers.dev"
+            echo "Base: https://catholicart.jer-f84.workers.dev"
             echo
             echo "### Smoke results"
             echo

@@ -30,7 +30,7 @@ loadConfig().then((cfg) => {
     tracesSampleRate: 1.0,
     tracePropagationTargets: [
       "localhost",
-      /^https:\/\/catholicart\.workers\.dev/,
+      /^https:\/\/catholicart\.jer-f84\.workers\.dev/,
     ],
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
