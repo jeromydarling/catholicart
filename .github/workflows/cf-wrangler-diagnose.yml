@@ -1,0 +1,55 @@
+name: cf · wrangler diagnose (one-shot)
+
+# Uses wrangler from a runner to find:
+# - The Worker's actual public URL (workers.dev subdomain)
+# - Deployment history (was it ever deployed?)
+# - Current bindings
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cf-wrangler-diagnose.yml'
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: whoami + subdomain
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e
+          npx wrangler@latest whoami || true
+          echo "----- account subdomain -----"
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq .
+
+      - name: List workers + deployments
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e
+          echo "----- workers on account -----"
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts" \
+            | jq '.result[] | {id, modified_on, created_on}'
+
+          echo "----- catholicart workers.dev subdomain enabled? -----"
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/catholicart/subdomain" | jq .
+
+          echo "----- catholicart bindings -----"
+          curl -sS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/catholicart/bindings" | jq .
+
+          echo "----- catholicart deployments -----"
+          npx wrangler@latest deployments list --name catholicart || true
