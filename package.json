@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build && node scripts/build-seo.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "smoke": "node scripts/api-smoke.mjs",
     "fetch-assets": "node scripts/fetch-assets.mjs",
     "render-hero": "hyperframes render hyperframes/hero -o public/assets/hero.mp4"
   },

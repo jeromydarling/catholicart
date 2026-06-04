@@ -1,0 +1,161 @@
+name: cf · preflight check (before bootstrap)
+
+# Confirms the CLOUDFLARE_API_TOKEN secret has every permission the
+# `cf-bootstrap-cloud` workflow needs to succeed. Run this FIRST if
+# bootstrap fails partway, or any time you've rotated the API token.
+#
+# What it checks:
+#   1. Token is valid + not expired
+#   2. Token can list accounts (Account:Read)
+#   3. The account ID in CLOUDFLARE_ACCOUNT_ID is in that list
+#   4. Token can list D1 databases       (D1:Edit)
+#   5. Token can list R2 buckets         (R2:Edit)
+#   6. Token can list KV namespaces      (KV:Edit)
+#   7. Token can list Workers            (Workers Scripts:Edit)
+#
+# Each check is independent — failures don't abort. The final summary
+# tells you exactly which permission is missing so you can re-issue
+# the token with the right scopes.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run preflight checks
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set +e  # don't abort on individual check failure
+
+          PASS=0
+          FAIL=0
+          declare -a RESULTS
+
+          check() {
+            local name="$1"; shift
+            local status="$1"; shift
+            local detail="$1"
+            if [ "$status" = "ok" ]; then
+              PASS=$((PASS+1))
+              RESULTS+=("✓ $name — $detail")
+            else
+              FAIL=$((FAIL+1))
+              RESULTS+=("✗ $name — $detail")
+            fi
+          }
+
+          # 1. Token valid?
+          R=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify")
+          if echo "$R" | jq -e '.success == true and .result.status == "active"' >/dev/null; then
+            EXPIRES=$(echo "$R" | jq -r '.result.expires_on // "never"')
+            check "Token is valid + active" ok "expires: $EXPIRES"
+          else
+            ERR=$(echo "$R" | jq -r '.errors[0].message // "unknown"')
+            check "Token is valid + active" fail "$ERR"
+          fi
+
+          # 2. Can list accounts?
+          R=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts")
+          if echo "$R" | jq -e '.success == true' >/dev/null; then
+            N=$(echo "$R" | jq '.result | length')
+            check "Account:Read — can list accounts" ok "$N visible"
+            # 3. Is our account in the list?
+            if echo "$R" | jq -e --arg id "$CF_ACCOUNT_ID" '.result[] | select(.id == $id)' >/dev/null; then
+              NAME=$(echo "$R" | jq -r --arg id "$CF_ACCOUNT_ID" '.result[] | select(.id == $id) | .name')
+              check "CLOUDFLARE_ACCOUNT_ID is reachable" ok "$NAME"
+            else
+              check "CLOUDFLARE_ACCOUNT_ID is reachable" fail "id ${CF_ACCOUNT_ID:0:8}… not in account list"
+            fi
+          else
+            ERR=$(echo "$R" | jq -r '.errors[0].message // "unknown"')
+            check "Account:Read — can list accounts" fail "$ERR"
+            check "CLOUDFLARE_ACCOUNT_ID is reachable" fail "(skipped: no account list)"
+          fi
+
+          # 4. D1
+          R=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/d1/database")
+          if echo "$R" | jq -e '.success == true' >/dev/null; then
+            N=$(echo "$R" | jq '.result | length')
+            check "D1:Edit — can list databases" ok "$N existing"
+          else
+            ERR=$(echo "$R" | jq -r '.errors[0].message // "unknown"')
+            check "D1:Edit — can list databases" fail "$ERR"
+          fi
+
+          # 5. R2
+          R=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/r2/buckets")
+          if echo "$R" | jq -e '.success == true' >/dev/null; then
+            N=$(echo "$R" | jq '.result.buckets | length')
+            check "R2:Edit — can list buckets" ok "$N existing"
+          else
+            ERR=$(echo "$R" | jq -r '.errors[0].message // "unknown"')
+            check "R2:Edit — can list buckets" fail "$ERR"
+          fi
+
+          # 6. KV
+          R=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/storage/kv/namespaces")
+          if echo "$R" | jq -e '.success == true' >/dev/null; then
+            N=$(echo "$R" | jq '.result | length')
+            check "Workers KV:Edit — can list namespaces" ok "$N existing"
+          else
+            ERR=$(echo "$R" | jq -r '.errors[0].message // "unknown"')
+            check "Workers KV:Edit — can list namespaces" fail "$ERR"
+          fi
+
+          # 7. Workers Scripts
+          R=$(curl -s -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts")
+          if echo "$R" | jq -e '.success == true' >/dev/null; then
+            N=$(echo "$R" | jq '.result | length')
+            check "Workers Scripts:Edit — can list workers" ok "$N deployed"
+          else
+            ERR=$(echo "$R" | jq -r '.errors[0].message // "unknown"')
+            check "Workers Scripts:Edit — can list workers" fail "$ERR"
+          fi
+
+          {
+            echo "## Preflight results"
+            echo ""
+            echo "**$PASS passed, $FAIL failed**"
+            echo ""
+            for line in "${RESULTS[@]}"; do
+              echo "- $line"
+            done
+            echo ""
+            if [ "$FAIL" -gt 0 ]; then
+              echo "### What to do"
+              echo ""
+              echo "Re-issue the token at https://dash.cloudflare.com/profile/api-tokens"
+              echo "with these scopes (all 'Edit' level):"
+              echo ""
+              echo "- Account → Account Settings:Read"
+              echo "- Account → D1:Edit"
+              echo "- Account → Workers R2 Storage:Edit"
+              echo "- Account → Workers KV Storage:Edit"
+              echo "- Account → Workers Scripts:Edit"
+              echo ""
+              echo "Then update the \`CLOUDFLARE_API_TOKEN\` secret and re-run this workflow."
+            else
+              echo "All green — \`cf-bootstrap-cloud\` should succeed."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Also dump to stdout for the log
+          echo ""
+          echo "──────── results ────────"
+          for line in "${RESULTS[@]}"; do
+            echo "  $line"
+          done
+          echo ""
+          echo "  $PASS passed, $FAIL failed"
+
+          exit $FAIL

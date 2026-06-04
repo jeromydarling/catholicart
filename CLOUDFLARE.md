@@ -90,6 +90,16 @@ it runs 9 live checks and shows pass/fail for each (Worker reachable,
 8 categories seeded, 20 saints, 12 dioceses, 4 orders, 12 artists,
 FTS5 search working, auth endpoint responsive, ledger responsive).
 
+**From a terminal / CI:** same checks via CLI —
+
+```bash
+npm run smoke                              # production
+node scripts/api-smoke.mjs --json          # parseable output
+BASE=http://localhost:8787 npm run smoke   # against local dev
+```
+
+Exit code 0 = all green, 1 = at least one failed.
+
 **Or manually:**
 
 - `/api/health` returns `{ ok: true, time }`
@@ -101,6 +111,22 @@ FTS5 search working, auth endpoint responsive, ledger responsive).
 Then visit `/signin`, enter your email, and click the link in the
 email Resend sends you. You should land back on the site signed in
 with the cookie set. (`/api/auth/me` confirms.)
+
+## Troubleshooting
+
+**Run `cf-preflight` first if anything has changed about the API token.**
+It tells you exactly which scope is missing in plain English.
+
+| Symptom | Most likely cause | Fix |
+|---|---|---|
+| `/api/health` returns 404 | Worker isn't deployed yet | wait for CF Pages auto-deploy, or `npx wrangler deploy` |
+| `/api/health` 500 with "D1_ERROR" | bootstrap workflow didn't run | run `cf-bootstrap-cloud` |
+| `/api/categories` empty array | migrations didn't run | re-run `cf-bootstrap-cloud` (idempotent) |
+| Magic-link email never arrives | `RESEND_API_KEY` unset | `wrangler secret put RESEND_API_KEY` |
+| Magic-link click → "Invalid token" | `AUTH_SECRET` rotated mid-flight | clear the link, request a new one |
+| `cf-bootstrap-cloud` "Authentication error" | API token missing scopes | run `cf-preflight` to identify which |
+| `wrangler.jsonc` patch left placeholders | regex changed shape | re-run bootstrap; if it persists, check resource names match `catholicart` |
+| Smoke test shows 6 OK but auth fails | KV SESSIONS namespace ID wrong | re-run `cf-preflight` + bootstrap |
 
 ## 5. What's left — incremental migration playbook
 

@@ -2,6 +2,21 @@
 
 Reusable test + smoke-check scripts. Run from the repo root with `node scripts/<file>.mjs`.
 
+## `api-smoke.mjs`
+
+Terminal version of the `/api-status` page. Hits a live Worker and checks
+that D1 is seeded, FTS5 works, auth responds, and the ledger endpoint
+returns stats. Defaults to `https://catholicart.workers.dev` but accepts
+a `BASE=` env var or a positional URL argument.
+
+```bash
+npm run smoke                                  # production
+node scripts/api-smoke.mjs http://localhost:8787
+node scripts/api-smoke.mjs --json              # machine-readable
+```
+
+Exit code 0 = all checks passed, 1 = at least one failed.
+
 ## `walkthrough.mjs`
 
 End-to-end lifecycle smoke test. Boots a headless Chrome, wipes localStorage,

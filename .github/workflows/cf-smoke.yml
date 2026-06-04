@@ -1,0 +1,56 @@
+name: cf · smoke test
+
+# Runs the same checks as the /api-status page from a runner, against
+# the live Worker. Use this after `cf-bootstrap-cloud` completes to
+# verify the stack end-to-end, or any time you need a quick health
+# check.
+#
+# Output is annotated into the job summary so failures are visible in
+# the Actions UI without clicking through to the log.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Worker origin to test (default: prod)'
+        required: false
+        default: 'https://catholicart.workers.dev'
+  workflow_run:
+    workflows: ['cf · bootstrap cloud resources (one-time)']
+    types: [completed]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run smoke
+        id: smoke
+        env:
+          BASE: ${{ inputs.base_url || 'https://catholicart.workers.dev' }}
+        run: |
+          set -o pipefail
+          # Capture both human + JSON output. Human output goes to the
+          # log; JSON output goes to the job summary table.
+          node scripts/api-smoke.mjs "$BASE" | tee /tmp/smoke.txt
+          STATUS=${PIPESTATUS[0]}
+          node scripts/api-smoke.mjs "$BASE" --json > /tmp/smoke.json || true
+          echo "exit_status=$STATUS" >> "$GITHUB_OUTPUT"
+          # Render to job summary as a markdown table.
+          {
+            echo "## Smoke results"
+            echo ""
+            echo "Base: \`$BASE\`"
+            echo ""
+            echo "| Check | Result | Detail | Time |"
+            echo "|---|---|---|---|"
+            jq -r '.results[] | "| \(.name) | \(if .ok then "✓" else "✗" end) | \(.message // "") | \(.ms)ms |"' /tmp/smoke.json
+            echo ""
+            jq -r '"**\(.passed) passed, \(.failed) failed**"' /tmp/smoke.json
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$STATUS"
