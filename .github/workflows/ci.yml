@@ -1,0 +1,32 @@
+name: ci
+
+# Local checks that don't need any Cloudflare credentials. Catches:
+#   - TS compile errors
+#   - migration SQL errors / seed count drift
+#   - FTS5 trigger regressions
+#
+# These all run against in-memory SQLite via better-sqlite3, so the
+# job is fast (no remote D1, no auth, no network).
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Validate D1 migrations against in-memory SQLite
+        run: npm run validate:migrations
+      - name: Verify build succeeds
+        run: npm run build

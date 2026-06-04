@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "smoke": "node scripts/api-smoke.mjs",
+    "validate:migrations": "node scripts/validate-migrations.mjs",
     "fetch-assets": "node scripts/fetch-assets.mjs",
     "render-hero": "hyperframes render hyperframes/hero -o public/assets/hero.mp4"
   },

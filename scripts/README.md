@@ -2,6 +2,19 @@
 
 Reusable test + smoke-check scripts. Run from the repo root with `node scripts/<file>.mjs`.
 
+## `validate-migrations.mjs`
+
+Applies every D1 migration to an in-memory SQLite database (via
+`better-sqlite3`), then asserts seed counts, FTS5 search behavior,
+SQL feature support (e.g. `COUNT(*) FILTER`), and foreign-key
+enforcement. Catches schema regressions before they hit D1.
+
+```bash
+npm run validate:migrations
+```
+
+Wired into CI on every push.
+
 ## `api-smoke.mjs`
 
 Terminal version of the `/api-status` page. Hits a live Worker and checks
