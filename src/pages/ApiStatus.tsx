@@ -97,14 +97,14 @@ const CHECKS: { name: string; run: () => Promise<{ ok: boolean; message?: string
     },
   },
   {
-    name: "Secrets — RESEND_API_KEY set",
+    name: "Email — Cloudflare Send Email binding wired",
     run: async () => {
       const r = await api.config();
       if (!r.ok) return { ok: false, message: String(r.error) };
-      const f = (r.data as { flags?: { resend_configured?: boolean } }).flags;
-      return f?.resend_configured
-        ? { ok: true, message: "resend wired" }
-        : { ok: false, message: "not set — magic-link emails will be queued but not delivered" };
+      const f = (r.data as { flags?: { email_configured?: boolean } }).flags;
+      return f?.email_configured
+        ? { ok: true, message: "EMAIL binding present" }
+        : { ok: false, message: "onboard the sending domain at dash.cloudflare.com → Email Service" };
     },
   },
   {

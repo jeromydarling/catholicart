@@ -1,7 +1,7 @@
 // Magic-link auth backed by D1 + KV sessions + signed JWT cookies.
 //
 // Flow:
-//   1. POST /api/auth/login { email } — issues a magic link, sends via Resend.
+//   1. POST /api/auth/login { email } — issues a magic link, sends via Cloudflare Email.
 //   2. GET  /api/auth/verify?token=… — exchanges magic link for session JWT
 //      stored in a cookie + KV (so we can revoke server-side).
 //   3. Subsequent requests carry the cookie; middleware loads the user.

@@ -41,15 +41,25 @@
   ],
   "ai": {
     "binding": "AI"
-  }
+  },
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "remote": true
+    }
+  ]
   /*
    * Secrets (set via cf-worker-secret-bulk workflow, NOT in this file):
    *   VITE_MAPBOX_TOKEN     — public Mapbox token for the map
    *   VITE_MAPBOX_STYLE     — optional custom Mapbox style URL
    *   VITE_SENTRY_DSN       — optional Sentry DSN for client errors
-   *   RESEND_API_KEY        — server-side, for outbound email
    *   AUTH_SECRET           — server-side, for signing session JWTs
    *   STRIPE_SECRET_KEY     — server-side, for Stripe (last)
    *   STRIPE_WEBHOOK_SECRET — server-side, for webhook signature verify
+   *
+   * Outbound email uses the `send_email` binding above (Cloudflare
+   * Email Service). The sender domain in EMAIL_FROM must be
+   * onboarded at https://dash.cloudflare.com/?to=/:account/email/
+   * with SPF + DKIM verified. No API key required.
    */
 }

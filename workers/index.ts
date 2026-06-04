@@ -40,7 +40,7 @@ app.get('/api/config', (c) => {
     sentry_dsn: c.env.VITE_SENTRY_DSN ?? '',
     site_url: c.env.SITE_URL,
     flags: {
-      resend_configured: Boolean(c.env.RESEND_API_KEY),
+      email_configured: Boolean(c.env.EMAIL && typeof c.env.EMAIL.send === 'function'),
       auth_secret_configured: Boolean(c.env.AUTH_SECRET),
       stripe_configured: Boolean(c.env.STRIPE_SECRET_KEY),
     },

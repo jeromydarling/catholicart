@@ -30,7 +30,7 @@ export const api = {
       sentry_dsn: string;
       site_url: string;
       flags?: {
-        resend_configured?: boolean;
+        email_configured?: boolean;
         auth_secret_configured?: boolean;
         stripe_configured?: boolean;
       };

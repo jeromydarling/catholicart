@@ -116,14 +116,14 @@ const CHECKS = [
     },
   },
   {
-    name: 'Secrets — RESEND_API_KEY set (magic-link email)',
+    name: 'Email — Cloudflare Send Email binding wired',
     optional: true,
     run: async () => {
       const r = await get('/api/config');
       if (!r.ok) return fail(r);
-      return r.data.flags?.resend_configured
-        ? pass('resend wired')
-        : fail('not set — magic-link emails will be queued but not delivered');
+      return r.data.flags?.email_configured
+        ? pass('EMAIL binding present')
+        : fail('binding missing — onboard the sending domain at dash.cloudflare.com → Email Service');
     },
   },
   {

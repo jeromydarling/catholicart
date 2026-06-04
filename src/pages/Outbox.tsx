@@ -13,9 +13,10 @@ import {
 import type { OutboxEntry } from "../lib/email/types";
 
 // /outbox — dev-only viewer for every email the platform would have
-// sent. In production this endpoint will be replaced by Resend's own
-// "logs" view, but during the prototype it's how we audit triggers,
-// proofread copy, and verify suppression of unsubscribed recipients.
+// sent. In production the same data lives in the D1 `outbox` table,
+// dispatched via the Cloudflare Email Service `send_email` binding;
+// during the prototype this is how we audit triggers, proofread copy,
+// and verify suppression of unsubscribed recipients.
 export default function Outbox() {
   const [entries, setEntries] = useState<OutboxEntry[]>(() => getOutbox());
   const [selected, setSelected] = useState<OutboxEntry | null>(null);
@@ -42,7 +43,7 @@ export default function Outbox() {
             </h1>
             <p className="mt-2 font-serif text-base text-ink-muted max-w-2xl">
               Each state transition fires a notification. In dev these land
-              here. In production they fan out through Resend.
+              here. In production they dispatch via Cloudflare Email Service.
             </p>
           </div>
           <div className="flex items-center gap-2">

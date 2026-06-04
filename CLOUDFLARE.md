@@ -10,7 +10,8 @@ foundation for the catholicart Worker:
 - **Workers AI** binding (available, not yet wired into a feature)
 - **Hono** router serving `/api/*` from the same Worker that serves the
   SPA — single domain, no CORS dance
-- **Magic-link auth** via Resend with signed JWT cookies (jose)
+- **Magic-link auth** via Cloudflare Email Service (`send_email`
+  binding) with signed JWT cookies (jose)
 - **Outbox** D1 table for an audit log of every email sent
 
 This document is the activation checklist. Follow it once and you're
@@ -27,10 +28,12 @@ After merging PR #2:
 2. Run [`cf-bootstrap-cloud`](../../actions/workflows/cf-bootstrap-cloud.yml)
    → creates D1+R2+KV, runs migrations, commits IDs back.
 3. Run [`cf-worker-secret-bulk`](../../actions/workflows/cf-worker-secret-bulk.yml)
-   → fill `vite_mapbox_token` + `auth_secret` (`openssl rand -base64 32`)
-   + `resend_api_key`.
-4. Visit `https://catholicart.workers.dev/api-status` → should be all green.
-5. Visit `/signin` → enter email → click magic link → land on `/dashboard`.
+   → fill `vite_mapbox_token` + `auth_secret` (`openssl rand -base64 32`).
+4. **Onboard the EMAIL_FROM domain** at
+   https://dash.cloudflare.com/?to=/:account/email/ → add SPF + DKIM
+   records (5-15 min for CF-managed DNS). No API key required.
+5. Visit `https://catholicart.workers.dev/api-status` → should be all green.
+6. Visit `/signin` → enter email → click magic link → land on `/dashboard`.
 
 If any step fails, see the [Troubleshooting](#troubleshooting) table
 below. The detailed walkthrough follows.
@@ -92,7 +95,6 @@ workflow per-variable.
 | `VITE_MAPBOX_TOKEN` | https://account.mapbox.com/access-tokens | Yes — for the map |
 | `VITE_MAPBOX_STYLE` | Your custom style URL | No — falls back to `mapbox/light-v11` |
 | `VITE_SENTRY_DSN` | sentry.io → Project Settings → Client Keys | No — silently no-ops if unset |
-| `RESEND_API_KEY` | https://resend.com/api-keys | Yes — for outbound email |
 | `AUTH_SECRET` | Generate: `openssl rand -base64 32` | Yes — signs session JWTs |
 | `STRIPE_SECRET_KEY` | Stripe Dashboard | No — Stripe not wired yet |
 | `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Webhooks | No — Stripe not wired yet |
@@ -103,10 +105,15 @@ workflow per-variable.
 2. Open https://github.com/jeromydarling/catholicart/actions/workflows/cf-worker-secret-bulk.yml
 3. **Run workflow** → fill:
    - `vite_mapbox_token` (pk.…)
-   - `resend_api_key` (re_…)
    - `auth_secret` (paste the openssl output)
    - leave others blank
 4. **Run workflow** button
+
+**Outbound email** uses the Cloudflare Email Service `send_email`
+binding declared in `wrangler.jsonc` — no API key. You do need to
+onboard the sending domain (the part after `@` in `EMAIL_FROM`) once:
+dash.cloudflare.com → **Email Service** → **Onboard Domain** → add
+the SPF + DKIM DNS records.
 
 `wrangler secret put` updates the live Worker immediately — no
 redeploy required. The client fetches the public-safe ones
@@ -152,7 +159,7 @@ It tells you exactly which scope is missing in plain English.
 | `/api/health` returns 404 | Worker isn't deployed yet | wait for CF Pages auto-deploy, or `npx wrangler deploy` |
 | `/api/health` 500 with "D1_ERROR" | bootstrap workflow didn't run | run `cf-bootstrap-cloud` |
 | `/api/categories` empty array | migrations didn't run | re-run `cf-bootstrap-cloud` (idempotent) |
-| Magic-link email never arrives | `RESEND_API_KEY` unset | `wrangler secret put RESEND_API_KEY` |
+| Magic-link email never arrives | `EMAIL_FROM` domain not onboarded to CF Email Service | dash.cloudflare.com → Email Service → Onboard Domain |
 | Magic-link click → "Invalid token" | `AUTH_SECRET` rotated mid-flight | clear the link, request a new one |
 | `cf-bootstrap-cloud` "Authentication error" | API token missing scopes | run `cf-preflight` to identify which |
 | `wrangler.jsonc` patch left placeholders | regex changed shape | re-run bootstrap; if it persists, check resource names match `catholicart` |

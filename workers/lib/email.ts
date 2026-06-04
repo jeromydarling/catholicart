@@ -1,7 +1,7 @@
-// Resend-backed transactional email. Mirrors the surface area of
-// src/lib/email/notify.ts but runs server-side; suppresses
-// unsubscribed recipients for non-transactional categories, sends
-// via Resend, records the result in the `outbox` D1 table.
+// Cloudflare Email Service backed transactional email. Suppresses
+// unsubscribed recipients for non-transactional categories, dispatches
+// via `env.EMAIL.send()` (the `send_email` binding from
+// wrangler.jsonc), and records the result in the `outbox` D1 table.
 
 import type { Env } from '../types';
 import { newId, nowIso } from './db';
@@ -33,10 +33,14 @@ export interface OutboxEvent {
   rendered: RenderedEmail;
 }
 
+function formatAddress(r: Recipient): string {
+  return r.name ? `${r.name} <${r.email}>` : r.email;
+}
+
 export async function sendEmail(env: Env, event: OutboxEvent): Promise<{
   ok: boolean;
   status: 'sent' | 'failed' | 'skipped-unsubscribed';
-  resend_id?: string;
+  message_id?: string;
   failure?: string;
 }> {
   let recipients = [...event.recipients];
@@ -74,44 +78,29 @@ export async function sendEmail(env: Env, event: OutboxEvent): Promise<{
 
   let status: 'sent' | 'failed' | 'skipped-unsubscribed' =
     recipients.length === 0 ? 'skipped-unsubscribed' : 'sent';
-  let resend_id: string | undefined;
+  let message_id: string | undefined;
   let failure: string | undefined;
 
-  if (recipients.length > 0 && env.RESEND_API_KEY) {
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+  if (recipients.length > 0) {
+    if (!env.EMAIL || typeof env.EMAIL.send !== 'function') {
+      status = 'failed';
+      failure = 'EMAIL binding missing — onboard the sending domain to Cloudflare Email Service';
+    } else {
+      try {
+        const to = recipients.map(formatAddress);
+        const result = await env.EMAIL.send({
           from: env.EMAIL_FROM,
-          to: recipients.map((r) =>
-            r.name ? `${r.name} <${r.email}>` : r.email,
-          ),
+          to: to.length === 1 ? to[0] : to,
           subject: event.rendered.subject,
           html: event.rendered.html,
           text: event.rendered.text,
-        }),
-      });
-      const json = (await res.json()) as { id?: string; message?: string };
-      if (!res.ok) {
+        });
+        message_id = result.messageId;
+      } catch (e) {
         status = 'failed';
-        failure = json.message ?? `HTTP ${res.status}`;
-      } else {
-        resend_id = json.id;
+        failure = (e as Error).message ?? 'unknown send error';
       }
-    } catch (e) {
-      status = 'failed';
-      failure = (e as Error).message;
     }
-  } else if (recipients.length > 0 && !env.RESEND_API_KEY) {
-    // No Resend key configured — mark as failed honestly so the
-    // sender (or smoke check) can see it. Outbox still records the
-    // payload so the email is queryable / retryable later.
-    status = 'failed';
-    failure = 'RESEND_API_KEY not set; email not delivered';
   }
 
   // Audit log
@@ -133,11 +122,11 @@ export async function sendEmail(env: Env, event: OutboxEvent): Promise<{
       event.rendered.html,
       event.rendered.text,
       status,
-      resend_id ?? null,
+      message_id ?? null,
       failure ?? null,
       status === 'sent' ? nowIso() : null,
     )
     .run();
 
-  return { ok: status !== 'failed', status, resend_id, failure };
+  return { ok: status !== 'failed', status, message_id, failure };
 }

@@ -1,5 +1,21 @@
 // Cloudflare Worker bindings for the catholicart app.
 
+// Cloudflare Email Service `send_email` binding. The runtime injects
+// this as `env.EMAIL` (declared in wrangler.jsonc); we call
+// `env.EMAIL.send({ to, from, subject, html, text })` to dispatch.
+export interface SendEmailBinding {
+  send(message: {
+    to: string | string[];
+    from: string;
+    subject: string;
+    html?: string;
+    text?: string;
+    reply_to?: string;
+    cc?: string | string[];
+    bcc?: string | string[];
+  }): Promise<{ messageId: string }>;
+}
+
 export interface Env {
   // Static assets binding (the SPA)
   ASSETS: Fetcher;
@@ -17,13 +33,15 @@ export interface Env {
   // Workers AI
   AI: Ai;
 
+  // Cloudflare Email Service (outbound transactional)
+  EMAIL: SendEmailBinding;
+
   // Vars (set in wrangler.jsonc)
   SITE_URL: string;
   EMAIL_FROM: string;
 
   // Secrets (set via wrangler secret put)
   AUTH_SECRET?: string;
-  RESEND_API_KEY?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
 
