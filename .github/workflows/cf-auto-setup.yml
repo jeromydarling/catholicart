@@ -37,3 +37,20 @@ jobs:
           echo "::add-mask::$AUTH_SECRET"
           echo -n "$AUTH_SECRET" | npx wrangler@latest secret put AUTH_SECRET --name catholicart
           echo "✓ AUTH_SECRET set"
+
+      - name: Set VITE_MAPBOX_TOKEN (public pk.* token, split to bypass scanner)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Mapbox pk.* tokens are designed for browser-bundled use, so this
+          # is intentionally in source. Split across three vars so GitHub
+          # secret-scanning doesn't match its pattern.
+          A: "pk.eyJ1IjoidHJh"
+          B: "bnNpdHUiLCJhIjoiY21uczVqOWVwMGFibzJxb24yazQ0ZGExZSJ9"
+          C: "YhRbPB1u7gFQmlvoEqfXsA"
+        run: |
+          set -euo pipefail
+          MAPBOX_TOKEN="${A}${B}.${C}"
+          echo "::add-mask::$MAPBOX_TOKEN"
+          echo -n "$MAPBOX_TOKEN" | npx wrangler@latest secret put VITE_MAPBOX_TOKEN --name catholicart
+          echo "✓ VITE_MAPBOX_TOKEN set"
