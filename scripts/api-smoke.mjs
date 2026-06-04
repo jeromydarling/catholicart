@@ -17,6 +17,10 @@ const BASE =
   'https://catholicart.workers.dev';
 
 const JSON_OUT = process.argv.includes('--json');
+// --infra-only skips the secret-presence checks. Useful right after
+// cf-bootstrap-cloud completes (before cf-worker-secret-bulk runs)
+// so the post-bootstrap auto-smoke doesn't false-alarm on RESEND.
+const INFRA_ONLY = process.argv.includes('--infra-only');
 
 const CHECKS = [
   {
@@ -113,6 +117,7 @@ const CHECKS = [
   },
   {
     name: 'Secrets — RESEND_API_KEY set (magic-link email)',
+    optional: true,
     run: async () => {
       const r = await get('/api/config');
       if (!r.ok) return fail(r);
@@ -123,6 +128,7 @@ const CHECKS = [
   },
   {
     name: 'Secrets — AUTH_SECRET set (session signing)',
+    optional: true,
     run: async () => {
       const r = await get('/api/config');
       if (!r.ok) return fail(r);
@@ -168,13 +174,14 @@ const isTTY = process.stdout.isTTY;
 const c = (code, s) => (isTTY && !JSON_OUT ? `${code}${s}${ANSI.reset}` : s);
 
 async function main() {
+  const checks = INFRA_ONLY ? CHECKS.filter((c) => !c.optional) : CHECKS;
   if (!JSON_OUT) {
     console.log(c(ANSI.bold, `\n  catholicart api smoke`));
-    console.log(c(ANSI.dim, `  base: ${BASE}\n`));
+    console.log(c(ANSI.dim, `  base: ${BASE}${INFRA_ONLY ? ' (infra only)' : ''}\n`));
   }
 
   const results = [];
-  for (const check of CHECKS) {
+  for (const check of checks) {
     const t0 = Date.now();
     let r;
     try {
