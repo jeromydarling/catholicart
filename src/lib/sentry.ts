@@ -1,17 +1,16 @@
 /**
  * Sentry initialization — federation-aware error tracking.
  *
- * Per CROS doctrine: app_slug tag for federation routing, replays masked,
- * media blocked, no PII by default. DSN from VITE_SENTRY_DSN; silently
- * no-ops when unset.
+ * DSN is fetched from /api/config at runtime (Worker secret), with
+ * VITE_SENTRY_DSN as a build-time fallback for local dev.
  */
 import * as Sentry from "@sentry/react";
+import { loadConfig } from "./config";
 
-const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
-
-if (dsn) {
+loadConfig().then((cfg) => {
+  if (!cfg.sentry_dsn) return;
   Sentry.init({
-    dsn,
+    dsn: cfg.sentry_dsn,
     environment: import.meta.env.MODE,
     release: (import.meta.env.VITE_APP_VERSION as string | undefined) ?? "unknown",
     initialScope: {
@@ -31,10 +30,9 @@ if (dsn) {
     tracesSampleRate: 1.0,
     tracePropagationTargets: [
       "localhost",
-      /^https:\/\/[a-z]+\.lovable\.app/,
-      /^https:\/\/[a-z]+\.supabase\.co/,
+      /^https:\/\/catholicart\.workers\.dev/,
     ],
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 1.0,
   });
-}
+});

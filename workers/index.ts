@@ -23,6 +23,22 @@ app.use('*', withAuth());
 app.get('/api/health', (c) =>
   c.json({ ok: true, time: new Date().toISOString() }),
 );
+
+// Public-safe client config. Mapbox pk.* tokens + Sentry DSNs are
+// designed to be exposed to the browser, so we serve them here at
+// runtime rather than baking them into the Vite bundle. This lets
+// `wrangler secret put VITE_MAPBOX_TOKEN` propagate without a
+// rebuild.
+app.get('/api/config', (c) => {
+  // Cache 60s — values change rarely, this saves a roundtrip per page.
+  c.header('Cache-Control', 'public, max-age=60, s-maxage=60');
+  return c.json({
+    mapbox_token: c.env.VITE_MAPBOX_TOKEN ?? '',
+    mapbox_style: c.env.VITE_MAPBOX_STYLE ?? '',
+    sentry_dsn: c.env.VITE_SENTRY_DSN ?? '',
+    site_url: c.env.SITE_URL,
+  });
+});
 app.route('/api/auth', auth);
 app.route('/api/artists', artists);
 app.route('/api/commissions', commissions);

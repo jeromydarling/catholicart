@@ -23,6 +23,13 @@ async function call<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> 
 
 export const api = {
   health: () => call<{ ok: boolean; time: string }>('/api/health'),
+  config: () =>
+    call<{
+      mapbox_token: string;
+      mapbox_style: string;
+      sentry_dsn: string;
+      site_url: string;
+    }>('/api/config'),
 
   // Auth
   login: (email: string) =>

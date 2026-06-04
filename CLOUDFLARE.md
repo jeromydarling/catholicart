@@ -69,19 +69,21 @@ workflow per-variable.
 | `STRIPE_SECRET_KEY` | Stripe Dashboard | No — Stripe not wired yet |
 | `STRIPE_WEBHOOK_SECRET` | Stripe Dashboard → Webhooks | No — Stripe not wired yet |
 
-For `cf-worker-secret-bulk`:
+**Use `cf-worker-secret-bulk` for everything:**
 
-1. Open https://github.com/jeromydarling/catholicart/actions/workflows/cf-worker-secret-bulk.yml
-2. **Run workflow** → fill `vite_mapbox_token`, leave others blank
-3. **Run workflow** button
+1. Generate the auth secret locally: `openssl rand -base64 32` → copy
+2. Open https://github.com/jeromydarling/catholicart/actions/workflows/cf-worker-secret-bulk.yml
+3. **Run workflow** → fill:
+   - `vite_mapbox_token` (pk.…)
+   - `resend_api_key` (re_…)
+   - `auth_secret` (paste the openssl output)
+   - leave others blank
+4. **Run workflow** button
 
-For `AUTH_SECRET` and `RESEND_API_KEY` (not in the batch workflow's
-schema yet, set via wrangler directly when you're on the laptop):
-
-```bash
-echo -n "<generated-secret>" | wrangler secret put AUTH_SECRET
-echo -n "re_..."              | wrangler secret put RESEND_API_KEY
-```
+`wrangler secret put` updates the live Worker immediately — no
+redeploy required. The client fetches the public-safe ones
+(`VITE_MAPBOX_TOKEN`, `VITE_SENTRY_DSN`) from `/api/config` at
+runtime, so changes propagate without rebuilding the SPA.
 
 ## 4. Verify
 

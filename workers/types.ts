@@ -26,6 +26,14 @@ export interface Env {
   RESEND_API_KEY?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+
+  // Public-safe client config exposed via /api/config (these are
+  // intentionally browser-bound — Mapbox pk.* tokens, Sentry DSNs,
+  // etc. — so we serve them at runtime rather than baking into the
+  // Vite bundle).
+  VITE_MAPBOX_TOKEN?: string;
+  VITE_MAPBOX_STYLE?: string;
+  VITE_SENTRY_DSN?: string;
 }
 
 export type AppVariables = {

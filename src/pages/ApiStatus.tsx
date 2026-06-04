@@ -85,6 +85,17 @@ const CHECKS: { name: string; run: () => Promise<{ ok: boolean; message?: string
       return { ok: true, message: `${r.data.stats.completed ?? 0} completed, ${r.data.stats.in_flight ?? 0} in flight` };
     },
   },
+  {
+    name: "Config — public client config served",
+    run: async () => {
+      const r = await api.config();
+      if (!r.ok) return { ok: false, message: String(r.error) };
+      const ok = Boolean(r.data.mapbox_token);
+      return ok
+        ? { ok: true, message: "mapbox_token present" }
+        : { ok: false, message: "mapbox_token empty — set VITE_MAPBOX_TOKEN" };
+    },
+  },
 ];
 
 export default function ApiStatus() {

@@ -100,6 +100,17 @@ const CHECKS = [
       return pass(`${s.completed ?? 0} completed, ${s.in_flight ?? 0} in flight`);
     },
   },
+  {
+    name: 'Config — /api/config returns public client values',
+    run: async () => {
+      const r = await get('/api/config');
+      if (!r.ok) return fail(r);
+      const hasMapbox = Boolean(r.data.mapbox_token);
+      return hasMapbox
+        ? pass('mapbox_token present')
+        : fail('mapbox_token empty — set VITE_MAPBOX_TOKEN via cf-worker-secret-bulk');
+    },
+  },
 ];
 
 async function get(path) {
