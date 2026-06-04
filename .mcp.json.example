@@ -29,6 +29,10 @@
       "env": {
         "RESEND_API_KEY": "<resend-api-key>"
       }
+    },
+    "cloudflare": {
+      "type": "sse",
+      "url": "https://mcp.cloudflare.com/sse"
     }
   }
 }

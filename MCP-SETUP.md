@@ -1,8 +1,9 @@
 # MCP setup for Ars Sacra
 
-Four MCP servers power the production buildout: **Supabase**, **Stripe**,
-**Resend**, **PostHog**. Three are configured via the project-scoped
-`.mcp.json` in this repo. PostHog is installed via its own wizard.
+Five MCP servers power the production buildout: **Supabase**, **Stripe**,
+**Resend**, **PostHog**, and **Cloudflare**. Four are configured via the
+project-scoped `.mcp.json` in this repo. PostHog is installed via its
+own wizard.
 
 `.mcp.json` is gitignored. The committed template is `.mcp.json.example`.
 
@@ -38,6 +39,32 @@ A **test-mode secret key** for now. We'll swap to live before launch.
 3. Copy the `re_...` key into `RESEND_API_KEY`.
 4. Verify a sending domain at **https://resend.com/domains** (we'll use
    it for pastor-endorsement magic links + patron milestone emails).
+
+### Cloudflare — no key needed up front
+
+The Cloudflare entry uses the hosted SSE endpoint at
+`mcp.cloudflare.com/sse`. The first time the new Claude Code session
+calls a Cloudflare tool, it'll pop a browser tab asking you to
+authorize against your Cloudflare account. OAuth handles the rest;
+no token to paste into `.mcp.json`.
+
+If you'd rather pin an API token (no browser hand-off), swap the
+entry to:
+
+```json
+"cloudflare": {
+  "command": "npx",
+  "args": ["-y", "@cloudflare/mcp-server-cloudflare"],
+  "env": {
+    "CLOUDFLARE_API_TOKEN": "<scoped-token>",
+    "CLOUDFLARE_ACCOUNT_ID": "<account-id>"
+  }
+}
+```
+
+Scope the token at https://dash.cloudflare.com/profile/api-tokens with
+`Account: Pages:Edit`, `Account: Workers Scripts:Edit`, `Account:
+Workers KV Storage:Edit`, and `Zone: DNS:Edit` for the forma domain.
 
 ## 2 — install PostHog separately
 
