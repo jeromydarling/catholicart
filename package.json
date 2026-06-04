@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "smoke": "node scripts/api-smoke.mjs",
     "validate:migrations": "node scripts/validate-migrations.mjs",
+    "db:local": "for f in migrations/d1/*.sql; do echo \"→ $f\"; wrangler d1 execute catholicart --local --file=\"$f\" || exit 1; done",
     "fetch-assets": "node scripts/fetch-assets.mjs",
     "render-hero": "hyperframes render hyperframes/hero -o public/assets/hero.mp4"
   },

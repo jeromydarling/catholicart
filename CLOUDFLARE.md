@@ -242,15 +242,24 @@ migrations/d1/
 ## Build & deploy
 
 ```bash
-# local dev (uses wrangler's local D1 + R2 + KV)
+# local dev (uses wrangler's local D1 + R2 + KV via miniflare)
 npm run dev
+
+# first time: seed the local D1 with all migrations
+npm run db:local
+
+# verify migrations against in-memory SQLite (no wrangler needed)
+npm run validate:migrations
 
 # build for production
 npm run build       # writes dist/client/ (SPA) + dist/catholicart/ (Worker)
 
 # deploy
 npx wrangler deploy
+
+# smoke test the live deploy
+npm run smoke
 ```
 
-CF Pages auto-runs `npx wrangler deploy` on every push to `main` (the
-Vite plugin handles this).
+CF auto-runs `npx wrangler deploy` on every push to `main` (the Vite
+plugin handles this).
