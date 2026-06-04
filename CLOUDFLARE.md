@@ -21,9 +21,18 @@ running on the full-Cloudflare stack.
 ## 1. Merge this PR
 
 The branch is `claude/cloudflare-native-stack`. Open a PR against
-`main` and merge. CF will build + deploy the new Worker. The site will
-keep working from the existing SPA (which still uses localStorage for
-data) until you finish step 2.
+`main` and merge.
+
+**Expected:** the Cloudflare build will fail the first time, because
+`wrangler.jsonc` ships with `__SET_BY_BOOTSTRAP_WORKFLOW__`
+placeholders for the D1 + KV resource IDs. The CF build pipeline
+validates those before deploying, and rejects them. This is the
+trigger for step 2 — running the bootstrap workflow replaces the
+placeholders with real IDs, commits the fix back, and the next deploy
+succeeds.
+
+The existing SPA keeps working from `localStorage` regardless of
+Worker deploy status.
 
 ## 2. Bootstrap the Cloudflare resources
 
@@ -143,9 +152,10 @@ This PR sets up the **back-end foundation**. The SPA still uses
    a brief spinner on the action button while it runs.
 4. **Test signed in + signed out**. If the endpoint requires auth and
    the user isn't signed in, the page should bounce to `/signin`.
-5. **Verify** by visiting both `/?api=on` (forced API mode) and
-   `/?api=off` (forced localStorage mode) — keep both wired during
-   migration so a regression doesn't break the site.
+5. **Verify** by signing in (`/signin`) and walking the migrated
+   page in both states — signed-in and signed-out. The endpoints
+   listed below have varying auth requirements; the page should
+   bounce to `/signin` for the auth-required ones.
 
 Pages in order of payoff:
 
