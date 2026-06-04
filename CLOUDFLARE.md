@@ -18,6 +18,25 @@ running on the full-Cloudflare stack.
 
 ---
 
+## TL;DR — morning quick-start
+
+After merging PR #2:
+
+1. Run [`cf-preflight`](../../actions/workflows/cf-preflight.yml) →
+   confirms the CF API token has the right scopes.
+2. Run [`cf-bootstrap-cloud`](../../actions/workflows/cf-bootstrap-cloud.yml)
+   → creates D1+R2+KV, runs migrations, commits IDs back.
+3. Run [`cf-worker-secret-bulk`](../../actions/workflows/cf-worker-secret-bulk.yml)
+   → fill `vite_mapbox_token` + `auth_secret` (`openssl rand -base64 32`)
+   + `resend_api_key`.
+4. Visit `https://catholicart.workers.dev/api-status` → should be all green.
+5. Visit `/signin` → enter email → click magic link → land on `/dashboard`.
+
+If any step fails, see the [Troubleshooting](#troubleshooting) table
+below. The detailed walkthrough follows.
+
+---
+
 ## 1. Merge this PR
 
 The branch is `claude/cloudflare-native-stack`. Open a PR against
