@@ -1,0 +1,58 @@
+name: cf · live audit (one-shot)
+
+# Probes the live Worker from a GH runner (which CAN reach
+# workers.dev, unlike the agent sandbox). Runs the full smoke
+# script and dumps JSON to the job summary so we can read it
+# back via the GH API.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cf-live-audit.yml'
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Smoke (full, with secret flags)
+        id: smoke
+        run: |
+          set +e
+          node scripts/api-smoke.mjs --json > /tmp/smoke.json
+          echo "exit=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/smoke.json
+
+      - name: Probe each endpoint individually with curl
+        run: |
+          set +e
+          for path in /api/health /api/categories /api/saints /api/dioceses /api/orders /api/artists '/api/artists?q=Maria' /api/auth/me /api/ledger /api/config; do
+            echo "── $path"
+            curl -sS -w "  HTTP %{http_code}  %{time_total}s\n" -o /tmp/body "https://catholicart.workers.dev$path"
+            head -c 400 /tmp/body | sed 's/^/  /'
+            echo
+            echo
+          done
+
+      - name: Render to summary
+        if: always()
+        run: |
+          {
+            echo "## Live audit"
+            echo
+            echo "Base: https://catholicart.workers.dev"
+            echo
+            echo "### Smoke results"
+            echo
+            echo '| Check | OK | Detail | Time |'
+            echo '|---|---|---|---|'
+            jq -r '.results[] | "| \(.name) | \(if .ok then "✓" else "✗" end) | \(.message // "") | \(.ms)ms |"' /tmp/smoke.json
+            echo
+            jq -r '"**\(.passed) passed, \(.failed) failed**"' /tmp/smoke.json
+          } >> "$GITHUB_STEP_SUMMARY"
