@@ -1,0 +1,32 @@
+name: cf · list pages projects
+
+# One-shot helper. Triggers on workflow_dispatch only.
+# Lists every Cloudflare Pages project under the account so we can find
+# the slug to target with the env-var workflow.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    steps:
+      - name: List Pages projects
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          echo "Listing Pages projects for account $CF_ACCOUNT_ID…"
+          response=$(curl -fsS \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/pages/projects")
+          echo "$response" | jq '.result[] | {
+            name,
+            subdomain,
+            domains,
+            production_branch,
+            latest_deployment: .latest_deployment.url,
+            created_on
+          }'
