@@ -1,0 +1,38 @@
+{
+  "$schema_note": "Template for .mcp.json. Copy to .mcp.json and fill in the keys (which are gitignored). PostHog is installed via their wizard separately — see MCP-SETUP.md.",
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "<supabase-personal-access-token>"
+      }
+    },
+    "stripe": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@stripe/mcp",
+        "--tools=all",
+        "--api-key=<stripe-secret-key-test-or-live>"
+      ]
+    },
+    "resend": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "resend-mcp"
+      ],
+      "env": {
+        "RESEND_API_KEY": "<resend-api-key>"
+      }
+    },
+    "cloudflare": {
+      "type": "sse",
+      "url": "https://mcp.cloudflare.com/sse"
+    }
+  }
+}

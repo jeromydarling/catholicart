@@ -1,7 +1,5 @@
-import { useState } from "react";
 import { useParams, useSearchParams, Link, useNavigate } from "react-router-dom";
-import { motion } from "motion/react";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 import { artistBySlug } from "../data/artists";
 import { categoryBySlug } from "../data/categories";
 import { PageShell } from "../components/layout/PageShell";
@@ -17,7 +15,9 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { Ornament } from "../components/Ornament";
+import { FeastDeadlinePicker } from "../components/FeastDeadlinePicker";
 import { useStore } from "../lib/store";
+import { PLATFORM_FEE_PCT } from "../lib/pricing";
 import { formatPrice, initials } from "../lib/utils";
 
 const SETTINGS = [
@@ -36,13 +36,8 @@ export default function Commission() {
   const tierId = params.get("tier");
   const isCustom = params.get("custom") === "true";
   const navigate = useNavigate();
-  const { addRequest } = useStore();
+  const { createCommission } = useStore();
   const artist = artistBySlug(slug);
-
-  const [submitted, setSubmitted] = useState<null | {
-    requestId: string;
-    artistName: string;
-  }>(null);
 
   if (!artist) {
     return (
@@ -59,48 +54,6 @@ export default function Commission() {
 
   const tier = artist.tiers.find((t) => t.id === tierId) ?? artist.tiers[0];
   const primaryCategory = categoryBySlug(artist.categories[0]);
-
-  if (submitted) {
-    return (
-      <PageShell>
-        <section className="container py-16 sm:py-24 max-w-2xl">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="text-center"
-          >
-            <div className="grid h-14 w-14 mx-auto place-items-center rounded-full bg-olive-500/15 text-olive-600">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <h1 className="mt-8 font-display text-4xl sm:text-5xl text-ink leading-tight">
-              Your request is on its way.
-            </h1>
-            <p className="mt-4 font-serif text-lg text-ink-muted">
-              {submitted.artistName} typically responds within a week.
-              We'll notify you here when there is a reply.
-            </p>
-            <Ornament className="my-10" />
-            <p className="font-serif italic text-base text-ink-soft max-w-md mx-auto">
-              “The artist's gaze is patient. Receive their response with the
-              same patience.”
-            </p>
-            <div className="mt-10 flex flex-wrap gap-3 justify-center">
-              <Button asChild>
-                <Link to="/dashboard">View your commission</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/browse">Browse other artists</Link>
-              </Button>
-            </div>
-            <div className="mt-8 font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
-              Request id · {submitted.requestId}
-            </div>
-          </motion.div>
-        </section>
-      </PageShell>
-    );
-  }
 
   return (
     <PageShell>
@@ -127,21 +80,30 @@ export default function Commission() {
             onSubmit={(e) => {
               e.preventDefault();
               const data = new FormData(e.currentTarget);
-              const req = addRequest({
+              const deadline = String(data.get("deadline") || "");
+              const feastSlug = String(data.get("feastSlug") || "");
+              const feastName = String(data.get("feastName") || "");
+              const ipTerms = String(data.get("ipTerms") || "patron-exclusive") as
+                | "patron-exclusive"
+                | "shared-prints"
+                | "artist-retains";
+              const c = createCommission({
                 artistSlug: artist.slug,
-                fromName: String(data.get("name") || ""),
-                fromEmail: String(data.get("email") || ""),
+                patronName: String(data.get("name") || ""),
+                patronEmail: String(data.get("email") || ""),
                 category: artist.categories[0],
                 setting: String(data.get("setting") || ""),
-                description: String(data.get("description") || ""),
-                budgetUsd: data.get("budget") ? Number(data.get("budget")) : undefined,
-                preferredDeadline: String(data.get("deadline") || "") || undefined,
+                scope: String(data.get("description") || ""),
+                preferredDeadline: deadline || undefined,
+                feastDeadline:
+                  feastSlug && feastName && deadline
+                    ? { feastSlug, name: feastName, date: deadline }
+                    : undefined,
+                parishOrChapel:
+                  String(data.get("parishOrChapel") || "") || undefined,
+                ipTerms,
               });
-              setSubmitted({
-                requestId: req.id,
-                artistName: artist.name,
-              });
-              window.scrollTo({ top: 0 });
+              navigate(`/workspace/${c.id}`);
             }}
           >
             <Field label="Your name">
@@ -184,19 +146,55 @@ export default function Commission() {
               </p>
             </Field>
 
-            <div className="grid sm:grid-cols-2 gap-5">
-              <Field label="Budget (USD, optional)">
-                <Input
-                  name="budget"
-                  type="number"
-                  min={0}
-                  step={50}
-                  placeholder={`From ${tier.startingAt}`}
-                />
-              </Field>
-              <Field label="Preferred completion date">
-                <Input name="deadline" type="date" />
-              </Field>
+            <Field label="Parish, chapel, or address (optional)">
+              <Input
+                name="parishOrChapel"
+                placeholder="Where will the work live?"
+                autoComplete="off"
+              />
+            </Field>
+
+            <FeastDeadlinePicker
+              minWeeks={tier.turnaroundWeeks[0] ?? 6}
+            />
+
+            <Field label="Reproduction rights">
+              <select
+                name="ipTerms"
+                defaultValue="patron-exclusive"
+                className="flex h-11 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm focusable"
+              >
+                <option value="patron-exclusive">
+                  Patron-exclusive — I own all rights (recommended)
+                </option>
+                <option value="shared-prints">
+                  Shared — artist may sell prints
+                </option>
+                <option value="artist-retains">
+                  Artist retains reproduction rights
+                </option>
+              </select>
+              <p className="mt-2 font-serif text-sm text-ink-muted italic">
+                You can renegotiate later. The artist will see your selection
+                when reviewing the request.
+              </p>
+            </Field>
+
+            <div className="pt-2 rounded-md border border-ink/10 bg-parchment-100 p-4">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-olive-600 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-display text-base text-ink">
+                    Funds held in escrow. Released only by you.
+                  </div>
+                  <p className="mt-1 font-serif text-sm text-ink-soft leading-relaxed">
+                    The artist receives 100% of the price they quote. Our{" "}
+                    {Math.round(PLATFORM_FEE_PCT * 100)}% platform fee is added
+                    on top — never deducted from the artist. Payment is split
+                    across three milestones (deposit, midpoint, final).
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="pt-4 flex flex-wrap items-center gap-3">
@@ -209,8 +207,8 @@ export default function Commission() {
               </Button>
             </div>
             <p className="font-serif text-xs italic text-ink-muted max-w-md">
-              You will not be charged. The artist will reply with a refined
-              quote; payment is arranged only after both parties agree.
+              You will not be charged yet. The artist will reply with a quote
+              and you'll fund the deposit only when you accept.
             </p>
           </form>
 
@@ -282,9 +280,9 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <Label className="block space-y-2">
+      <span className="block">{label}</span>
       {children}
-    </div>
+    </Label>
   );
 }

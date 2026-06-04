@@ -15,6 +15,10 @@ import {
 import { ArtworkPlate } from "../components/ArtworkPlate";
 import { Ornament } from "../components/Ornament";
 import { formatPrice, initials } from "../lib/utils";
+import { similarArtists } from "../lib/recommend";
+import { useStore } from "../lib/store";
+import { StarRating } from "../components/StarRating";
+import { Seo } from "../components/Seo";
 
 export default function ArtistProfile() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -38,9 +42,34 @@ export default function ArtistProfile() {
   }
 
   const cats = artist.categories.map((s) => categoryBySlug(s)!);
+  const bioText = Array.isArray(artist.bio) ? artist.bio.join(" ") : artist.bio ?? "";
 
   return (
     <PageShell>
+      <Seo
+        title={`${artist.honorific ? artist.honorific + " " : ""}${artist.name} · ${cats[0]?.shortName ?? "Artist"} · Ars Sacra`}
+        description={`${cats[0]?.name ?? "Sacred art"} commissions by ${artist.name}, ${artist.city}. ${bioText.slice(0, 140)}`}
+        path={`/artists/${artist.slug}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: artist.name,
+          honorificPrefix: artist.honorific ?? undefined,
+          address: {
+            "@type": "PostalAddress",
+            addressLocality: artist.city,
+            addressCountry: artist.region,
+          },
+          jobTitle: cats[0]?.name ?? "Artist",
+          description: bioText.slice(0, 280),
+          knowsAbout: cats.map((c) => c?.name),
+          memberOf: {
+            "@type": "Organization",
+            name: "Ars Sacra",
+            url: "https://arssacra.local",
+          },
+        }}
+      />
       {/* Hero */}
       <section className="relative">
         <div
@@ -198,7 +227,7 @@ export default function ArtistProfile() {
                 )}
               </div>
 
-              <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
+              <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl">
                 <Stat
                   icon={<Hourglass className="h-4 w-4" />}
                   label="Practicing"
@@ -214,6 +243,7 @@ export default function ArtistProfile() {
                   label="Custom"
                   value={artist.customPricing ? "Welcome" : "Tiers only"}
                 />
+                <AvailabilityStat slug={artist.slug} />
               </div>
             </motion.div>
 
@@ -388,7 +418,57 @@ export default function ArtistProfile() {
           </TabsContent>
         </Tabs>
       </section>
+
+      <ReviewsSection slug={artist.slug} />
+      <SimilarArtists slug={artist.slug} />
     </PageShell>
+  );
+}
+
+function SimilarArtists({ slug }: { slug: string }) {
+  const similar = similarArtists(slug, 4);
+  if (similar.length === 0) return null;
+  return (
+    <section className="container my-20 sm:my-28">
+      <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+        Similar hands
+      </div>
+      <h2 className="font-display text-2xl sm:text-3xl text-ink leading-tight mb-6">
+        Other artists in this tradition
+      </h2>
+      <ul className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {similar.map((a) => {
+          const cat = categoryBySlug(a.categories[0]);
+          return (
+            <li key={a.slug}>
+              <Link
+                to={`/artists/${a.slug}`}
+                className="block rounded-md border border-ink/10 bg-parchment-50 shadow-card p-4 hover:shadow-plate transition-shadow focusable"
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className="h-12 w-12 rounded-full grid place-items-center text-parchment-50 font-display text-base shrink-0"
+                    style={{
+                      background: `linear-gradient(135deg, ${a.portraitFrom}, ${a.portraitTo})`,
+                    }}
+                  >
+                    {initials(a.name)}
+                  </div>
+                  <div className="grow min-w-0">
+                    <div className="font-display text-base text-ink truncate">
+                      {a.name}
+                    </div>
+                    <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted truncate">
+                      {cat?.shortName} · {a.city}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -410,6 +490,185 @@ function Stat({
         </span>
       </div>
       <div className="mt-1 font-display text-base text-ink">{value}</div>
+    </div>
+  );
+}
+
+function ReviewsSection({ slug }: { slug: string }) {
+  const store = useStore();
+  const reviews = store.reviewsForArtist(slug);
+  const commissions = store.commissions.filter((c) => c.artistSlug === slug);
+  const delivered = commissions.filter(
+    (c) => c.stage === "delivered" || c.stage === "blessed",
+  );
+
+  // Track-record metrics
+  const totalDelivered = delivered.length;
+  const onTime = delivered.filter((c) => {
+    if (!c.preferredDeadline || !c.completedAt) return true;
+    return new Date(c.completedAt).getTime() <= new Date(c.preferredDeadline).getTime();
+  }).length;
+  const onTimePct = totalDelivered > 0 ? Math.round((onTime / totalDelivered) * 100) : null;
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      : null;
+  const avgTurnaroundWeeks = (() => {
+    const completed = delivered.filter((c) => c.completedAt);
+    if (completed.length === 0) return null;
+    const total = completed.reduce((s, c) => {
+      const start = new Date(c.createdAt).getTime();
+      const end = new Date(c.completedAt!).getTime();
+      return s + (end - start);
+    }, 0);
+    return Math.round(total / completed.length / (1000 * 60 * 60 * 24 * 7));
+  })();
+
+  if (totalDelivered === 0 && reviews.length === 0) return null;
+
+  return (
+    <section className="container my-20 sm:my-28">
+      <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+        Track record
+      </div>
+      <h2 className="font-display text-2xl sm:text-3xl text-ink leading-tight mb-6">
+        The patron's evidence
+      </h2>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
+        <MetricCard label="Commissions delivered" value={totalDelivered.toString()} />
+        <MetricCard
+          label="On-time"
+          value={onTimePct != null ? `${onTimePct}%` : "—"}
+        />
+        <MetricCard
+          label="Avg turnaround"
+          value={avgTurnaroundWeeks != null ? `${avgTurnaroundWeeks} wk` : "—"}
+        />
+        <MetricCard
+          label="Avg rating"
+          value={
+            avgRating != null ? (
+              <span className="flex items-center gap-2 tabular-nums">
+                {avgRating.toFixed(1)}
+                <StarRating value={avgRating} size="sm" />
+              </span>
+            ) : (
+              "—"
+            )
+          }
+        />
+      </div>
+
+      {reviews.length > 0 ? (
+        <ul className="space-y-5">
+          {reviews.map((r) => (
+            <li
+              key={r.id}
+              className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5"
+            >
+              <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <StarRating value={r.rating} size="sm" />
+                  <span className="font-sans text-xs uppercase tracking-[0.18em] text-ink-muted tabular-nums">
+                    {r.rating}/5
+                  </span>
+                </div>
+                <div className="font-sans text-[11px] uppercase tracking-[0.18em] text-ink-muted">
+                  {r.patronName} ·{" "}
+                  {new Date(r.createdAt).toLocaleDateString(undefined, {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+              <p className="mt-3 font-serif text-base text-ink-soft leading-relaxed italic">
+                "{r.body}"
+              </p>
+              {r.artistReply && (
+                <div className="mt-4 pt-4 border-t border-ink/10">
+                  <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-1.5">
+                    Reply from the artist
+                  </div>
+                  <p className="font-serif text-sm text-ink-soft leading-relaxed">
+                    {r.artistReply.body}
+                  </p>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="rounded-md border border-dashed border-ink/15 p-8 text-center">
+          <p className="font-serif text-ink-muted">
+            Patrons haven't written reviews yet. The artist's track record above is the
+            evidence so far.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-4 sm:p-5">
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+        {label}
+      </div>
+      <div className="mt-2 font-display text-2xl text-ink leading-none">
+        {value}
+      </div>
+    </div>
+  );
+}
+
+// Computes "Accepting" / "In demand" / "Full" from in-flight load + month overrides.
+function AvailabilityStat({ slug }: { slug: string }) {
+  const store = useStore();
+  const avail = store.getAvailability(slug);
+  const cap = avail?.concurrentCap ?? 3;
+  const inFlight = store.commissions.filter(
+    (c) =>
+      c.artistSlug === slug &&
+      c.stage !== "delivered" &&
+      c.stage !== "blessed" &&
+      c.stage !== "cancelled",
+  ).length;
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const monthStatus = avail?.months[monthKey] ?? "accepting";
+
+  let label = "Accepting";
+  let value = `${inFlight} in flight`;
+  if (monthStatus === "away") {
+    label = "Away";
+    value = "Resumes next month";
+  } else if (monthStatus === "full" || inFlight >= cap) {
+    label = "Currently full";
+    value = `${inFlight}/${cap} active`;
+  } else if (inFlight >= cap - 1) {
+    label = "In demand";
+    value = `${inFlight}/${cap} active`;
+  }
+  return (
+    <div className="flex items-start gap-2 rounded-md bg-parchment-100 px-3 py-2.5">
+      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-sm bg-parchment-50 text-burgundy-500 mt-0.5">
+        <Hourglass className="h-4 w-4" />
+      </div>
+      <div className="min-w-0">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+          {label}
+        </div>
+        <div className="mt-0.5 font-display text-sm text-ink tabular-nums truncate">
+          {value}
+        </div>
+      </div>
     </div>
   );
 }

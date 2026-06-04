@@ -22,7 +22,7 @@ export function Footer() {
           </div>
           <FooterCol heading="Commission">
             <FooterLink to="/browse">Browse artists</FooterLink>
-            <FooterLink to="/browse?category=iconography">By category</FooterLink>
+            <FooterLink to="/map">Map of the guild</FooterLink>
             <FooterLink to="/about#how-it-works">How it works</FooterLink>
           </FooterCol>
           <FooterCol heading="For artists">
@@ -30,10 +30,20 @@ export function Footer() {
             <FooterLink to="/dashboard">Artist dashboard</FooterLink>
             <FooterLink to="/manifesto">The manifesto</FooterLink>
           </FooterCol>
-          <FooterCol heading="The guild">
+          <FooterCol heading="Trust & transparency">
+            <FooterLink to="/ledger">The Ledger</FooterLink>
+            <FooterLink to="/catalog">Annual catalog</FooterLink>
+            <FooterLink to="/orders">Religious orders</FooterLink>
+            <FooterLink to="/partnerships">For dioceses</FooterLink>
             <FooterLink to="/about">Mission</FooterLink>
-            <FooterLink to="/manifesto">Manifesto</FooterLink>
-            <FooterLink to="/about#cst">Catholic Social Teaching</FooterLink>
+          </FooterCol>
+        </div>
+        <div className="mt-10 grid gap-10 sm:grid-cols-2 lg:grid-cols-4 border-t border-ink/10 pt-10">
+          <FooterCol heading="The culture engine">
+            <FooterLink to="/journal">Beauty Manifesto</FooterLink>
+            <FooterLink to="/report">Anti-Kitsch Report</FooterLink>
+            <FooterLink to="/prize">Pulchritudo Prize</FooterLink>
+            <FooterLink to="/apprenticeships">Apprenticeships</FooterLink>
           </FooterCol>
         </div>
 

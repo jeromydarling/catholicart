@@ -12,6 +12,8 @@ import { Quote } from "../components/Quote";
 import { CategoryTile } from "../components/CategoryTile";
 import { ArtistCard } from "../components/ArtistCard";
 import { HeroVideo } from "../components/HeroVideo";
+import { LiturgicalSeasonBanner } from "../components/LiturgicalSeason";
+import { Seo } from "../components/Seo";
 
 const HOW = [
   {
@@ -36,6 +38,20 @@ export default function Landing() {
 
   return (
     <PageShell>
+      <Seo
+        title="Ars Sacra · Commission Catholic art from a verified guild"
+        description="A marketplace for commissioning sacred art from pastor-endorsed Catholic artists. Iconography, painting, sculpture, vestments, metalwork, glass, and song. Funds held in escrow; the artist receives 100% of the price they quote."
+        path="/"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Ars Sacra",
+          url: "https://arssacra.local",
+          slogan: "Ad maiorem Dei gloriam, per pulchritudinem.",
+          description:
+            "A guild and marketplace for commissioning Catholic sacred art from pastor-endorsed artists.",
+        }}
+      />
       {/* Hero — full-bleed cinematic, makes the commission thesis visible */}
       <section className="relative h-[calc(100svh-4rem)] sm:h-[calc(100svh-5rem)] min-h-[600px] max-h-[880px] overflow-hidden">
         <HeroVideo />
@@ -142,6 +158,11 @@ export default function Landing() {
           </Button>
         </div>
       </section>
+
+      {/* Liturgical season banner — orient the patron in the year */}
+      <div className="mt-20 sm:mt-28">
+        <LiturgicalSeasonBanner />
+      </div>
 
       {/* Categories */}
       <section className="container pt-20 sm:pt-28">

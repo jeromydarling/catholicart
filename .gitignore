@@ -14,3 +14,12 @@ public/assets/hero.mp4
 
 # Built/cloned third-party desktop app — see tools/README.md for re-install steps
 tools/1code/
+
+# Local env files (Mapbox token, etc.) — keep .env.example committed
+.env
+.env.local
+.env.*.local
+
+# Project-scoped MCP config (contains API keys). The template
+# .mcp.json.example is committed.
+.mcp.json
