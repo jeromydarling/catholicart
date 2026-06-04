@@ -1,0 +1,52 @@
+name: cf · diagnose token + projects
+
+# Lists every Cloudflare account the API token can see, and every Pages
+# project under each. Use this to discover the right (account_id,
+# project_name) combo when the env workflow returns 404.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect token + list every accessible project
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID_SECRET: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+
+          echo "──────── token verify ────────"
+          curl -fsS \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/user/tokens/verify" \
+            | jq '{ success, status: .result.status, expires_on: .result.expires_on, errors }'
+
+          echo
+          echo "──────── account ID in your secret ────────"
+          # We need to show what we have without leaking it fully. First 8 chars are fine.
+          echo "${CF_ACCOUNT_ID_SECRET:0:8}…(truncated)"
+
+          echo
+          echo "──────── accounts this token can see ────────"
+          ACCOUNTS=$(curl -fsS \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            "https://api.cloudflare.com/client/v4/accounts")
+          echo "$ACCOUNTS" | jq '.result[] | { id, name }'
+
+          echo
+          echo "──────── Pages projects in EACH visible account ────────"
+          echo "$ACCOUNTS" | jq -r '.result[].id' | while read -r ACC; do
+            echo
+            echo ">>> account: $ACC"
+            curl -fsS \
+              -H "Authorization: Bearer $CF_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$ACC/pages/projects" \
+              | jq '.result[] | { name, subdomain, production_branch, latest_deployment_url: .latest_deployment.url, source: .source.config.repo_name }' \
+              || echo "  (no access to Pages on this account)"
+          done
+
+          echo
+          echo "Find your repo's project above. Use its account ID + name with cf-pages-env-batch."
