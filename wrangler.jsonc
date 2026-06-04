@@ -20,7 +20,7 @@
     {
       "binding": "DB",
       "database_name": "catholicart",
-      "database_id": "__SET_BY_BOOTSTRAP_WORKFLOW__"
+      "database_id": "efcb8d15-b157-4de2-baf1-9cd2b0cbc864"
     }
   ],
   "r2_buckets": [
@@ -32,11 +32,11 @@
   "kv_namespaces": [
     {
       "binding": "CACHE",
-      "id": "__SET_BY_BOOTSTRAP_WORKFLOW__"
+      "id": "9a899378540c45278ec1f483683533a5"
     },
     {
       "binding": "SESSIONS",
-      "id": "__SET_BY_BOOTSTRAP_WORKFLOW__"
+      "id": "6afaeeabf1764d98aa659003d29f690e"
     }
   ],
   "ai": {
