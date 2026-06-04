@@ -4,7 +4,12 @@ import { writeFile, readFile } from "fs/promises";
 import { resolve } from "path";
 
 const SITE = process.env.ARS_SACRA_SITE ?? "https://arssacra.local";
-const OUT = resolve("dist/sitemap.xml");
+// Cloudflare Vite plugin places client assets in dist/client/. Fall
+// back to dist/ for any legacy non-Workers build.
+import { existsSync } from "fs";
+const OUT = existsSync(resolve("dist/client"))
+  ? resolve("dist/client/sitemap.xml")
+  : resolve("dist/sitemap.xml");
 
 const artistsFile = await readFile(resolve("src/data/artists.ts"), "utf8");
 const slugMatches = [...artistsFile.matchAll(/slug:\s*"([^"]+)"/g)];

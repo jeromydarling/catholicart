@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "catholicart",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "workers/index.ts",
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": {
+    "enabled": true
+  }
+  /*
+   * Bindings will be added as we wire each phase of the full-Cloudflare
+   * stack. Examples (uncomment + fill in once the resources exist):
+   *
+   * "d1_databases": [
+   *   { "binding": "DB", "database_name": "catholicart", "database_id": "<uuid>" }
+   * ],
+   *
+   * "r2_buckets": [
+   *   { "binding": "BUCKET", "bucket_name": "catholicart-wip-images" }
+   * ],
+   *
+   * "ai": { "binding": "AI" },
+   *
+   * "kv_namespaces": [
+   *   { "binding": "CACHE", "id": "<id>" }
+   * ],
+   *
+   * "vars": {
+   *   "RESEND_API_KEY_NAME": "RESEND_API_KEY"
+   * }
+   */
+}
