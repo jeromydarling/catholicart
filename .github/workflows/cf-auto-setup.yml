@@ -1,0 +1,39 @@
+name: cf · auto-setup secrets (one-time)
+
+# Idempotent secret setup for the catholicart Worker. Runs on push to
+# main whenever this file is touched. Generates AUTH_SECRET locally
+# (32 bytes, base64) and sets it via wrangler.
+#
+# Re-running just re-generates a fresh AUTH_SECRET (which invalidates
+# existing sessions, so don't re-run casually).
+#
+# VITE_MAPBOX_TOKEN must be set separately via cf-worker-secret-bulk
+# — GitHub Push Protection blocks Mapbox tokens in source even
+# though pk.* tokens are public by design.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cf-auto-setup.yml'
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set AUTH_SECRET (generated)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          AUTH_SECRET=$(openssl rand -base64 32)
+          echo "::add-mask::$AUTH_SECRET"
+          echo -n "$AUTH_SECRET" | npx wrangler@latest secret put AUTH_SECRET --name catholicart
+          echo "✓ AUTH_SECRET set"
