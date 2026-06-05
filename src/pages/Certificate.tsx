@@ -171,10 +171,10 @@ export default function Certificate() {
                 )}
               </Col>
               <Col label="Begun">
-                <Date d={c.createdAt} />
+                <DateLine d={c.createdAt} />
               </Col>
               <Col label="Completed">
-                {c.completedAt ? <Date d={c.completedAt} /> : <span>—</span>}
+                {c.completedAt ? <DateLine d={c.completedAt} /> : <span>—</span>}
               </Col>
               {c.feastDeadline && (
                 <Col label="Made for">
@@ -203,6 +203,9 @@ export default function Certificate() {
                 </p>
               </div>
             )}
+
+            {/* Provenance chain — the work's life on one page. */}
+            <ProvenanceChain commission={c} />
 
             {/* Endorsement & blessing */}
             <div className="mt-auto pt-10 grid sm:grid-cols-2 gap-6 sm:gap-10 border-t border-ink/10">
@@ -237,7 +240,7 @@ export default function Certificate() {
                       <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted mt-0.5">
                         {c.blessing.parishOrChapel ?? ""}{" "}
                         {c.blessing.recordedAt && (
-                          <>· <Date d={c.blessing.recordedAt} /></>
+                          <>· <DateLine d={c.blessing.recordedAt} /></>
                         )}
                       </div>
                     </div>
@@ -258,7 +261,7 @@ export default function Certificate() {
                 Serial · {c.certificate.serial}
               </div>
               <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted tabular-nums">
-                Issued <Date d={c.certificate.issuedAt} />
+                Issued <DateLine d={c.certificate.issuedAt} />
               </div>
               <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-burgundy-500">
                 Recorded in <Link to="/ledger" className="underline">The Ledger</Link>
@@ -279,6 +282,98 @@ export default function Certificate() {
   );
 }
 
+// Pulls the patron's first letter, the artist's first reply (their
+// vision), and the WIP cycle out of the commission's messages/wip
+// streams, and renders them as a quiet provenance chain — the work's
+// life on one page. The patron's first message is anonymized to
+// initials so the certificate can be shared without exposing the
+// patron's full name on every page.
+function ProvenanceChain({
+  commission,
+}: {
+  commission: ReturnType<typeof useStore>["commissions"][number];
+}) {
+  const c = commission;
+  const patronLetter = c.messages.find((m) => m.authorRole === "patron");
+  const vision = c.messages.find(
+    (m, i) => m.authorRole === "artist" && (i === 0 || c.messages[0].authorRole !== "artist"),
+  );
+  const wip = [...(c.wip ?? [])].sort(
+    (a, b) => new Date(a.postedAt).getTime() - new Date(b.postedAt).getTime(),
+  );
+  if (!patronLetter && !vision && wip.length === 0) return null;
+
+  const anon = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0][0] + ".";
+    const last = parts[parts.length - 1] ?? "";
+    return `${parts[0][0]}. ${last[0]}.`;
+  };
+
+  return (
+    <div className="mt-10 pt-6 border-t border-ink/10">
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-4">
+        Provenance — the work's life
+      </div>
+
+      {patronLetter && (
+        <section className="mb-7">
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-2">
+            The patron's letter · from {anon(c.patronName)}
+          </div>
+          <blockquote className="border-l-2 border-burgundy-500/40 pl-4 font-serif text-[15px] text-ink-soft italic leading-relaxed whitespace-pre-line">
+            {patronLetter.body}
+          </blockquote>
+        </section>
+      )}
+
+      {vision && (
+        <section className="mb-7">
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-2">
+            The artist's vision
+          </div>
+          <blockquote className="border-l-2 border-gold-500/60 pl-4 font-serif text-[15px] text-ink leading-relaxed whitespace-pre-line">
+            {vision.body}
+          </blockquote>
+        </section>
+      )}
+
+      {wip.length > 0 && (
+        <section>
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted mb-3">
+            From the studio · {wip.length} {wip.length === 1 ? "update" : "updates"}
+          </div>
+          <ol className="space-y-4">
+            {wip.map((w) => (
+              <li key={w.id} className="flex gap-3">
+                <div
+                  className="h-14 w-14 shrink-0 rounded-sm ring-1 ring-ink/10"
+                  style={{
+                    background: `linear-gradient(135deg, ${w.paletteFrom}, ${w.paletteTo})`,
+                  }}
+                  aria-hidden
+                />
+                <div className="grow">
+                  <div className="font-sans text-[10px] uppercase tracking-[0.18em] text-ink-muted">
+                    {new Date(w.postedAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </div>
+                  <p className="mt-0.5 font-serif text-[15px] text-ink leading-snug">
+                    {w.caption}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+    </div>
+  );
+}
+
 function Col({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -290,7 +385,7 @@ function Col({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-function Date({ d }: { d: string }) {
+function DateLine({ d }: { d: string }) {
   return (
     <span className="font-sans text-sm tabular-nums">
       {new window.Date(d).toLocaleDateString(undefined, {
