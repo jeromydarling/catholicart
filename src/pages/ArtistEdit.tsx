@@ -16,6 +16,7 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { Ornament } from "../components/Ornament";
+import { PayoutsPanel } from "../components/PayoutsPanel";
 import { Seo } from "../components/Seo";
 import { api } from "../lib/api";
 import { artistBySlug } from "../data/artists";
@@ -140,7 +141,7 @@ const QUESTIONS: Question[] = [
   },
 ];
 
-type Tab = "questions" | "review" | "endorsement" | "links" | "earnings";
+type Tab = "questions" | "review" | "endorsement" | "links" | "earnings" | "payouts";
 
 interface VerificationRow {
   id: string;
@@ -405,6 +406,7 @@ export default function ArtistEdit() {
               ["endorsement", "III. Endorsement", null],
               ["links", "IV. Socials", null],
               ["earnings", "V. Earnings", null],
+              ["payouts", "VI. Payouts", null],
             ] as const
           ).map(([id, label, count]) => (
             <button
@@ -729,6 +731,10 @@ export default function ArtistEdit() {
 
         {loaded && tab === "earnings" && (
           <EarningsPanel slug={slug} />
+        )}
+
+        {loaded && tab === "payouts" && (
+          <PayoutsPanel slug={slug} />
         )}
 
         {loaded && (

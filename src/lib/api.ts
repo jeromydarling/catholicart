@@ -250,4 +250,42 @@ export const api = {
     call<{ upload_url: string; image_url: string; key: string }>('/api/upload/wip', {
       method: 'POST', body: JSON.stringify(body),
     }),
+
+  // Payouts — artist's chosen rail and method-specific fields.
+  payoutPreference: (slug: string) =>
+    call<{ preference: PayoutPreferenceShape }>(`/api/artists/${slug}/payouts`),
+  savePayoutPreference: (slug: string, body: Partial<PayoutPreferenceShape>) =>
+    call<{ ok: boolean; preference: PayoutPreferenceShape }>(
+      `/api/artists/${slug}/payouts`,
+      { method: 'PUT', body: JSON.stringify(body) },
+    ),
 };
+
+export type PayoutMethod =
+  | 'unset'
+  | 'stripe_connect'
+  | 'wise'
+  | 'paper_check'
+  | 'paypal'
+  | 'manual_wire';
+
+export interface PayoutPreferenceShape {
+  method: PayoutMethod;
+  wise_recipient_id?: string | null;
+  wise_currency?: string | null;
+  wise_account_holder_name?: string | null;
+  wise_iban?: string | null;
+  wise_bank_code?: string | null;
+  wise_account_number?: string | null;
+  wise_country?: string | null;
+  check_payee_name?: string | null;
+  check_address_line1?: string | null;
+  check_address_line2?: string | null;
+  check_city?: string | null;
+  check_state?: string | null;
+  check_postal_code?: string | null;
+  check_country?: string | null;
+  paypal_email?: string | null;
+  manual_wire_notes?: string | null;
+  status?: 'pending' | 'verified' | 'failed';
+}

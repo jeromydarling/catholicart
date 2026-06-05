@@ -49,6 +49,17 @@ export interface Env {
   // and the artist can write their own sections by hand.
   ANTHROPIC_API_KEY?: string;
 
+  // Payout rails — each artist picks one. Each adapter checks for
+  // its own key at call time; missing keys queue the disbursement
+  // rather than failing it.
+  WISE_API_TOKEN?: string;          // Wise Business API
+  WISE_PROFILE_ID?: string;         // Wise business profile that funds transfers
+  CHECKBOOK_API_KEY?: string;       // Checkbook.io paper + digital checks
+  CHECKBOOK_API_SECRET?: string;
+  PAYPAL_CLIENT_ID?: string;        // PayPal Payouts API (OAuth2)
+  PAYPAL_CLIENT_SECRET?: string;
+  PAYPAL_LIVE?: string;             // "true" for production; otherwise sandbox
+
   // Public-safe client config exposed via /api/config (these are
   // intentionally browser-bound — Mapbox pk.* tokens, Sentry DSNs,
   // etc. — so we serve them at runtime rather than baking into the
