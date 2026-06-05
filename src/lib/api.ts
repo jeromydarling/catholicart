@@ -87,6 +87,33 @@ export const api = {
       method: 'PUT', body: JSON.stringify(body),
     }),
 
+  // Verification (pastor's one-click endorsement)
+  requestEndorsement: (slug: string, body: {
+    pastor_email: string;
+    pastor_name?: string;
+    parish_or_community: string;
+    parish_website?: string;
+    diocese?: string;
+    role?: 'pastor' | 'religious-superior' | 'chancery';
+  }) =>
+    call<{ ok: boolean; verification_id: string; expires_at: string }>(
+      `/api/artists/${slug}/verifications/request`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
+  listVerifications: (slug: string) =>
+    call<{ verifications: Array<{
+      id: string;
+      status: string;
+      role: string;
+      verifier_name: string;
+      verifier_email: string;
+      parish_or_community: string;
+      diocese: string | null;
+      created_at: string;
+      endorsed_at: string | null;
+      expires_at: string | null;
+    }> }>(`/api/artists/${slug}/verifications`),
+
   // Commissions
   createCommission: (body: unknown) =>
     call<{ commission: unknown }>(`/api/commissions`, { method: 'POST', body: JSON.stringify(body) }),

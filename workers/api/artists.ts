@@ -4,9 +4,11 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { Env, AppVariables } from '../types';
-import { all, first, nowIso, run } from '../lib/db';
+import { all, first, newId, nowIso, run } from '../lib/db';
 import { requireAuth, requireRole } from '../lib/auth';
 import { synthesizeVocation, type QuestionnaireResponses } from '../lib/synthesize';
+import { sendEmail } from '../lib/email';
+import { pastorEndorsementRequest } from '../lib/email-templates';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -420,6 +422,93 @@ app.put('/:slug/profile', requireAuth(), async (c) => {
   await run(c.env.DB,
     `UPDATE artists SET ${sets.join(', ')} WHERE id = ?`, ...binds);
   return c.json({ ok: true });
+});
+
+// POST /api/artists/:slug/verifications/request — artist or operator.
+// Creates a pending verification, sends a one-click endorsement email
+// to the pastor (or chancery contact, or religious superior).
+const RequestBody = z.object({
+  pastor_email: z.string().email(),
+  pastor_name: z.string().min(1).max(200).optional(),
+  parish_or_community: z.string().min(1).max(200),
+  parish_website: z.string().url().max(400).optional().or(z.literal('')),
+  diocese: z.string().max(200).optional(),
+  role: z.enum(['pastor', 'religious-superior', 'chancery']).default('pastor'),
+});
+app.post('/:slug/verifications/request', requireAuth(), async (c) => {
+  const slug = c.req.param('slug');
+  const ownership = await assertArtistOwnership(c.env, slug, c.var.user!);
+  if (!ownership) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const parsed = RequestBody.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ ok: false, error: parsed.error.flatten() }, 400);
+  const d = parsed.data;
+
+  // Token: 256-bit random, URL-safe. Two UUIDs joined for headroom.
+  const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+  const expiresAt = new Date(Date.now() + 21 * 24 * 3600 * 1000).toISOString();
+
+  // Free-webmail flag — important for trust signals downstream.
+  const freeWebmail = /@(gmail|yahoo|hotmail|outlook|aol|icloud|protonmail|fastmail)\./i.test(d.pastor_email);
+
+  const verId = newId('ver');
+  await run(c.env.DB,
+    `INSERT INTO verifications (
+       id, artist_id, token, status, role, verifier_name, verifier_email,
+       verifier_email_is_free_webmail, parish_or_community, parish_website,
+       diocese, expires_at
+     ) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?)`,
+    verId, ownership.id, token, d.role,
+    d.pastor_name ?? '(awaiting reply)',
+    d.pastor_email.toLowerCase(),
+    freeWebmail ? 1 : 0,
+    d.parish_or_community, d.parish_website || null,
+    d.diocese ?? null, expiresAt,
+  );
+
+  // Look up the artist for the email body.
+  const artist = await first<{ name: string; honorific: string | null; slug: string; city: string }>(
+    c.env.DB,
+    `SELECT name, honorific, slug, city FROM artists WHERE id = ?`,
+    ownership.id,
+  );
+
+  // Send the one-click email.
+  const link = `${c.env.SITE_URL}/verify/${token}`;
+  const event = pastorEndorsementRequest(
+    c.env.SITE_URL,
+    {
+      pastor_email: d.pastor_email,
+      pastor_name: d.pastor_name,
+      parish_or_community: d.parish_or_community,
+      artist_name: artist?.name ?? 'an artist',
+      artist_honorific: artist?.honorific ?? null,
+      artist_city: artist?.city ?? '',
+      role: d.role,
+    },
+    link,
+  );
+  await sendEmail(c.env, {
+    kind: 'verification.requested',
+    payload: { verification_id: verId, artist_slug: artist?.slug ?? slug },
+    ...event,
+  });
+
+  return c.json({ ok: true, verification_id: verId, expires_at: expiresAt });
+});
+
+// GET /api/artists/:slug/verifications — list this artist's
+// outstanding & past verification requests. Owner or operator.
+app.get('/:slug/verifications', requireAuth(), async (c) => {
+  const slug = c.req.param('slug');
+  const ownership = await assertArtistOwnership(c.env, slug, c.var.user!);
+  if (!ownership) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const rows = await all(c.env.DB,
+    `SELECT id, status, role, verifier_name, verifier_email,
+            parish_or_community, diocese, created_at, endorsed_at, expires_at
+       FROM verifications WHERE artist_id = ?
+       ORDER BY created_at DESC`,
+    ownership.id);
+  return c.json({ verifications: rows });
 });
 
 function serialize(a: ArtistRow) {

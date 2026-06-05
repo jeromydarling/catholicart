@@ -139,7 +139,20 @@ const QUESTIONS: Question[] = [
   },
 ];
 
-type Tab = "questions" | "review" | "links";
+type Tab = "questions" | "review" | "endorsement" | "links";
+
+interface VerificationRow {
+  id: string;
+  status: string;
+  role: string;
+  verifier_name: string;
+  verifier_email: string;
+  parish_or_community: string;
+  diocese: string | null;
+  created_at: string;
+  endorsed_at: string | null;
+  expires_at: string | null;
+}
 
 export default function ArtistEdit() {
   const { slug = "" } = useParams<{ slug: string }>();
@@ -375,7 +388,8 @@ export default function ArtistEdit() {
             [
               ["questions", "I. Questions", `${completedCount}/${QUESTIONS.length}`],
               ["review", "II. Review draft", null],
-              ["links", "III. Socials", null],
+              ["endorsement", "III. Endorsement", null],
+              ["links", "IV. Socials", null],
             ] as const
           ).map(([id, label, count]) => (
             <button
@@ -581,6 +595,14 @@ export default function ArtistEdit() {
           </div>
         )}
 
+        {loaded && tab === "endorsement" && (
+          <EndorsementPanel
+            slug={slug}
+            artistName={staticArtist.name}
+            onError={setError}
+          />
+        )}
+
         {loaded && tab === "links" && (
           <div className="grid lg:grid-cols-12 gap-10 pb-20">
             <div className="lg:col-span-8 space-y-6">
@@ -671,6 +693,213 @@ export default function ArtistEdit() {
         )}
       </section>
     </PageShell>
+  );
+}
+
+// The pastor / superior / chancery endorsement panel. The artist
+// enters the verifier's email + parish; we send a one-click
+// endorsement page. No account required for the verifier.
+function EndorsementPanel({
+  slug,
+  artistName,
+  onError,
+}: {
+  slug: string;
+  artistName: string;
+  onError: (e: string | null) => void;
+}) {
+  const [list, setList] = useState<VerificationRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [form, setForm] = useState({
+    pastor_email: "",
+    pastor_name: "",
+    parish_or_community: "",
+    parish_website: "",
+    diocese: "",
+    role: "pastor" as "pastor" | "religious-superior" | "chancery",
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await api.listVerifications(slug);
+      if (cancelled) return;
+      if (res.ok) setList(res.data.verifications);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
+
+  async function send() {
+    if (!form.pastor_email || !form.parish_or_community) {
+      onError("Please fill in at least the email and parish.");
+      return;
+    }
+    setSending(true);
+    onError(null);
+    const res = await api.requestEndorsement(slug, {
+      pastor_email: form.pastor_email,
+      pastor_name: form.pastor_name || undefined,
+      parish_or_community: form.parish_or_community,
+      parish_website: form.parish_website || undefined,
+      diocese: form.diocese || undefined,
+      role: form.role,
+    });
+    setSending(false);
+    if (!res.ok) {
+      onError("Couldn't send the request just now. Please try again.");
+      return;
+    }
+    setSent(true);
+    setForm({
+      pastor_email: "",
+      pastor_name: "",
+      parish_or_community: "",
+      parish_website: "",
+      diocese: "",
+      role: "pastor",
+    });
+    // Re-fetch the list
+    const listRes = await api.listVerifications(slug);
+    if (listRes.ok) setList(listRes.data.verifications);
+    setTimeout(() => setSent(false), 5000);
+  }
+
+  return (
+    <div className="grid lg:grid-cols-12 gap-10 pb-20">
+      <div className="lg:col-span-7 space-y-6">
+        <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6">
+          <div className="font-display text-lg text-ink mb-2">
+            Send a one-click endorsement request
+          </div>
+          <p className="font-serif text-sm text-ink-soft leading-relaxed mb-5">
+            We do not accept artists into the guild without a witness. Enter
+            your pastor's email (or your religious superior's, or your
+            diocesan chancery's). They will receive a single short page —
+            no account required — where they can endorse you, decline, or
+            ask for a conversation. The whole interaction takes about a
+            minute on their end.
+          </p>
+          <div className="space-y-4">
+            <Field label="Email" helper="Their direct address — ideally the parish email, not a personal Gmail.">
+              <Input
+                type="email"
+                value={form.pastor_email}
+                onChange={(e) => setForm((f) => ({ ...f, pastor_email: e.target.value }))}
+                placeholder="frwalsh@stmichaels-pittsburgh.org"
+              />
+            </Field>
+            <Field label="Their name" helper="As they would want it shown.">
+              <Input
+                value={form.pastor_name}
+                onChange={(e) => setForm((f) => ({ ...f, pastor_name: e.target.value }))}
+                placeholder="Fr. Daniel Walsh"
+              />
+            </Field>
+            <Field label="Parish or community">
+              <Input
+                value={form.parish_or_community}
+                onChange={(e) => setForm((f) => ({ ...f, parish_or_community: e.target.value }))}
+                placeholder="St. Michael the Archangel, Pittsburgh"
+              />
+            </Field>
+            <Field label="Parish website (optional)">
+              <Input
+                type="url"
+                value={form.parish_website}
+                onChange={(e) => setForm((f) => ({ ...f, parish_website: e.target.value }))}
+                placeholder="https://stmichaels-pittsburgh.org"
+              />
+            </Field>
+            <Field label="Diocese (optional)">
+              <Input
+                value={form.diocese}
+                onChange={(e) => setForm((f) => ({ ...f, diocese: e.target.value }))}
+                placeholder="Diocese of Pittsburgh"
+              />
+            </Field>
+            <Field label="Their role">
+              <select
+                value={form.role}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    role: e.target.value as typeof form.role,
+                  }))
+                }
+                className="flex h-11 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm focusable"
+              >
+                <option value="pastor">Pastor</option>
+                <option value="religious-superior">Religious superior</option>
+                <option value="chancery">Chancery</option>
+              </select>
+            </Field>
+            <Button onClick={send} disabled={sending} className="w-full">
+              {sending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              Send the endorsement request
+            </Button>
+            {sent && (
+              <div className="mt-2 inline-flex items-center font-sans text-[11px] uppercase tracking-[0.18em] text-olive-600">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Sent. They'll receive
+                it within a minute.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <aside className="lg:col-span-5">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-3">
+          Your endorsement requests
+        </div>
+        {loading ? (
+          <Loader2 className="h-5 w-5 animate-spin text-ink-muted" />
+        ) : list.length === 0 ? (
+          <p className="font-serif text-sm italic text-ink-muted">
+            None yet. Send your first request to {artistName.split(" ")[0]}'s
+            pastor or superior to begin.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {list.map((v) => (
+              <li
+                key={v.id}
+                className="rounded-md border border-ink/10 bg-parchment-50 p-4"
+              >
+                <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                  <div className="font-display text-base text-ink leading-tight">
+                    {v.verifier_email}
+                  </div>
+                  <span
+                    className={
+                      "font-sans text-[10px] uppercase tracking-[0.22em] " +
+                      (v.status === "endorsed"
+                        ? "text-olive-600"
+                        : v.status === "declined" || v.status === "expired"
+                          ? "text-burgundy-500"
+                          : "text-gold-600")
+                    }
+                  >
+                    {v.status.replace(/-/g, " ")}
+                  </span>
+                </div>
+                <div className="mt-1 font-sans text-[11px] uppercase tracking-[0.18em] text-ink-muted">
+                  {v.parish_or_community}
+                  {v.diocese && ` · ${v.diocese}`}
+                </div>
+                {v.endorsed_at && (
+                  <div className="mt-1 font-serif text-xs italic text-ink-muted">
+                    Endorsed {new Date(v.endorsed_at).toLocaleDateString()}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
+    </div>
   );
 }
 

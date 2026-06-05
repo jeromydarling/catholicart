@@ -185,6 +185,70 @@ export function magicLinkToVerifier(
   };
 }
 
+// Pastor (or religious superior, or chancery) gets a single-click
+// endorsement request. The token in `link` is the only credential —
+// no account, no signup, no friction.
+export function pastorEndorsementRequest(
+  site: string,
+  c: {
+    pastor_email: string;
+    pastor_name?: string;
+    parish_or_community: string;
+    artist_name: string;
+    artist_honorific?: string | null;
+    artist_city: string;
+    role: 'pastor' | 'religious-superior' | 'chancery';
+  },
+  link: string,
+): { recipients: Recipient[]; category: EmailCategory; rendered: RenderedEmail } {
+  const safeArtist = `${c.artist_honorific ? c.artist_honorific + ' ' : ''}${c.artist_name}`
+    .replace(/[\r\n]/g, ' ').slice(0, 200);
+  const roleLabel =
+    c.role === 'pastor' ? 'Pastor' :
+    c.role === 'religious-superior' ? 'Superior' : 'Chancery';
+  const subject = `Endorsement requested — ${safeArtist}`;
+  const preheader = `A guild artist has named you as a witness. One click.`;
+  const body = `
+    <p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 16px">
+      ${esc(safeArtist)} of ${esc(c.artist_city)} is applying to the Ars Sacra
+      guild — a small, free fellowship of Catholic artists offering sacred
+      art on commission. They have named you as their ${esc(roleLabel.toLowerCase())} at
+      <strong>${esc(c.parish_or_community)}</strong>.
+    </p>
+    <p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 16px">
+      We ask only this: do you affirm that this person is a Catholic in good
+      standing within your community, and that you support their work as a
+      sacred artist? You are under no obligation. One click below opens a
+      short page where you can endorse, decline, or ask for a conversation.
+    </p>
+    <p style="font-family:Georgia,serif;color:#5a3a3e;font-size:14px;line-height:1.55;font-style:italic;margin:0 0 8px">
+      Your endorsement is a small act of vouchsafing — not a guarantee, not
+      a contract. It tells future patrons that a priest, superior, or chancery
+      knows this person and considers them sound. We do not accept artists
+      without it.
+    </p>
+  `;
+  const html = renderLayout({
+    site,
+    preheader,
+    eyebrow: 'Endorsement request',
+    title: `Would you endorse ${safeArtist}?`,
+    lede: `Asked of you as ${roleLabel.toLowerCase()} at ${c.parish_or_community}.`,
+    body,
+    cta: { label: 'Open the endorsement page', href: link },
+    footerCategory: 'Endorsement',
+  });
+  return {
+    recipients: [{
+      email: c.pastor_email,
+      name: c.pastor_name,
+      role: c.role,
+    }],
+    category: 'transactional',
+    rendered: { subject, preheader, html, text: htmlToText(html) },
+  };
+}
+
 export function welcomeSubscriber(
   site: string,
   email: string,
