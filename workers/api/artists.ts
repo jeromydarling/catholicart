@@ -434,6 +434,54 @@ app.put('/:slug/profile', requireAuth(), async (c) => {
   return c.json({ ok: true });
 });
 
+// POST /api/artists/:slug/house — the authenticated patron designates
+// this artist their "house artist." A small, one-way commitment from
+// the patron; the artist's public profile shows an anonymized count.
+app.post('/:slug/house', requireAuth(), async (c) => {
+  const u = c.var.user!;
+  const slug = c.req.param('slug');
+  const a = await first<{ id: string }>(c.env.DB,
+    `SELECT id FROM artists WHERE slug = ?`, slug);
+  if (!a) return c.json({ ok: false, error: 'not found' }, 404);
+  await run(c.env.DB,
+    `INSERT INTO house_artists (user_id, artist_id) VALUES (?, ?)
+       ON CONFLICT(user_id, artist_id) DO NOTHING`,
+    u.id, a.id);
+  return c.json({ ok: true });
+});
+
+// DELETE /api/artists/:slug/house — patron releases the designation.
+app.delete('/:slug/house', requireAuth(), async (c) => {
+  const u = c.var.user!;
+  const slug = c.req.param('slug');
+  const a = await first<{ id: string }>(c.env.DB,
+    `SELECT id FROM artists WHERE slug = ?`, slug);
+  if (!a) return c.json({ ok: false, error: 'not found' }, 404);
+  await run(c.env.DB,
+    `DELETE FROM house_artists WHERE user_id = ? AND artist_id = ?`,
+    u.id, a.id);
+  return c.json({ ok: true });
+});
+
+// GET /api/artists/:slug/house — public count + "is current user a
+// house patron of this artist?" If unauthenticated, mine: false.
+app.get('/:slug/house', async (c) => {
+  const slug = c.req.param('slug');
+  const a = await first<{ id: string }>(c.env.DB,
+    `SELECT id FROM artists WHERE slug = ?`, slug);
+  if (!a) return c.json({ ok: false, error: 'not found' }, 404);
+  const countRow = await first<{ n: number }>(c.env.DB,
+    `SELECT COUNT(*) AS n FROM house_artists WHERE artist_id = ?`, a.id);
+  let mine = false;
+  if (c.var.user) {
+    const row = await first(c.env.DB,
+      `SELECT 1 FROM house_artists WHERE user_id = ? AND artist_id = ?`,
+      c.var.user.id, a.id);
+    mine = Boolean(row);
+  }
+  return c.json({ count: countRow?.n ?? 0, mine });
+});
+
 // GET /api/artists/:slug/earnings.csv?year=YYYY — artist or operator
 // downloads a tax-ready record of every commission released to them
 // in the given year (or all years if year is omitted). Output is

@@ -51,6 +51,8 @@ export default function ArtistProfile() {
   const navigate = useNavigate();
   const artist = artistBySlug(slug);
   const [live, setLive] = useState<LiveProfile | null>(null);
+  const [house, setHouse] = useState<{ count: number; mine: boolean } | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
 
   // Pull the live profile fields from the API. Failures are silent —
   // the page still renders from the seed data. Owner detection is
@@ -59,10 +61,15 @@ export default function ArtistProfile() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [aRes, qRes] = await Promise.all([
+      const [aRes, qRes, hRes, meRes] = await Promise.all([
         api.artist(slug),
         api.questionnaire(slug),
+        api.houseStatus(slug),
+        api.me(),
       ]);
+      if (cancelled) return;
+      if (hRes.ok) setHouse(hRes.data);
+      if (meRes.ok) setSignedIn(Boolean(meRes.data.user));
       if (cancelled) return;
       if (!aRes.ok) return;
       const a = aRes.data.artist as Record<string, unknown>;
@@ -230,6 +237,43 @@ export default function ArtistProfile() {
                 “{(live?.profile_published && live.vocation_statement)
                   || artist.vocationStatement}”
               </p>
+
+              {/* House artist patrons count + toggle. Encourages
+                  patrons to formalize the relationship. */}
+              {house && house.count > 0 && (
+                <div className="mt-4 font-sans text-[11px] uppercase tracking-[0.22em] text-ink-muted">
+                  {house.count} {house.count === 1 ? "household calls" : "households call"} them their house artist
+                </div>
+              )}
+              {signedIn && !live?.is_owner && (
+                <div className="mt-3">
+                  {house?.mine ? (
+                    <Button
+                      onClick={async () => {
+                        await api.releaseHousePatron(slug);
+                        const h = await api.houseStatus(slug);
+                        if (h.ok) setHouse(h.data);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Release house artist designation
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={async () => {
+                        await api.becomeHousePatron(slug);
+                        const h = await api.houseStatus(slug);
+                        if (h.ok) setHouse(h.data);
+                      }}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Make {artist.name.split(" ")[0]} my house artist
+                    </Button>
+                  )}
+                </div>
+              )}
 
               {/* Owner edit prompt — only the artist (or operator) sees this. */}
               {live?.is_owner && (

@@ -87,6 +87,14 @@ export const api = {
       method: 'PUT', body: JSON.stringify(body),
     }),
 
+  // House artist designation
+  houseStatus: (slug: string) =>
+    call<{ count: number; mine: boolean }>(`/api/artists/${slug}/house`),
+  becomeHousePatron: (slug: string) =>
+    call<{ ok: boolean }>(`/api/artists/${slug}/house`, { method: 'POST' }),
+  releaseHousePatron: (slug: string) =>
+    call<{ ok: boolean }>(`/api/artists/${slug}/house`, { method: 'DELETE' }),
+
   // Verification (pastor's one-click endorsement)
   requestEndorsement: (slug: string, body: {
     pastor_email: string;
