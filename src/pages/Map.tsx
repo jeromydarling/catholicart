@@ -14,6 +14,7 @@ import { initials } from "../lib/utils";
 import { MapboxMap } from "../components/MapboxMap";
 import { Seo } from "../components/Seo";
 import { DirectoryEmptyState } from "../components/DirectoryEmptyState";
+import DiscoveryMapPage from "./DiscoveryMapPage";
 
 export default function MapPage() {
   const [query, setQuery] = useState("");
@@ -21,6 +22,9 @@ export default function MapPage() {
   const dioceses = useMemo(() => listDioceses(), []);
 
   if (!flags.showArtistDirectory) {
+    if (flags.showDiscoveryDirectory) {
+      return <DiscoveryMapPage />;
+    }
     return (
       <PageShell>
         <Seo

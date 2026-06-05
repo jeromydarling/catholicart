@@ -13,4 +13,10 @@ export const flags = {
   // Turn back on when we have meaningful diocese-specific content to
   // surface (verified artists per diocese, chancery outreach copy, etc.).
   showDioceses: false,
+
+  // Show the researched discovery directory — Catholic sacred artists
+  // and religious-order workshops surfaced on /directory and /map
+  // with a clear "not yet a Locavit member" label. Sourced from
+  // public research (see src/data/discovery-directory.ts).
+  showDiscoveryDirectory: true,
 } as const;

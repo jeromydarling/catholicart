@@ -39,6 +39,7 @@ import Chancery from "./pages/Chancery";
 import ComingSoon from "./pages/ComingSoon";
 import Features from "./pages/Features";
 import Demo from "./pages/Demo";
+import Directory from "./pages/Directory";
 import NotFound from "./pages/NotFound";
 import { flags } from "./data/flags";
 
@@ -94,6 +95,9 @@ export default function App() {
       <Route path="/chancery/:token" element={<Chancery />} />
       <Route path="/features" element={<Features />} />
       <Route path="/demo" element={<Demo />} />
+      {flags.showDiscoveryDirectory && (
+        <Route path="/directory" element={<Directory />} />
+      )}
       {/* Add-on feature detail pages — patron-facing descriptions of
           guild offerings (Mass intentions, hand-bound books, etc.). */}
       <Route path="/mass-intentions" element={<ComingSoon pageKey="mass-intentions" />} />

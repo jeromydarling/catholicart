@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, Navigate } from "react-router-dom";
 import { motion } from "motion/react";
 import { ArrowRight, Filter, Heart, MapPin, Search, Scale, X } from "lucide-react";
 import { artists, isVerified } from "../data/artists";
@@ -155,6 +155,9 @@ export default function Browse() {
     (savedOnly ? 1 : 0);
 
   if (!flags.showArtistDirectory) {
+    if (flags.showDiscoveryDirectory) {
+      return <Navigate to="/directory" replace />;
+    }
     return (
       <PageShell>
         <Seo
