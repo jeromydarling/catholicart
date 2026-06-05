@@ -154,7 +154,18 @@ export default function ArtistProfile() {
           },
         }}
       />
-      {/* Hero */}
+      {/* Hero — the artist's own palette flows into every accent on
+          the page via CSS custom properties, set once on the root and
+          read by `.artist-accent` and `.artist-accent-soft` below. */}
+      <style>{`
+        .artist-page {
+          --artist-from: ${artist.portraitFrom};
+          --artist-to: ${artist.portraitTo};
+        }
+        .artist-page .artist-accent { color: var(--artist-from); }
+        .artist-page .artist-rule { background: linear-gradient(to right, transparent, var(--artist-from), transparent); height: 1px; border: 0; }
+      `}</style>
+      <div className="artist-page">
       <section className="relative">
         <div
           aria-hidden
@@ -714,6 +725,7 @@ export default function ArtistProfile() {
 
       <ReviewsSection slug={artist.slug} />
       <SimilarArtists slug={artist.slug} />
+      </div>
     </PageShell>
   );
 }

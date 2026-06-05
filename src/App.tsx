@@ -36,6 +36,7 @@ import About from "./pages/About";
 import Manifesto from "./pages/Manifesto";
 import Verify from "./pages/Verify";
 import Chancery from "./pages/Chancery";
+import ComingSoon from "./pages/ComingSoon";
 import NotFound from "./pages/NotFound";
 
 // Heavy pages — code-split so mapbox-gl etc. don't bloat the main bundle.
@@ -88,6 +89,15 @@ export default function App() {
       <Route path="/manifesto" element={<Manifesto />} />
       <Route path="/verify/:token" element={<Verify />} />
       <Route path="/chancery/:token" element={<Chancery />} />
+      {/* In gestation — features that need a real-world dependency
+          before they can flip on. Each page is honest about what it
+          needs. When the dependency lands, swap the page for the
+          working feature. */}
+      <Route path="/mass-intentions" element={<ComingSoon pageKey="mass-intentions" />} />
+      <Route path="/memorabilia-book" element={<ComingSoon pageKey="memorabilia-book" />} />
+      <Route path="/thank-you-card" element={<ComingSoon pageKey="thank-you-card" />} />
+      <Route path="/reference-library" element={<ComingSoon pageKey="reference-library" />} />
+      <Route path="/wip-timelapse" element={<ComingSoon pageKey="wip-timelapse" />} />
       {/* Vanity URL — the artist's "site" is the existing profile,
           reachable at /:slug as well as /artists/:slug. Reserved
           single-segment paths (declared above) win because they
