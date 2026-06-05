@@ -249,6 +249,75 @@ export function pastorEndorsementRequest(
   };
 }
 
+// Annual season letter — January 1st mailing. A short, warm reflection
+// on what the artist made this year: works, patrons, feasts. Not a
+// metrics report; a letter.
+export function seasonLetterToArtist(
+  site: string,
+  c: {
+    artist_id: string;
+    artist_name: string;
+    artist_email: string;
+    works_completed: number;
+    patrons_served: number;
+    feasts: string[];
+    total_to_artist: number;
+  },
+  year: number,
+): { recipients: Recipient[]; category: EmailCategory; rendered: RenderedEmail } {
+  const safeName = c.artist_name.replace(/[\r\n]/g, ' ').slice(0, 200);
+  const firstName = safeName.split(' ')[0];
+  const works = c.works_completed === 1 ? '1 work' : `${c.works_completed} works`;
+  const patrons = c.patrons_served === 1 ? '1 household' : `${c.patrons_served} households`;
+  const subject = `${year}, in your hand · A letter from the guild`;
+  const preheader = `${works} for ${patrons}. Thank you for what you made.`;
+  const feastLine =
+    c.feasts.length === 0
+      ? ''
+      : c.feasts.length === 1
+        ? `<p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 14px">One of them was made for ${esc(c.feasts[0])}.</p>`
+        : `<p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 14px">Among the feasts your work served: ${c.feasts.slice(0, 5).map((f) => `<em>${esc(f)}</em>`).join(', ')}.</p>`;
+  const body = `
+    <p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 14px">
+      Dear ${esc(firstName)},
+    </p>
+    <p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 14px">
+      This is a quiet letter to mark the year. In ${year} you made
+      <strong>${works}</strong> through the guild, received by <strong>${patrons}</strong>.
+    </p>
+    ${feastLine}
+    <p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 14px">
+      The patrons received their work, the parishes have icons and panels
+      and stones and songs that did not exist before you bent over them.
+      That is the thing being recorded here — not a number on a ledger,
+      but a record of presence. Thank you for the labor of it.
+    </p>
+    <p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 14px;font-style:italic">
+      Ad maiorem Dei gloriam, per pulchritudinem.
+    </p>
+    <p style="font-family:Georgia,serif;color:#3a1418;font-size:14px;line-height:1.6;margin:24px 0 0">
+      — The guild
+    </p>
+    <p style="font-family:Helvetica,Arial,sans-serif;color:#8d6e72;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;margin:24px 0 0">
+      Tax-ready earnings: ${fmtPrice(c.total_to_artist)} to your hand in ${year}.
+    </p>
+  `;
+  const html = renderLayout({
+    site,
+    preheader,
+    eyebrow: `Season letter · ${year}`,
+    title: `${year}, in your hand.`,
+    body,
+    cta: { label: 'See the works on your profile', href: `${site}/artists/` },
+    footerCategory: 'Season letter',
+  });
+  return {
+    recipients: [{ email: c.artist_email, name: c.artist_name, role: 'artist' }],
+    category: 'milestone',
+    rendered: { subject, preheader, html, text: htmlToText(html) },
+  };
+}
+
 export function welcomeSubscriber(
   site: string,
   email: string,

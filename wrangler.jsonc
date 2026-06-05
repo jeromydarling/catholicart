@@ -49,7 +49,10 @@
     }
   ],
   "triggers": {
-    "crons": ["0 */6 * * *"]
+    "crons": [
+      "0 */6 * * *",
+      "0 8 1 1 *"
+    ]
   }
   /*
    * Secrets (set via cf-worker-secret-bulk workflow, NOT in this file):

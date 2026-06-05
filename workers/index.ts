@@ -90,12 +90,24 @@ app.all('/api/*', (c) => c.json({ ok: false, error: 'not found' }, 404));
 // Fallback: serve the SPA for anything that isn't an API or asset.
 app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));
 
-// Scheduled handler — runs every 6 hours (cron in wrangler.jsonc).
-// Cleans up the magic_links table; without this it grows unbounded
-// because /api/auth/login inserts a row per login attempt.
+// Scheduled handlers. Two crons (declared in wrangler.jsonc):
+//   "0 */6 * * *" — every 6 hours: prune the magic_links table.
+//   "0 8 1 1 *"   — January 1 at 08:00 UTC: send the annual season
+//                    letter to every artist with work completed in
+//                    the previous year.
+import { sendSeasonLetters } from './lib/season-letter';
+
 export default {
   fetch: app.fetch,
-  async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    if (event.cron === '0 8 1 1 *') {
+      const lastYear = new Date().getUTCFullYear() - 1;
+      ctx.waitUntil(sendSeasonLetters(env, lastYear).then((r) =>
+        console.log(`season letters: sent=${r.sent} skipped=${r.skipped}`),
+      ));
+      return;
+    }
+    // Default: 6-hourly magic_links GC.
     const cutoff = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     await env.DB
       .prepare(`DELETE FROM magic_links WHERE expires_at < ?`)
