@@ -70,6 +70,7 @@ app.get('/api/config', (c) => {
       email_configured: Boolean(c.env.EMAIL && typeof c.env.EMAIL.send === 'function'),
       auth_secret_configured: Boolean(c.env.AUTH_SECRET),
       stripe_configured: Boolean(c.env.STRIPE_SECRET_KEY),
+      anthropic_configured: Boolean(c.env.ANTHROPIC_API_KEY),
     },
   });
 });

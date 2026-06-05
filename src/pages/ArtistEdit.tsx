@@ -164,6 +164,9 @@ export default function ArtistEdit() {
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [forbidden, setForbidden] = useState(false);
+  // Per-question gentle nudges from the synthesizer's last run.
+  const [nudges, setNudges] = useState<Record<string, string>>({});
+  const [synthOffline, setSynthOffline] = useState(false);
 
   // Load existing responses + artist profile
   useEffect(() => {
@@ -266,14 +269,19 @@ export default function ArtistEdit() {
     if (!someAnswered) return;
     setSynthesizing(true);
     setError(null);
+    setSynthOffline(false);
     // Save first so the model sees the latest answers.
     await api.saveQuestionnaire(slug, responses as unknown as Record<string, string>);
     const res = await api.synthesizeVocation(slug);
     setSynthesizing(false);
     if (!res.ok) {
-      setError(
-        "The synthesizer hesitated. Try again, or write the three sections by hand below.",
-      );
+      if (res.status === 503) {
+        setSynthOffline(true);
+      } else {
+        setError(
+          "The synthesizer hesitated. Try again, or write the three sections by hand below.",
+        );
+      }
       return;
     }
     setSynth((s) => ({
@@ -282,7 +290,20 @@ export default function ArtistEdit() {
       studio_rhythm: res.data.synthesis.studio_rhythm,
       process_note: res.data.synthesis.process_note,
     }));
-    setTab("review");
+    // Surface per-question nudges from the model.
+    const map: Record<string, string> = {};
+    for (const n of res.data.synthesis.needs_expansion ?? []) {
+      map[n.field] = n.nudge;
+    }
+    setNudges(map);
+    // If we have at least one substantive field, jump to review; if
+    // EVERYTHING came back empty plus a pile of nudges, stay on
+    // Questions so the artist can address them.
+    const hasContent =
+      res.data.synthesis.mission_statement.trim() ||
+      res.data.synthesis.studio_rhythm.trim() ||
+      res.data.synthesis.process_note.trim();
+    if (hasContent) setTab("review");
   }
 
   async function saveProfile() {
@@ -376,6 +397,15 @@ export default function ArtistEdit() {
             {error}
           </div>
         )}
+        {synthOffline && (
+          <div className="mb-6 rounded-md border border-gold-500/30 bg-gold-500/5 p-4 font-serif text-sm text-ink-soft">
+            <strong className="text-ink">The synthesizer isn't switched on yet.</strong>{" "}
+            Your answers are saved. The guild operator needs to set
+            <code className="font-mono text-xs mx-1 px-1 bg-parchment-100 rounded">ANTHROPIC_API_KEY</code>
+            for Claude to read your answers. In the meantime, every
+            field on the Review tab can be written by hand.
+          </div>
+        )}
 
         {!loaded && (
           <div className="py-24 text-center font-sans text-xs uppercase tracking-[0.22em] text-ink-muted">
@@ -413,6 +443,18 @@ export default function ArtistEdit() {
                     }
                     placeholder={q.placeholder}
                   />
+                  {nudges[q.id] && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-md bg-gold-500/5 border-l-2 border-gold-500 px-3 py-2 font-serif text-sm italic text-ink-soft leading-relaxed"
+                    >
+                      <span className="not-italic font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mr-2">
+                        From the editor
+                      </span>
+                      {nudges[q.id]}
+                    </motion.div>
+                  )}
                 </motion.li>
               ))}
             </ol>
@@ -456,9 +498,10 @@ export default function ArtistEdit() {
                   : <><Sparkles className="h-4 w-4 mr-2" /> {allAnswered ? "Synthesize a draft" : "Synthesize what you've answered"}</>}
               </Button>
               <p className="font-serif text-xs italic text-ink-muted leading-relaxed">
-                Llama 3.1, running on Cloudflare's edge. It's instructed
-                to use your exact words wherever possible and to invent
-                nothing.
+                Claude Sonnet, instructed to prefer your exact words and
+                invent nothing. If an answer is thin, it tells you so
+                in the margin — gently, in the second person — and
+                leaves that field empty for you to fill.
               </p>
             </aside>
           </div>

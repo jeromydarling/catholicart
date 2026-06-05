@@ -33,6 +33,7 @@ export const api = {
         email_configured?: boolean;
         auth_secret_configured?: boolean;
         stripe_configured?: boolean;
+        anthropic_configured?: boolean;
       };
     }>('/api/config'),
 
@@ -72,10 +73,15 @@ export const api = {
       method: 'PUT', body: JSON.stringify(body),
     }),
   synthesizeVocation: (slug: string) =>
-    call<{ ok: boolean; synthesis: { mission_statement: string; studio_rhythm: string; process_note: string } }>(
-      `/api/artists/${slug}/synthesize`,
-      { method: 'POST' },
-    ),
+    call<{
+      ok: boolean;
+      synthesis: {
+        mission_statement: string;
+        studio_rhythm: string;
+        process_note: string;
+        needs_expansion: Array<{ field: string; nudge: string }>;
+      };
+    }>(`/api/artists/${slug}/synthesize`, { method: 'POST' }),
   saveArtistProfile: (slug: string, body: Record<string, string | boolean | undefined>) =>
     call<{ ok: boolean }>(`/api/artists/${slug}/profile`, {
       method: 'PUT', body: JSON.stringify(body),

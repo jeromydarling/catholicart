@@ -369,7 +369,11 @@ app.post('/:slug/synthesize', requireAuth(), async (c) => {
       nowIso(), ownership.id);
     return c.json({ ok: true, synthesis: synth });
   } catch (e) {
-    return c.json({ ok: false, error: (e as Error).message ?? 'synthesis failed' }, 500);
+    const msg = (e as Error).message ?? 'synthesis failed';
+    // 503 when the synthesizer isn't configured yet, so the UI can
+    // distinguish "set the key" from "the model hesitated."
+    const status = msg.includes('ANTHROPIC_API_KEY not set') ? 503 : 500;
+    return c.json({ ok: false, error: msg }, status);
   }
 });
 

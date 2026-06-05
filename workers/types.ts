@@ -44,6 +44,10 @@ export interface Env {
   AUTH_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
+  // For the vocation-site synthesizer. When unset, the synthesize
+  // endpoint returns a clear error; the questionnaire still works
+  // and the artist can write their own sections by hand.
+  ANTHROPIC_API_KEY?: string;
 
   // Public-safe client config exposed via /api/config (these are
   // intentionally browser-bound — Mapbox pk.* tokens, Sentry DSNs,
