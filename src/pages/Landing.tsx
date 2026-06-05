@@ -4,6 +4,7 @@ import { ArrowRight, Feather, HandHeart, MessagesSquare, PlayCircle, Sparkles } 
 import { brand } from "../data/brand";
 import { categories } from "../data/categories";
 import { artists } from "../data/artists";
+import { flags } from "../data/flags";
 import { heroQuote, quotes } from "../data/quotes";
 import { PageShell } from "../components/layout/PageShell";
 import { Button } from "../components/ui/button";
@@ -182,27 +183,29 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Featured artists */}
-      <section className="container pt-20 sm:pt-28">
-        <SectionHeading
-          eyebrow="The guild"
-          title="A few of our artists"
-          intro="Each member of the guild is vouched for by a parish, a master, or a prior commission. They are paid justly; their craft is their vocation."
-        />
-        <div className="mt-10 sm:mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {featured.map((a, i) => (
-            <ArtistCard key={a.slug} artist={a} index={i} />
-          ))}
-        </div>
-        <div className="mt-10 flex justify-center">
-          <Button asChild variant="outline" size="lg">
-            <Link to="/browse">
-              See all {artists.length} artists{" "}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </section>
+      {/* Featured artists — surfaces only when the directory is populated. */}
+      {flags.showArtistDirectory && featured.length > 0 && (
+        <section className="container pt-20 sm:pt-28">
+          <SectionHeading
+            eyebrow="The guild"
+            title="A few of our artists"
+            intro="Each member of the guild is vouched for by a parish, a master, or a prior commission. They are paid justly; their craft is their vocation."
+          />
+          <div className="mt-10 sm:mt-14 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {featured.map((a, i) => (
+              <ArtistCard key={a.slug} artist={a} index={i} />
+            ))}
+          </div>
+          <div className="mt-10 flex justify-center">
+            <Button asChild variant="outline" size="lg">
+              <Link to="/browse">
+                See all {artists.length} artists{" "}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+      )}
 
       {/* How it works */}
       <section

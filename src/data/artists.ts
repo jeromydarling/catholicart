@@ -1,7 +1,11 @@
 import type { Artist } from "../types";
 import { SEED_VERIFICATIONS } from "./seed-verifications";
+import { flags } from "./flags";
 
-export const artists: Artist[] = [
+// Internal seed roster. Kept intact so flipping the
+// `showArtistDirectory` flag instantly restores the directory while
+// the researched real-world directory is being assembled and ingested.
+const SEED_ARTISTS: Artist[] = [
   {
     slug: "maria-chrysostom",
     name: "Maria Chrysostom",
@@ -1248,10 +1252,15 @@ export const artists: Artist[] = [
 ];
 
 // Attach seed endorsements to each artist by slug.
-artists.forEach((a) => {
+SEED_ARTISTS.forEach((a) => {
   const v = SEED_VERIFICATIONS[a.slug];
   if (v) a.verification = v;
 });
+
+// Gated export — empty when the directory flag is off so /browse,
+// /map, featured rows, and direct slug lookups behave as if the guild
+// is being assembled. SEED_ARTISTS is preserved above.
+export const artists: Artist[] = flags.showArtistDirectory ? SEED_ARTISTS : [];
 
 export function artistBySlug(slug: string) {
   return artists.find((a) => a.slug === slug);

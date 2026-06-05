@@ -14,9 +14,13 @@ const OUT = existsSync(resolve("dist/client"))
   ? resolve("dist/client/sitemap.xml")
   : resolve("dist/sitemap.xml");
 
+// Read flags so we don't sitemap routes that are gated off.
+const flagsFile = await readFile(resolve("src/data/flags.ts"), "utf8");
+const directoryEnabled = /showArtistDirectory:\s*true/.test(flagsFile);
+
 const artistsFile = await readFile(resolve("src/data/artists.ts"), "utf8");
 const slugMatches = [...artistsFile.matchAll(/slug:\s*"([^"]+)"/g)];
-const artistSlugs = slugMatches.map((m) => m[1]);
+const artistSlugs = directoryEnabled ? slugMatches.map((m) => m[1]) : [];
 
 const staticRoutes = [
   "/",
@@ -38,7 +42,6 @@ const staticRoutes = [
   "/demo",
   "/library",
   "/letters",
-  "/dioceses",
 ];
 
 const now = new Date().toISOString();

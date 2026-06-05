@@ -6,9 +6,11 @@ import { artists, isVerified } from "../data/artists";
 import { categories } from "../data/categories";
 import { saints, saintBySlug } from "../data/saints";
 import { tagsFor } from "../data/artist-tags";
+import { flags } from "../data/flags";
 import type { Artist, CategorySlug } from "../types";
 import { PageShell } from "../components/layout/PageShell";
 import { ArtistCard } from "../components/ArtistCard";
+import { DirectoryEmptyState } from "../components/DirectoryEmptyState";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Input } from "../components/ui/input";
@@ -151,6 +153,19 @@ export default function Browse() {
     (priceBand !== "any" ? 1 : 0) +
     (activeSaint ? 1 : 0) +
     (savedOnly ? 1 : 0);
+
+  if (!flags.showArtistDirectory) {
+    return (
+      <PageShell>
+        <Seo
+          title="Browse the guild — Locavit"
+          description="A directory of pastor-endorsed Catholic artists, currently being assembled. Iconography, painting, sculpture, glass, music, verse."
+          path="/browse"
+        />
+        <DirectoryEmptyState surface="browse" />
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell>

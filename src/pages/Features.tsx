@@ -204,9 +204,9 @@ const TRUST: Feature[] = [
   },
   {
     icon: Building2,
-    title: "Diocesan landing pages",
-    body: "A page per diocese listing verified artists in the region, with a clear path for chancery outreach.",
-    to: "/dioceses",
+    title: "Diocesan & parish partnerships",
+    body: "Dioceses, parishes, and religious institutions can commission through a multi-stakeholder approval flow with NET-30 invoicing.",
+    to: "/partnerships",
   },
   {
     icon: Award,

@@ -5,6 +5,7 @@ import { ArrowRight, MapPin, Search, ShieldCheck } from "lucide-react";
 import { artists, isVerified } from "../data/artists";
 import { tagsFor, listDioceses, artistsByDiocese } from "../data/artist-tags";
 import { categoryBySlug } from "../data/categories";
+import { flags } from "../data/flags";
 import { PageShell } from "../components/layout/PageShell";
 import { Ornament } from "../components/Ornament";
 import { Input } from "../components/ui/input";
@@ -12,11 +13,25 @@ import { Badge } from "../components/ui/badge";
 import { initials } from "../lib/utils";
 import { MapboxMap } from "../components/MapboxMap";
 import { Seo } from "../components/Seo";
+import { DirectoryEmptyState } from "../components/DirectoryEmptyState";
 
 export default function MapPage() {
   const [query, setQuery] = useState("");
   const [selectedDiocese, setSelectedDiocese] = useState<string | null>(null);
   const dioceses = useMemo(() => listDioceses(), []);
+
+  if (!flags.showArtistDirectory) {
+    return (
+      <PageShell>
+        <Seo
+          title="Map of the Body of Christ — Locavit"
+          description="A worldwide map of Catholic sacred artists, currently being assembled."
+          path="/map"
+        />
+        <DirectoryEmptyState surface="map" />
+      </PageShell>
+    );
+  }
 
   const filteredDioceses = useMemo(() => {
     if (!query.trim()) return dioceses;

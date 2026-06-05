@@ -40,6 +40,7 @@ import ComingSoon from "./pages/ComingSoon";
 import Features from "./pages/Features";
 import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
+import { flags } from "./data/flags";
 
 // Heavy pages — code-split so mapbox-gl etc. don't bloat the main bundle.
 const MapPage = lazy(() => import("./pages/Map"));
@@ -77,8 +78,8 @@ export default function App() {
       <Route path="/partnerships/new" element={<IntakeForm />} />
       <Route path="/partnerships/:id" element={<IntakeDetail />} />
       <Route path="/admin" element={<Admin />} />
-      <Route path="/dioceses" element={<Diocese />} />
-      <Route path="/dioceses/:slug" element={<Diocese />} />
+      {flags.showDioceses && <Route path="/dioceses" element={<Diocese />} />}
+      {flags.showDioceses && <Route path="/dioceses/:slug" element={<Diocese />} />}
       <Route path="/letters" element={<Letters />} />
       <Route path="/library" element={<Library />} />
       <Route path="/share/:token" element={<Share />} />
