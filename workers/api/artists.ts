@@ -4,8 +4,9 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { Env, AppVariables } from '../types';
-import { all, first, run } from '../lib/db';
-import { requireRole } from '../lib/auth';
+import { all, first, nowIso, run } from '../lib/db';
+import { requireAuth, requireRole } from '../lib/auth';
+import { synthesizeVocation, type QuestionnaireResponses } from '../lib/synthesize';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -27,6 +28,14 @@ interface ArtistRow {
   order_slug: string | null;
   vocation_statement: string | null;
   patron: string | null;
+  // Vocation-site fields (questionnaire-derived, artist-editable)
+  mission_statement?: string | null;
+  studio_rhythm?: string | null;
+  process_note?: string | null;
+  instagram_handle?: string | null;
+  x_handle?: string | null;
+  personal_url?: string | null;
+  profile_published?: number;
 }
 
 // GET /api/artists?q=…&category=…&saint=…&diocese=…&order=…&accepting=true&min=&max=&saved=&sort=
@@ -253,6 +262,162 @@ app.post('/:slug/claim', requireRole('operator'), async (c) => {
   });
 });
 
+// ── Vocation site (questionnaire + AI synthesis + edits) ────────────
+// Only the artist themselves, or an operator, can touch these.
+
+async function assertArtistOwnership(
+  env: Env,
+  slug: string,
+  user: { id: string; role: string },
+): Promise<{ id: string; user_id: string | null } | null> {
+  const a = await first<{ id: string; user_id: string | null }>(
+    env.DB, `SELECT id, user_id FROM artists WHERE slug = ?`, slug,
+  );
+  if (!a) return null;
+  if (user.role === 'operator') return a;
+  if (a.user_id === user.id) return a;
+  return null;
+}
+
+// GET /api/artists/:slug/questionnaire — artist (or operator) reads
+// their saved responses to render the editor.
+app.get('/:slug/questionnaire', requireAuth(), async (c) => {
+  const slug = c.req.param('slug');
+  const ownership = await assertArtistOwnership(c.env, slug, c.var.user!);
+  if (!ownership) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const row = await first(c.env.DB,
+    `SELECT * FROM artist_questionnaire WHERE artist_id = ?`, ownership.id);
+  return c.json({ responses: row ?? null });
+});
+
+// PUT /api/artists/:slug/questionnaire — save (or update) responses.
+const QBody = z.object({
+  q1_first_call:    z.string().max(4000).optional(),
+  q2_lineage:       z.string().max(4000).optional(),
+  q3_canon:         z.string().max(4000).optional(),
+  q4_patron_saints: z.string().max(4000).optional(),
+  q5_rhythm:        z.string().max(4000).optional(),
+  q6_materials:     z.string().max(4000).optional(),
+  q7_for_parish:    z.string().max(4000).optional(),
+  q8_for_home:      z.string().max(4000).optional(),
+  q9_the_cost:      z.string().max(4000).optional(),
+  q10_the_prayer:   z.string().max(4000).optional(),
+});
+app.put('/:slug/questionnaire', requireAuth(), async (c) => {
+  const slug = c.req.param('slug');
+  const ownership = await assertArtistOwnership(c.env, slug, c.var.user!);
+  if (!ownership) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const parsed = QBody.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ ok: false }, 400);
+  const d = parsed.data;
+  await run(c.env.DB,
+    `INSERT INTO artist_questionnaire (
+       artist_id, q1_first_call, q2_lineage, q3_canon, q4_patron_saints,
+       q5_rhythm, q6_materials, q7_for_parish, q8_for_home, q9_the_cost,
+       q10_the_prayer, submitted_at, updated_at
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(artist_id) DO UPDATE SET
+       q1_first_call    = excluded.q1_first_call,
+       q2_lineage       = excluded.q2_lineage,
+       q3_canon         = excluded.q3_canon,
+       q4_patron_saints = excluded.q4_patron_saints,
+       q5_rhythm        = excluded.q5_rhythm,
+       q6_materials     = excluded.q6_materials,
+       q7_for_parish    = excluded.q7_for_parish,
+       q8_for_home      = excluded.q8_for_home,
+       q9_the_cost      = excluded.q9_the_cost,
+       q10_the_prayer   = excluded.q10_the_prayer,
+       submitted_at     = COALESCE(artist_questionnaire.submitted_at, excluded.submitted_at),
+       updated_at       = excluded.updated_at`,
+    ownership.id,
+    d.q1_first_call ?? null, d.q2_lineage ?? null, d.q3_canon ?? null,
+    d.q4_patron_saints ?? null, d.q5_rhythm ?? null, d.q6_materials ?? null,
+    d.q7_for_parish ?? null, d.q8_for_home ?? null, d.q9_the_cost ?? null,
+    d.q10_the_prayer ?? null,
+    nowIso(), nowIso(),
+  );
+  return c.json({ ok: true });
+});
+
+// POST /api/artists/:slug/synthesize — runs Workers AI on the saved
+// responses, stores the three generated fields as DRAFTS on artists.
+// The artist edits them via PUT /:slug/profile.
+app.post('/:slug/synthesize', requireAuth(), async (c) => {
+  const slug = c.req.param('slug');
+  const ownership = await assertArtistOwnership(c.env, slug, c.var.user!);
+  if (!ownership) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const r = await first<QuestionnaireResponses>(c.env.DB,
+    `SELECT q1_first_call, q2_lineage, q3_canon, q4_patron_saints,
+            q5_rhythm, q6_materials, q7_for_parish, q8_for_home,
+            q9_the_cost, q10_the_prayer
+       FROM artist_questionnaire WHERE artist_id = ?`,
+    ownership.id);
+  if (!r) return c.json({ ok: false, error: 'no responses yet' }, 400);
+  try {
+    const synth = await synthesizeVocation(c.env, r);
+    await run(c.env.DB,
+      `UPDATE artists SET
+         mission_statement = ?,
+         studio_rhythm = ?,
+         process_note = ?,
+         updated_at = ?
+         WHERE id = ?`,
+      synth.mission_statement, synth.studio_rhythm, synth.process_note,
+      nowIso(), ownership.id);
+    await run(c.env.DB,
+      `UPDATE artist_questionnaire SET ai_generated_at = ? WHERE artist_id = ?`,
+      nowIso(), ownership.id);
+    return c.json({ ok: true, synthesis: synth });
+  } catch (e) {
+    return c.json({ ok: false, error: (e as Error).message ?? 'synthesis failed' }, 500);
+  }
+});
+
+// PUT /api/artists/:slug/profile — artist edits any of the
+// synthesized fields + socials.
+const ProfileBody = z.object({
+  mission_statement: z.string().max(400).optional(),
+  studio_rhythm:     z.string().max(2000).optional(),
+  process_note:      z.string().max(4000).optional(),
+  vocation_statement: z.string().max(400).optional(),
+  instagram_handle:  z.string().max(60).optional(),
+  x_handle:          z.string().max(60).optional(),
+  personal_url:      z.string().url().max(400).optional().or(z.literal('')),
+  profile_published: z.boolean().optional(),
+});
+app.put('/:slug/profile', requireAuth(), async (c) => {
+  const slug = c.req.param('slug');
+  const ownership = await assertArtistOwnership(c.env, slug, c.var.user!);
+  if (!ownership) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const parsed = ProfileBody.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ ok: false }, 400);
+  const d = parsed.data;
+  // Build a dynamic UPDATE; only set fields that were provided.
+  const sets: string[] = [];
+  const binds: unknown[] = [];
+  const set = (col: string, v: unknown) => {
+    if (v !== undefined) { sets.push(`${col} = ?`); binds.push(v); }
+  };
+  set('mission_statement', d.mission_statement);
+  set('studio_rhythm', d.studio_rhythm);
+  set('process_note', d.process_note);
+  set('vocation_statement', d.vocation_statement);
+  set('instagram_handle', d.instagram_handle ?? null);
+  set('x_handle', d.x_handle ?? null);
+  set('personal_url', d.personal_url || null);
+  if (d.profile_published !== undefined) {
+    sets.push('profile_published = ?');
+    binds.push(d.profile_published ? 1 : 0);
+  }
+  if (sets.length === 0) return c.json({ ok: true });
+  sets.push('updated_at = ?');
+  binds.push(nowIso());
+  binds.push(ownership.id);
+  await run(c.env.DB,
+    `UPDATE artists SET ${sets.join(', ')} WHERE id = ?`, ...binds);
+  return c.json({ ok: true });
+});
+
 function serialize(a: ArtistRow) {
   let bio: string[] = [];
   try {
@@ -265,6 +430,7 @@ function serialize(a: ArtistRow) {
     bio,
     accepting_commissions: Boolean(a.accepting_commissions),
     custom_pricing: Boolean(a.custom_pricing),
+    profile_published: Boolean(a.profile_published ?? 0),
   };
 }
 

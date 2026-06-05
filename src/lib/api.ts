@@ -64,6 +64,23 @@ export const api = {
     call<{ artist: unknown; categories: string[]; saints: string[]; tiers: unknown[]; works: unknown[]; stats: unknown; reviews: unknown[] }>(`/api/artists/${slug}`),
   similar: (slug: string) => call<{ artists: unknown[] }>(`/api/artists/${slug}/similar`),
 
+  // Vocation site (artist-only)
+  questionnaire: (slug: string) =>
+    call<{ responses: Record<string, string | null> | null }>(`/api/artists/${slug}/questionnaire`),
+  saveQuestionnaire: (slug: string, body: Record<string, string>) =>
+    call<{ ok: boolean }>(`/api/artists/${slug}/questionnaire`, {
+      method: 'PUT', body: JSON.stringify(body),
+    }),
+  synthesizeVocation: (slug: string) =>
+    call<{ ok: boolean; synthesis: { mission_statement: string; studio_rhythm: string; process_note: string } }>(
+      `/api/artists/${slug}/synthesize`,
+      { method: 'POST' },
+    ),
+  saveArtistProfile: (slug: string, body: Record<string, string | boolean | undefined>) =>
+    call<{ ok: boolean }>(`/api/artists/${slug}/profile`, {
+      method: 'PUT', body: JSON.stringify(body),
+    }),
+
   // Commissions
   createCommission: (body: unknown) =>
     call<{ commission: unknown }>(`/api/commissions`, { method: 'POST', body: JSON.stringify(body) }),

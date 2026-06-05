@@ -1,11 +1,21 @@
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Award, Compass, Hourglass, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Award,
+  Compass,
+  ExternalLink,
+  Hourglass,
+  Pencil,
+  ShieldCheck,
+} from "lucide-react";
 import { artistBySlug, isVerified } from "../data/artists";
 import { categoryBySlug } from "../data/categories";
 import { PageShell } from "../components/layout/PageShell";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
+import { api } from "../lib/api";
 import {
   Tabs,
   TabsContent,
@@ -20,10 +30,55 @@ import { useStore } from "../lib/store";
 import { StarRating } from "../components/StarRating";
 import { Seo } from "../components/Seo";
 
+interface LiveProfile {
+  mission_statement: string;
+  studio_rhythm: string;
+  process_note: string;
+  vocation_statement: string;
+  instagram_handle: string;
+  x_handle: string;
+  personal_url: string;
+  profile_published: boolean;
+  /** true when the signed-in user can edit this profile */
+  is_owner: boolean;
+}
+
 export default function ArtistProfile() {
   const { slug = "" } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const artist = artistBySlug(slug);
+  const [live, setLive] = useState<LiveProfile | null>(null);
+
+  // Pull the live profile fields from the API. Failures are silent —
+  // the page still renders from the seed data. Owner detection is
+  // server-implied: we attempt the questionnaire endpoint; if it
+  // returns 200, the signed-in user owns this artist.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [aRes, qRes] = await Promise.all([
+        api.artist(slug),
+        api.questionnaire(slug),
+      ]);
+      if (cancelled) return;
+      if (!aRes.ok) return;
+      const a = aRes.data.artist as Record<string, unknown>;
+      setLive({
+        mission_statement: (a.mission_statement as string) ?? "",
+        studio_rhythm: (a.studio_rhythm as string) ?? "",
+        process_note: (a.process_note as string) ?? "",
+        vocation_statement: (a.vocation_statement as string) ?? "",
+        instagram_handle: (a.instagram_handle as string) ?? "",
+        x_handle: (a.x_handle as string) ?? "",
+        personal_url: (a.personal_url as string) ?? "",
+        profile_published: Boolean(a.profile_published),
+        is_owner: qRes.ok,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
 
   if (!artist) {
     return (
@@ -139,8 +194,75 @@ export default function ArtistProfile() {
                 className="font-display italic text-2xl sm:text-3xl text-ink leading-snug max-w-2xl"
                 style={{ textWrap: "balance" } as React.CSSProperties}
               >
-                “{artist.vocationStatement}”
+                “{(live?.profile_published && live.vocation_statement)
+                  || artist.vocationStatement}”
               </p>
+
+              {/* Owner edit prompt — only the artist (or operator) sees this. */}
+              {live?.is_owner && (
+                <div className="mt-5 inline-flex items-center gap-3 rounded-md border border-dashed border-burgundy-500/30 bg-burgundy-500/5 px-4 py-2.5">
+                  <Pencil className="h-4 w-4 text-burgundy-500" />
+                  <span className="font-serif text-sm text-ink-soft">
+                    This is your page.{" "}
+                    <Link
+                      to={`/artists/${slug}/edit`}
+                      className="text-burgundy-500 hover:text-burgundy-600 underline underline-offset-2"
+                    >
+                      {live.profile_published
+                        ? "Edit your vocation site"
+                        : "Build your vocation site"}
+                    </Link>
+                  </span>
+                </div>
+              )}
+
+              {/* Mission statement — appears when published. Set in
+                  large display type, as the single line under the name. */}
+              {live?.profile_published && live.mission_statement && (
+                <p
+                  className="mt-7 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed max-w-2xl"
+                  style={{ textWrap: "balance" } as React.CSSProperties}
+                >
+                  {live.mission_statement}
+                </p>
+              )}
+
+              {/* Socials row — when present. */}
+              {live?.profile_published &&
+                (live.instagram_handle || live.x_handle || live.personal_url) && (
+                  <div className="mt-5 flex items-center gap-4 flex-wrap font-sans text-xs uppercase tracking-[0.18em]">
+                    {live.instagram_handle && (
+                      <a
+                        href={`https://instagram.com/${live.instagram_handle}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-ink-muted hover:text-burgundy-500 inline-flex items-center gap-1"
+                      >
+                        Instagram <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                    {live.x_handle && (
+                      <a
+                        href={`https://x.com/${live.x_handle}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-ink-muted hover:text-burgundy-500 inline-flex items-center gap-1"
+                      >
+                        X <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                    {live.personal_url && (
+                      <a
+                        href={live.personal_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-ink-muted hover:text-burgundy-500 inline-flex items-center gap-1"
+                      >
+                        Their own site <ExternalLink className="h-3 w-3" />
+                      </a>
+                    )}
+                  </div>
+                )}
 
               {artist.verification && isVerified(artist) && (
                 <div className="mt-7 rounded-md border border-olive-500/30 bg-olive-500/5 p-4 sm:p-5 max-w-2xl">
@@ -290,6 +412,46 @@ export default function ArtistProfile() {
           </div>
         </div>
       </section>
+
+      {/* The artist's own words — appears when they've published a
+          vocation site. The studio rhythm and process note sit before
+          the portfolio so the work is framed by the hand that makes
+          it, not the other way around. */}
+      {live?.profile_published && (live.studio_rhythm || live.process_note) && (
+        <section className="container mt-14 sm:mt-20 max-w-3xl">
+          <Ornament className="mb-10" />
+          {live.studio_rhythm && (
+            <div className="mb-12">
+              <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+                The studio rhythm
+              </div>
+              <p
+                className="font-serif text-lg sm:text-xl text-ink leading-relaxed whitespace-pre-line"
+                style={{ textWrap: "pretty" } as React.CSSProperties}
+              >
+                {live.studio_rhythm}
+              </p>
+            </div>
+          )}
+          {live.process_note && (
+            <div>
+              <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+                Formation & process
+              </div>
+              <div
+                className="font-serif text-base sm:text-lg text-ink-soft leading-relaxed space-y-4"
+                style={{ textWrap: "pretty" } as React.CSSProperties}
+              >
+                {live.process_note.split(/\n\n+/).map((para, i) => (
+                  <p key={i} className="whitespace-pre-line">
+                    {para}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Tabs */}
       <section className="container mt-14 sm:mt-20">

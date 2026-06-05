@@ -1,9 +1,11 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useParams, Navigate } from "react-router-dom";
 import Landing from "./pages/Landing";
 import Browse from "./pages/Browse";
 import ArtistProfile from "./pages/ArtistProfile";
+import ArtistEdit from "./pages/ArtistEdit";
 import Commission from "./pages/Commission";
+import { artistBySlug } from "./data/artists";
 import Workspace from "./pages/Workspace";
 import Connect from "./pages/Connect";
 import ArtistSignup from "./pages/ArtistSignup";
@@ -41,6 +43,7 @@ export default function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/browse" element={<Browse />} />
       <Route path="/artists/:slug" element={<ArtistProfile />} />
+      <Route path="/artists/:slug/edit" element={<ArtistEdit />} />
       <Route path="/commission/:slug" element={<Commission />} />
       <Route path="/workspace/:id" element={<Workspace />} />
       <Route path="/connect/:slug" element={<Connect />} />
@@ -76,9 +79,26 @@ export default function App() {
       <Route path="/manifesto" element={<Manifesto />} />
       <Route path="/verify/:token" element={<Verify />} />
       <Route path="/chancery/:token" element={<Chancery />} />
+      {/* Vanity URL — the artist's "site" is the existing profile,
+          reachable at /:slug as well as /artists/:slug. Reserved
+          single-segment paths (declared above) win because they
+          appear earlier in the route table. The wrapper checks the
+          slug against the artist data to avoid hijacking 404s. */}
+      <Route path="/:slug" element={<VanityArtist />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
+}
+
+function VanityArtist() {
+  const { slug = "" } = useParams<{ slug: string }>();
+  const artist = artistBySlug(slug);
+  if (!artist) return <NotFound />;
+  // Redirect to the canonical /artists/:slug so the URL the artist
+  // shares ("arssacra.com/maria-chrysostom") still resolves, but
+  // the rest of the app continues to link through /artists/ for
+  // back-compat and clarity.
+  return <Navigate to={`/artists/${slug}`} replace />;
 }
 
 function MapLoading() {
