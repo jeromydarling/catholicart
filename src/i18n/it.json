@@ -1,1 +1,26 @@
-{}
+{
+  "brand.tagline": "Commissiona Bellezza.",
+  "directory.page.disclaimer": "Questi artisti non sono ancora membri della corporazione Locavit.",
+  "directory.page.kicker": "Un repertorio vivo",
+  "directory.page.title.line1": "Artisti sacri cattolici,",
+  "directory.page.title.line2": "nel mondo.",
+  "directory.section.body": "Abbiamo cercato e mappato iconografi, scultori, sarti di paramenti, miniatori e botteghe monastiche viventi in tutto il mondo. Nessuno è ancora membro di Locavit — li abbiamo elencati perché tu possa trovarli e commissionarli direttamente, finché non entreranno.",
+  "directory.section.claim.prefix": "Sei su questa mappa? Scrivi a ",
+  "directory.section.claim.suffix": " e ti apriremo il profilo nella corporazione.",
+  "directory.section.cta.directory": "Sfoglia il repertorio",
+  "directory.section.cta.map": "Vederli sulla mappa",
+  "directory.section.kicker": "Mentre la corporazione si raduna",
+  "directory.section.title.line1": "{count} artisti sacri cattolici,",
+  "directory.section.title.line2": "{countries} paesi.",
+  "features.cta.browse": "Esplora la corporazione",
+  "features.cta.demo": "Segui una commissione",
+  "features.kicker": "L'intera corporazione",
+  "features.subtitle": "Un patto tra artista e committente — con l'attestazione del parroco sulla soglia, il libro mastro visibile a tutti, e tutto ciò che fa di una vera commissione una vera commissione.",
+  "features.title.line1": "Ogni mestiere della corporazione,",
+  "features.title.line2": "in un'unica stanza.",
+  "hero.cta.apply": "Candidati come artista",
+  "hero.cta.commission": "Commissiona a un artista",
+  "hero.subtitle": "Scrivi a un artista cattolico attestato dal proprio parroco raccontando ciò che desideri venga fatto; ti risponderà con una visione e un preventivo. L'artista trattiene ogni centesimo. Una decima del 2% per la corporazione si liquida alla fine — quanto basta per tenere accese le luci.",
+  "hero.title.line1": "Un patto tra",
+  "hero.title.line2": "artista e committente."
+}

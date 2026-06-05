@@ -1,1 +1,26 @@
-{}
+{
+  "brand.tagline": "Encarga Belleza.",
+  "directory.page.disclaimer": "Estos artistas aún no son miembros del gremio Locavit.",
+  "directory.page.kicker": "Un directorio vivo",
+  "directory.page.title.line1": "Artistas católicos sacros,",
+  "directory.page.title.line2": "en todo el mundo.",
+  "directory.section.body": "Hemos investigado y cartografiado a iconógrafos, escultores, vestidores litúrgicos, miniaturistas y talleres monásticos vivos de todo el mundo. Ninguno es aún miembro de Locavit — los hemos publicado para que puedas encontrarlos y encargarles directamente hasta que se unan.",
+  "directory.section.claim.prefix": "¿Estás en este mapa? Escribe a ",
+  "directory.section.claim.suffix": " y abriremos tu perfil en el gremio.",
+  "directory.section.cta.directory": "Recorrer el directorio",
+  "directory.section.cta.map": "Verlos en el mapa",
+  "directory.section.kicker": "Mientras se forma el gremio",
+  "directory.section.title.line1": "{count} artistas católicos sacros,",
+  "directory.section.title.line2": "{countries} países.",
+  "features.cta.browse": "Conoce el gremio",
+  "features.cta.demo": "Recorre un encargo",
+  "features.kicker": "Todo el gremio",
+  "features.subtitle": "Un pacto entre artista y patrón — con el aval del párroco en la puerta, el contable a la vista de todos, y todo lo demás que hace que un encargo verdadero se sienta como un encargo verdadero.",
+  "features.title.line1": "Todo oficio del gremio,",
+  "features.title.line2": "en una sola sala.",
+  "hero.cta.apply": "Solicita unirte como artista",
+  "hero.cta.commission": "Encarga a un artista",
+  "hero.subtitle": "Escribe a un artista católico avalado por su párroco contándole qué deseas que se haga; él te responderá con una visión y un presupuesto. El artista se queda con cada céntimo. Un diezmo del 2% para el gremio se liquida al final — lo justo para mantenernos abiertos.",
+  "hero.title.line1": "Un pacto entre",
+  "hero.title.line2": "artista y patrón."
+}

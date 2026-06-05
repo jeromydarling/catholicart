@@ -1,1 +1,26 @@
-{}
+{
+  "brand.tagline": "Commandez la Beauté.",
+  "directory.page.disclaimer": "Ces artistes ne sont pas encore membres de la guilde Locavit.",
+  "directory.page.kicker": "Un annuaire vivant",
+  "directory.page.title.line1": "Artistes sacrés catholiques,",
+  "directory.page.title.line2": "à travers le monde.",
+  "directory.section.body": "Nous avons recherché et cartographié des iconographes, sculpteurs, brodeurs de vêtements liturgiques, enlumineurs et ateliers monastiques vivants à travers le monde. Aucun n'est encore membre de Locavit — nous les listons pour que vous puissiez les trouver et les commander directement, jusqu'à ce qu'ils nous rejoignent.",
+  "directory.section.claim.prefix": "Vous êtes sur cette carte ? Écrivez à ",
+  "directory.section.claim.suffix": " et nous ouvrirons votre profil de guilde.",
+  "directory.section.cta.directory": "Parcourir l'annuaire",
+  "directory.section.cta.map": "Les voir sur la carte",
+  "directory.section.kicker": "Le temps que la guilde se rassemble",
+  "directory.section.title.line1": "{count} artistes sacrés catholiques,",
+  "directory.section.title.line2": "{countries} pays.",
+  "features.cta.browse": "Découvrez la guilde",
+  "features.cta.demo": "Suivez une commande",
+  "features.kicker": "Toute la guilde",
+  "features.subtitle": "Une alliance entre l'artiste et le commanditaire — avec l'aval du curé à la porte, le livre de comptes ouvert à tous, et tout le reste qui fait qu'une véritable commande ressemble à une véritable commande.",
+  "features.title.line1": "Chaque métier de la guilde,",
+  "features.title.line2": "dans une même salle.",
+  "hero.cta.apply": "Postuler comme artiste",
+  "hero.cta.commission": "Commander à un artiste",
+  "hero.subtitle": "Écrivez à un artiste catholique recommandé par son curé pour lui dire ce que vous voulez voir réalisé ; il vous répond par une vision et un devis. L'artiste garde chaque centime. Une dîme de 2% pour la guilde est réglée à la toute fin — juste assez pour garder les lumières allumées.",
+  "hero.title.line1": "Une alliance entre",
+  "hero.title.line2": "l'artiste et le commanditaire."
+}
