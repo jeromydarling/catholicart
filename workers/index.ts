@@ -16,6 +16,7 @@ import misc from './api/misc';
 import verifications from './api/verifications';
 import studio from './api/studio';
 import payouts from './api/payouts';
+import translate from './api/translate';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
@@ -86,6 +87,7 @@ app.route('/api/upload', upload);
 app.route('/api/verifications', verifications);
 app.route('/api/studio', studio);
 app.route('/api', payouts);                  // /api/artists/:slug/payouts
+app.route('/api', translate);                // /api/translate
 app.route('/api', misc);                    // /api/ledger, /api/preferences/*, /api/subscribe, /api/apprenticeships
 
 // Unmatched /api/* returns JSON 404 (not the SPA shell).

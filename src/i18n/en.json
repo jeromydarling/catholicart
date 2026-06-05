@@ -1,0 +1,30 @@
+{
+  "brand.tagline": "Commission Beauty.",
+
+  "hero.title.line1": "A covenant between",
+  "hero.title.line2": "artist and patron.",
+  "hero.subtitle": "Write to a pastor-endorsed Catholic artist about what you want made; they answer with a vision and a quote. The artist keeps every cent. A 2% guild tithe settles at the very end — just enough to keep the lights on.",
+  "hero.cta.commission": "Commission an artist",
+  "hero.cta.apply": "Apply as an artist",
+
+  "directory.section.kicker": "While the guild assembles",
+  "directory.section.title.line1": "{count} Catholic sacred artists,",
+  "directory.section.title.line2": "{countries} countries.",
+  "directory.section.body": "We've researched and mapped living iconographers, sculptors, vestment makers, illuminators, and monastery workshops around the world. None of them are Locavit members yet — we listed them so you can find and commission them directly until they join.",
+  "directory.section.cta.map": "See them on the map",
+  "directory.section.cta.directory": "Browse the directory",
+  "directory.section.claim.prefix": "On this map? Write ",
+  "directory.section.claim.suffix": " and we'll set up your guild profile.",
+
+  "features.kicker": "The whole guild",
+  "features.title.line1": "Every craft of the guild,",
+  "features.title.line2": "in one room.",
+  "features.subtitle": "A covenant between artist and patron — with the priest's endorsement at the door, the bookkeeper visible to all, and everything else that makes a real commission feel like a real commission.",
+  "features.cta.demo": "Walk through a commission",
+  "features.cta.browse": "Browse the guild",
+
+  "directory.page.kicker": "A working directory",
+  "directory.page.title.line1": "Catholic sacred artists,",
+  "directory.page.title.line2": "worldwide.",
+  "directory.page.disclaimer": "These artists are not yet members of the Locavit guild. We've published this directory so commissioners can discover and contact them directly through the websites and addresses listed."
+}

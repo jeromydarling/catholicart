@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { ChevronDown, Menu, X, ArrowRight } from "lucide-react";
 import { brand } from "../../data/brand";
 import { Button } from "../ui/button";
+import { LanguagePicker } from "../LanguagePicker";
 import { cn } from "../../lib/utils";
 import { MENUS, type MegaMenuDef, type MegaMenuFeature, type MenuLink } from "./menu-config";
 
@@ -123,6 +124,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <LanguagePicker />
           <Button
             asChild
             variant="outline"

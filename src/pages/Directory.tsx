@@ -22,12 +22,14 @@ import {
   DIRECTORY_DISCIPLINES,
   type DirectoryEntry,
 } from "../data/discovery-directory";
+import { useT } from "../i18n";
 
 // /directory — the researched discovery list. Real Catholic sacred
 // artists and religious-order workshops, sourced from public sources,
 // shown with a clear "not yet a member" framing.
 
 export default function Directory() {
+  const { t } = useT();
   const [q, setQ] = useState("");
   const [country, setCountry] = useState<string | null>(null);
   const [discipline, setDiscipline] = useState<string | null>(null);
@@ -58,12 +60,12 @@ export default function Directory() {
 
       <section className="container pt-12 sm:pt-16 max-w-4xl">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
-          A working directory
+          {t("directory.page.kicker")}
         </div>
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl tracking-tight text-ink leading-[1.05]">
-          Catholic sacred artists,
+          {t("directory.page.title.line1")}
           <span className="block italic text-burgundy-500 mt-1">
-            worldwide.
+            {t("directory.page.title.line2")}
           </span>
         </h1>
         <p className="mt-6 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed max-w-3xl">
@@ -75,10 +77,7 @@ export default function Directory() {
         </p>
         <div className="mt-6 rounded-md border border-gold-500/30 bg-gold-500/5 p-4 max-w-3xl">
           <p className="font-serif text-sm text-ink leading-relaxed">
-            <strong className="font-medium">These artists are not
-            yet members of the Locavit guild.</strong> We've published
-            this directory so commissioners can discover and contact
-            them directly through the websites and addresses listed.
+            <strong className="font-medium">{t("directory.page.disclaimer")}</strong>{" "}
             If you're one of the artists below, write to{" "}
             <a
               href="mailto:hello@locavit.com"

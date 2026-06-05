@@ -13,6 +13,7 @@ import { heroQuote, quotes } from "../data/quotes";
 import { PageShell } from "../components/layout/PageShell";
 import { Button } from "../components/ui/button";
 import { Ornament } from "../components/Ornament";
+import { useT } from "../i18n";
 import { Quote } from "../components/Quote";
 import { CategoryTile } from "../components/CategoryTile";
 import { ArtistCard } from "../components/ArtistCard";
@@ -55,6 +56,7 @@ const HOW = [
 
 export default function Landing() {
   const featured = artists.slice(0, 4);
+  const { t } = useT();
 
   return (
     <PageShell>
@@ -85,27 +87,24 @@ export default function Landing() {
             className="max-w-xl lg:max-w-2xl pb-52 sm:pb-44 lg:pb-32 pt-16 sm:pt-20"
           >
             <div className="font-sans text-[11px] uppercase tracking-[0.32em] text-gold-300 mb-4 sm:mb-5">
-              {brand.tagline}
+              {t("brand.tagline")}
             </div>
             <h1
               className="font-display text-[2.5rem] sm:text-6xl md:text-7xl lg:text-[5rem] leading-[1.04] tracking-tight text-parchment-50 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]"
               style={{ textWrap: "balance" } as React.CSSProperties}
             >
-              A covenant between
+              {t("hero.title.line1")}
               <span className="block italic text-gold-300 mt-1">
-                artist and patron.
+                {t("hero.title.line2")}
               </span>
             </h1>
             <p className="mt-4 sm:mt-5 max-w-md lg:max-w-lg font-serif text-[15px] sm:text-lg lg:text-xl text-parchment-100 leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
-              Write to a pastor-endorsed Catholic artist about what you want
-              made; they answer with a vision and a quote. The artist keeps
-              every cent. A 2% guild tithe settles at the very end — just
-              enough to keep the lights on.
+              {t("hero.subtitle")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="gold">
                 <Link to="/browse">
-                  Commission an artist{" "}
+                  {t("hero.cta.commission")}{" "}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -115,7 +114,7 @@ export default function Landing() {
                 size="lg"
                 className="bg-parchment-50/10 border-parchment-50/40 text-parchment-50 hover:bg-parchment-50/20 hover:border-parchment-50/60 backdrop-blur-sm"
               >
-                <Link to="/signup/artist">Apply as an artist</Link>
+                <Link to="/signup/artist">{t("hero.cta.apply")}</Link>
               </Button>
             </div>
           </motion.div>
@@ -228,20 +227,16 @@ export default function Landing() {
         <section className="container pt-20 sm:pt-28">
           <div className="max-w-3xl">
             <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
-              While the guild assembles
+              {t("directory.section.kicker")}
             </div>
             <h2 className="font-display text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink">
-              {DIRECTORY_ENTRIES.length} Catholic sacred artists,
+              {t("directory.section.title.line1", { count: DIRECTORY_ENTRIES.length })}
               <span className="block italic text-burgundy-500 mt-1">
-                {DIRECTORY_COUNTRIES.length} countries.
+                {t("directory.section.title.line2", { countries: DIRECTORY_COUNTRIES.length })}
               </span>
             </h2>
             <p className="mt-5 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed">
-              We've researched and mapped living iconographers,
-              sculptors, vestment makers, illuminators, and monastery
-              workshops around the world. None of them are Locavit
-              members yet — we listed them so you can find and
-              commission them directly until they join.
+              {t("directory.section.body")}
             </p>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -298,24 +293,24 @@ export default function Landing() {
             <Button asChild size="lg" variant="gold">
               <Link to="/map">
                 <MapPin className="mr-2 h-4 w-4" />
-                See them on the map
+                {t("directory.section.cta.map")}
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link to="/directory">
-                Browse the directory <ArrowRight className="ml-2 h-4 w-4" />
+                {t("directory.section.cta.directory")} <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
           <p className="mt-6 text-center font-serif italic text-sm text-ink-muted max-w-2xl mx-auto">
-            On this map? Write{" "}
+            {t("directory.section.claim.prefix")}
             <a
               href="mailto:hello@locavit.com"
               className="text-burgundy-500 hover:text-burgundy-600 not-italic underline underline-offset-2"
             >
               hello@locavit.com
-            </a>{" "}
-            and we'll set up your guild profile.
+            </a>
+            {t("directory.section.claim.suffix")}
           </p>
         </section>
       )}

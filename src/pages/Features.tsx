@@ -43,6 +43,7 @@ import { MiniLibrary } from "../components/marketing/mini/MiniLibrary";
 import { MiniEarnings } from "../components/marketing/mini/MiniEarnings";
 import { MiniLedger } from "../components/marketing/mini/MiniLedger";
 import { MiniSeasonLetter } from "../components/marketing/mini/MiniSeasonLetter";
+import { useT } from "../i18n";
 
 // /features — the complete catalog of what Locavit does, organized
 // by who it serves. Browser frames wrap live React renderings of the
@@ -223,6 +224,7 @@ const TRUST: Feature[] = [
 ];
 
 export default function Features() {
+  const { t } = useT();
   return (
     <PageShell>
       <Seo
@@ -233,28 +235,25 @@ export default function Features() {
 
       <section className="container pt-16 sm:pt-24 max-w-4xl">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
-          The whole guild
+          {t("features.kicker")}
         </div>
         <h1 className="font-display text-4xl sm:text-5xl md:text-6xl tracking-tight text-ink leading-[1.05]">
-          Every craft of the guild,
+          {t("features.title.line1")}
           <span className="block italic text-burgundy-500 mt-1">
-            in one room.
+            {t("features.title.line2")}
           </span>
         </h1>
         <p className="mt-6 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed max-w-2xl">
-          A covenant between artist and patron — with the priest's
-          endorsement at the door, the bookkeeper visible to all, and
-          everything else that makes a real commission feel like a real
-          commission.
+          {t("features.subtitle")}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
             <Link to="/demo">
-              Walk through a commission <ArrowRight className="ml-2 h-4 w-4" />
+              {t("features.cta.demo")} <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link to="/browse">Browse the guild</Link>
+            <Link to="/browse">{t("features.cta.browse")}</Link>
           </Button>
         </div>
         <Ornament className="my-12" />
