@@ -1,10 +1,14 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Feather, HandHeart, MessagesSquare, PlayCircle, Sparkles } from "lucide-react";
+import { ArrowRight, ExternalLink, Feather, HandHeart, MapPin, MessagesSquare, PlayCircle, Sparkles } from "lucide-react";
 import { brand } from "../data/brand";
 import { categories } from "../data/categories";
 import { artists } from "../data/artists";
 import { flags } from "../data/flags";
+import {
+  DIRECTORY_ENTRIES,
+  DIRECTORY_COUNTRIES,
+} from "../data/discovery-directory";
 import { heroQuote, quotes } from "../data/quotes";
 import { PageShell } from "../components/layout/PageShell";
 import { Button } from "../components/ui/button";
@@ -19,6 +23,17 @@ import { BrowserFrame } from "../components/marketing/BrowserFrame";
 import { MiniVocation } from "../components/marketing/mini/MiniVocation";
 import { MiniWipFeed } from "../components/marketing/mini/MiniWipFeed";
 import { MiniCertificate } from "../components/marketing/mini/MiniCertificate";
+
+// A handpicked sample for the home page directory preview — chosen
+// to span geography (UK, Canada, Spain, Nigeria), discipline
+// (iconography, sculpture, multi-craft atelier, painting), and type
+// (individual + lay atelier). Order matters; they render in order.
+const DISCOVERY_PREVIEW = [
+  "aidan-hart",
+  "timothy-schmalz",
+  "talleres-de-arte-granda",
+  "bruce-onobrakpeya",
+];
 
 const HOW = [
   {
@@ -204,6 +219,104 @@ export default function Landing() {
               </Link>
             </Button>
           </div>
+        </section>
+      )}
+
+      {/* Discovery directory — while the seed guild is hidden, this is the
+          public face of "real Catholic artists you can find right now." */}
+      {!flags.showArtistDirectory && flags.showDiscoveryDirectory && (
+        <section className="container pt-20 sm:pt-28">
+          <div className="max-w-3xl">
+            <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+              While the guild assembles
+            </div>
+            <h2 className="font-display text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink">
+              {DIRECTORY_ENTRIES.length} Catholic sacred artists,
+              <span className="block italic text-burgundy-500 mt-1">
+                {DIRECTORY_COUNTRIES.length} countries.
+              </span>
+            </h2>
+            <p className="mt-5 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed">
+              We've researched and mapped living iconographers,
+              sculptors, vestment makers, illuminators, and monastery
+              workshops around the world. None of them are Locavit
+              members yet — we listed them so you can find and
+              commission them directly until they join.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {DISCOVERY_PREVIEW.map((id, i) => {
+              const e = DIRECTORY_ENTRIES.find((x) => x.id === id);
+              if (!e) return null;
+              return (
+                <motion.div
+                  key={e.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.4, delay: i * 0.08 }}
+                  className="rounded-md border border-ink/10 bg-parchment-50 p-5 hover:border-burgundy-500/40 hover:shadow-card transition-all flex flex-col"
+                >
+                  <div className="flex items-start gap-2 mb-2">
+                    <h3 className="font-display text-base text-ink leading-tight grow">
+                      {e.name}
+                    </h3>
+                    {e.order && (
+                      <span className="shrink-0 rounded-sm bg-burgundy-500/10 px-1.5 py-0.5 font-sans text-[9px] uppercase tracking-[0.18em] text-burgundy-500">
+                        {e.order}
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-ink-muted">
+                    {[e.city, e.country].filter(Boolean).join(" · ")}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5 grow">
+                    {e.disciplines.slice(0, 2).map((d) => (
+                      <span
+                        key={d}
+                        className="rounded-sm bg-parchment-100 px-2 py-0.5 font-sans text-[10px] text-ink-soft"
+                      >
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                  {e.website && (
+                    <a
+                      href={e.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 inline-flex items-center gap-1 font-sans text-[10px] uppercase tracking-[0.18em] text-burgundy-500 hover:text-burgundy-600"
+                    >
+                      Visit <ExternalLink className="h-2.5 w-2.5" />
+                    </a>
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
+          <div className="mt-10 flex flex-wrap justify-center gap-3">
+            <Button asChild size="lg" variant="gold">
+              <Link to="/map">
+                <MapPin className="mr-2 h-4 w-4" />
+                See them on the map
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/directory">
+                Browse the directory <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <p className="mt-6 text-center font-serif italic text-sm text-ink-muted max-w-2xl mx-auto">
+            On this map? Write{" "}
+            <a
+              href="mailto:hello@locavit.com"
+              className="text-burgundy-500 hover:text-burgundy-600 not-italic underline underline-offset-2"
+            >
+              hello@locavit.com
+            </a>{" "}
+            and we'll set up your guild profile.
+          </p>
         </section>
       )}
 
