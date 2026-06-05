@@ -150,6 +150,14 @@ export default function Ledger() {
             </>
           )}
         </p>
+        {stats.totalPlatform > 0 && (
+          <p className="mt-3 font-serif text-sm sm:text-base text-ink-soft leading-relaxed max-w-3xl">
+            Of the guild's <span className="tabular-nums">{formatPrice(stats.totalPlatform)}</span> across the
+            years, <span className="text-olive-600 tabular-nums">{formatPrice(Math.round(stats.totalPlatform * 0.5))}</span>{" "}
+            has been earmarked for the apprentice stipend fund — supporting young
+            artists training under guild masters. The rest keeps the lights on.
+          </p>
+        )}
       </section>
 
       {/* Filter */}
