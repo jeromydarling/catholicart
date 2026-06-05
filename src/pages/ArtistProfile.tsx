@@ -40,6 +40,8 @@ interface LiveProfile {
   personal_url: string;
   profile_published: boolean;
   sabbatical_until: string;
+  trained_under: string;
+  trained_under_slug: string;
   /** true when the signed-in user can edit this profile */
   is_owner: boolean;
 }
@@ -74,6 +76,8 @@ export default function ArtistProfile() {
         personal_url: (a.personal_url as string) ?? "",
         profile_published: Boolean(a.profile_published),
         sabbatical_until: (a.sabbatical_until as string) ?? "",
+        trained_under: (a.trained_under as string) ?? "",
+        trained_under_slug: (a.trained_under_slug as string) ?? "",
         is_owner: qRes.ok,
       });
     })();
@@ -199,6 +203,21 @@ export default function ArtistProfile() {
                     <span className="mx-2 text-gold-500">✦</span> Patron:{" "}
                     {artist.patron}
                   </>
+                )}
+                {live?.trained_under && (
+                  <div className="mt-1.5 normal-case tracking-normal text-[13px] font-serif italic text-ink-soft">
+                    Trained under{" "}
+                    {live.trained_under_slug ? (
+                      <Link
+                        to={`/artists/${live.trained_under_slug}`}
+                        className="text-burgundy-500 hover:text-burgundy-600 not-italic font-medium"
+                      >
+                        {live.trained_under}
+                      </Link>
+                    ) : (
+                      <span className="text-ink not-italic">{live.trained_under}</span>
+                    )}
+                  </div>
                 )}
               </div>
 

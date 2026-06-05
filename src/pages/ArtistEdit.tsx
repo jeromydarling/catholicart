@@ -169,6 +169,8 @@ export default function ArtistEdit() {
     x_handle: "",
     personal_url: "",
     sabbatical_until: "",
+    trained_under: "",
+    trained_under_slug: "",
   });
   const [profilePublished, setProfilePublished] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -222,6 +224,8 @@ export default function ArtistEdit() {
           x_handle: (a.x_handle as string) ?? "",
           personal_url: (a.personal_url as string) ?? "",
           sabbatical_until: (a.sabbatical_until as string) ?? "",
+          trained_under: (a.trained_under as string) ?? "",
+          trained_under_slug: (a.trained_under_slug as string) ?? "",
         });
         setProfilePublished(Boolean(a.profile_published));
       }
@@ -333,6 +337,8 @@ export default function ArtistEdit() {
       x_handle: synth.x_handle,
       personal_url: synth.personal_url,
       sabbatical_until: synth.sabbatical_until,
+      trained_under: synth.trained_under,
+      trained_under_slug: synth.trained_under_slug,
       profile_published: profilePublished,
     });
     setSavingP(false);
@@ -555,6 +561,28 @@ export default function ArtistEdit() {
                 rows={2}
                 onChange={(v) => setSynth((s) => ({ ...s, vocation_statement: v }))}
               />
+              <ReviewField
+                eyebrow="Trained under"
+                helper="The master, studio, or school where you trained — free text. If your master is in this guild, you can also enter their slug below and we'll link to their profile."
+                value={synth.trained_under}
+                rows={2}
+                onChange={(v) => setSynth((s) => ({ ...s, trained_under: v }))}
+              />
+              <div className="space-y-2">
+                <div className="font-sans text-[10px] uppercase tracking-[0.28em] text-gold-600">
+                  Master's slug (if a guild artist)
+                </div>
+                <p className="font-serif text-sm italic text-ink-muted">
+                  e.g. "br-andrew-of-subiaco" — if blank, "Trained under" renders as plain text.
+                </p>
+                <Input
+                  value={synth.trained_under_slug}
+                  onChange={(e) =>
+                    setSynth((s) => ({ ...s, trained_under_slug: e.target.value }))
+                  }
+                  placeholder="(optional)"
+                />
+              </div>
             </div>
             <aside className="lg:col-span-4 lg:sticky lg:top-24 lg:self-start space-y-3">
               <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5">

@@ -39,6 +39,8 @@ interface ArtistRow {
   personal_url?: string | null;
   profile_published?: number;
   sabbatical_until?: string | null;
+  trained_under?: string | null;
+  trained_under_slug?: string | null;
 }
 
 // GET /api/artists?q=…&category=…&saint=…&diocese=…&order=…&accepting=true&min=&max=&saved=&sort=
@@ -393,6 +395,8 @@ const ProfileBody = z.object({
   profile_published: z.boolean().optional(),
   // ISO date (YYYY-MM-DD) or empty to clear. Past dates clear too.
   sabbatical_until:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
+  trained_under:     z.string().max(400).optional(),
+  trained_under_slug: z.string().max(120).optional().or(z.literal('')),
 });
 app.put('/:slug/profile', requireAuth(), async (c) => {
   const slug = c.req.param('slug');
@@ -415,6 +419,8 @@ app.put('/:slug/profile', requireAuth(), async (c) => {
   set('x_handle', d.x_handle ?? null);
   set('personal_url', d.personal_url || null);
   set('sabbatical_until', d.sabbatical_until || null);
+  set('trained_under', d.trained_under ?? null);
+  set('trained_under_slug', d.trained_under_slug || null);
   if (d.profile_published !== undefined) {
     sets.push('profile_published = ?');
     binds.push(d.profile_published ? 1 : 0);
