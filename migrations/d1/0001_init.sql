@@ -1,4 +1,4 @@
--- Ars Sacra · D1 (SQLite) schema
+-- Locavit · D1 (SQLite) schema
 --
 -- Ported from the Postgres-targeted Supabase migrations to SQLite for
 -- Cloudflare D1. Differences from the Postgres version:

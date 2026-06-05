@@ -1,4 +1,4 @@
-# MCP setup for Ars Sacra
+# MCP setup for Locavit
 
 Five MCP servers power the production buildout: **Supabase**, **Stripe**,
 **Resend**, **PostHog**, and **Cloudflare**. Four are configured via the
@@ -96,9 +96,9 @@ You should see `supabase`, `stripe`, `resend`, and (after the wizard)
 1. **Create Supabase project** via the MCP — I'll use the Supabase MCP
    to provision one and run the initial migration.
 2. **Configure Stripe Connect** in the Stripe Dashboard — turn on
-   Express accounts, set the platform name to "Ars Sacra".
+   Express accounts, set the platform name to "Locavit".
 3. **Verify Resend sending domain** — pick a real domain (e.g.
-   `arssacra.com`) and add the DNS records.
+   `locavit.com`) and add the DNS records.
 4. **PostHog project key** — once the MCP is connected I'll pull the
    project key and wire `posthog-js` into `main.tsx`.
 

@@ -41,8 +41,8 @@ export default function Certificate() {
   return (
     <PageShell>
       <Seo
-        title={`Certificate · ${c.certificate.title} · ${artist?.name ?? "Ars Sacra"}`}
-        description={`Provenance certificate for ${c.certificate.title}, by ${artist?.name ?? "an Ars Sacra artist"}. Serial ${c.certificate.serial}. Recorded in The Ledger.`}
+        title={`Certificate · ${c.certificate.title} · ${artist?.name ?? "Locavit"}`}
+        description={`Provenance certificate for ${c.certificate.title}, by ${artist?.name ?? "an Locavit artist"}. Serial ${c.certificate.serial}. Recorded in The Ledger.`}
         path={`/certificate/${c.id}`}
         jsonLd={{
           "@context": "https://schema.org",
@@ -61,7 +61,7 @@ export default function Certificate() {
                 },
               }
             : undefined,
-          publisher: { "@type": "Organization", name: "Ars Sacra" },
+          publisher: { "@type": "Organization", name: "Locavit" },
           genre: cat?.name,
         }}
       />

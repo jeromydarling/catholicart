@@ -63,7 +63,7 @@ export default function Prize() {
     <PageShell>
       <Seo
         title="The Pulchritudo Prize — $25,000, awarded each Pentecost"
-        description="An annual prize for the most beautiful sacred work commissioned through Ars Sacra. Selected by a jury of artists, theologians, and the patron whose commission preceded the work."
+        description="An annual prize for the most beautiful sacred work commissioned through Locavit. Selected by a jury of artists, theologians, and the patron whose commission preceded the work."
         path="/prize"
       />
       {/* Hero */}

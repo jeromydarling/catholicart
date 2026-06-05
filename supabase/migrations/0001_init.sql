@@ -1,4 +1,4 @@
--- Ars Sacra · initial schema
+-- Locavit · initial schema
 -- Postgres + Supabase. Apply in order: 0001_init.sql → 0002_rls.sql → 0003_seed.sql.
 --
 -- Conventions:

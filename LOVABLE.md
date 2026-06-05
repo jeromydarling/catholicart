@@ -1,4 +1,4 @@
-# Lovable handoff · Ars Sacra
+# Lovable handoff · Locavit
 
 This repository is a production-grade prototype of a marketplace for
 commissioning Catholic sacred art. It runs as a Vite + React SPA today,
@@ -67,8 +67,8 @@ In Supabase → Authentication → Providers:
 
 In Authentication → URL configuration:
 
-- Site URL: `https://arssacra.com`
-- Redirect URLs: `https://arssacra.com/auth/callback`, `http://localhost:5173/auth/callback`
+- Site URL: `https://locavit.com`
+- Redirect URLs: `https://locavit.com/auth/callback`, `http://localhost:5173/auth/callback`
 
 The `handle_new_user` trigger in `0001_init.sql` auto-creates a profile
 row when someone signs up. Default role is `patron`. Operators are
@@ -89,10 +89,10 @@ Server-only secrets (set with `supabase secrets set`):
 
 ```
 RESEND_API_KEY=re_...
-RESEND_FROM="Ars Sacra <hello@arssacra.com>"
+RESEND_FROM="Locavit <hello@locavit.com>"
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-ARS_SACRA_SITE=https://arssacra.com
+LOCAVIT_SITE=https://locavit.com
 ```
 
 ## 4. Deploy the edge functions
@@ -184,7 +184,7 @@ the webhook can find it.
 ## 7. Resend (real email)
 
 Verify a sending domain at https://resend.com/domains (use
-`arssacra.com` or a subdomain like `mail.arssacra.com`). Add the DNS
+`locavit.com` or a subdomain like `mail.locavit.com`). Add the DNS
 records Resend gives you (SPF, DKIM, DMARC) at your registrar.
 
 When a state transition fires in the app, instead of `notify()` pushing
@@ -229,7 +229,7 @@ matter for marketing.
 6. Stripe webhook endpoint registered
 7. Resend sending domain verified
 8. Artists imported (one-shot script from `src/data/artists.ts`)
-9. First operator promoted: `update profiles set role = 'operator' where email = 'you@arssacra.com';`
+9. First operator promoted: `update profiles set role = 'operator' where email = 'you@locavit.com';`
 10. `npm run build && npm run preview` to smoke-test
 11. Deploy to Vercel / Cloudflare Pages
 
@@ -296,5 +296,5 @@ Auth-gated:
 
 ## Contact
 
-Questions about the brand or the business logic: jeromy@arssacra.com
+Questions about the brand or the business logic: jeromy@locavit.com
 (or whatever address ends up on file).

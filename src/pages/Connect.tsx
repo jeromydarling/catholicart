@@ -171,7 +171,7 @@ export default function Connect() {
                 <p className="font-serif text-xs italic text-ink-muted leading-relaxed flex items-start gap-2">
                   <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                   Your account number is encrypted and tokenized by Stripe.
-                  Only the last four digits are stored on Ars Sacra.
+                  Only the last four digits are stored on Locavit.
                 </p>
                 <Button
                   className="w-full"

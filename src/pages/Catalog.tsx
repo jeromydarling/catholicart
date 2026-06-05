@@ -54,7 +54,7 @@ export default function Catalog() {
     <PageShell>
       <Seo
         title="The Annual Catalog of Commissioned Beauty"
-        description="The yearbook of every sacred work the Ars Sacra guild delivered. Bound annually. Sent to every patron, every artist, every diocese who asked for one."
+        description="The yearbook of every sacred work the Locavit guild delivered. Bound annually. Sent to every patron, every artist, every diocese who asked for one."
         path="/catalog"
       />
       <section className="container pt-12 sm:pt-16">

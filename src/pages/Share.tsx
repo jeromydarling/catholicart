@@ -83,7 +83,7 @@ export default function Share() {
             to="/"
             className="mt-6 inline-block font-sans text-[11px] uppercase tracking-[0.22em] text-burgundy-500"
           >
-            Visit Ars Sacra
+            Visit Locavit
           </Link>
         </section>
       </PageShell>
@@ -97,7 +97,7 @@ export default function Share() {
   return (
     <PageShell>
       <Seo
-        title="A commission in progress — Ars Sacra"
+        title="A commission in progress — Locavit"
         description="A shared view of a commission's studio thread and work in progress."
         path={`/share/${token}`}
         robots="noindex,nofollow"

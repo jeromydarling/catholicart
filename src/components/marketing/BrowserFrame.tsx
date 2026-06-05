@@ -7,7 +7,7 @@ import { cn } from "../../lib/utils";
 // show the work without needing actual image assets.
 
 export function BrowserFrame({
-  url = "arssacra.com",
+  url = "locavit.com",
   children,
   className,
   tone = "parchment",

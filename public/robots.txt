@@ -8,4 +8,4 @@ Disallow: /certificate/
 Disallow: /dashboard
 Disallow: /connect/
 
-Sitemap: https://arssacra.local/sitemap.xml
+Sitemap: https://locavit.local/sitemap.xml

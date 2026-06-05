@@ -46,7 +46,7 @@ export default function SignIn() {
     <PageShell>
       <Seo
         title="Sign in"
-        description="Sign in to Ars Sacra via magic link. We don't use passwords."
+        description="Sign in to Locavit via magic link. We don't use passwords."
         path="/signin"
         robots="noindex,nofollow"
       />

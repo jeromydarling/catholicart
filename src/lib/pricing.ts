@@ -1,4 +1,4 @@
-// Ars Sacra economic engine.
+// Locavit economic engine.
 //
 // The artist receives 100% of the price they quote, paid across
 // three escrow milestones (deposit → midpoint → final). A small 2%

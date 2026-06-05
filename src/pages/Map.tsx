@@ -28,7 +28,7 @@ export default function MapPage() {
     <PageShell>
       <Seo
         title="Map of the Body of Christ — Catholic artists worldwide"
-        description="Every Ars Sacra guild artist is rooted in a particular church — a real parish, a real diocese, a real bishop. Find a hand near you, or commission across the world."
+        description="Every Locavit guild artist is rooted in a particular church — a real parish, a real diocese, a real bishop. Find a hand near you, or commission across the world."
         path="/map"
       />
       <section className="container pt-12 sm:pt-16">

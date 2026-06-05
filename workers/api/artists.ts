@@ -613,7 +613,7 @@ app.get('/:slug/earnings.csv', requireAuth(), async (c) => {
     (total / 1).toFixed(2), '',
   ].map(esc).join(','));
 
-  const filename = `arssacra-earnings-${slug}${yearFilter ? `-${yearFilter}` : ''}.csv`;
+  const filename = `locavit-earnings-${slug}${yearFilter ? `-${yearFilter}` : ''}.csv`;
   return new Response(lines.join('\n'), {
     headers: {
       'content-type': 'text/csv; charset=utf-8',

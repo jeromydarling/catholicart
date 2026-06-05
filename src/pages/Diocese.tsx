@@ -82,7 +82,7 @@ export default function Diocese() {
     <PageShell>
       <Seo
         title={`${diocese} — artists of the guild`}
-        description={`Ars Sacra guild artists serving the ${diocese}. Iconography, painting, sculpture, glass, music, verse — commissioned directly from verified Catholic artists.`}
+        description={`Locavit guild artists serving the ${diocese}. Iconography, painting, sculpture, glass, music, verse — commissioned directly from verified Catholic artists.`}
         path={`/dioceses/${slug}`}
       />
       <section className="container pt-12 sm:pt-16 max-w-4xl">
@@ -98,7 +98,7 @@ export default function Diocese() {
               <span className="text-ink font-medium">
                 {dioceseArtists.length} {dioceseArtists.length === 1 ? "artist" : "artists"}
               </span>{" "}
-              from the Ars Sacra guild serve this diocese.
+              from the Locavit guild serve this diocese.
               {verified.length > 0 && (
                 <>
                   {" "}

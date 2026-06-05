@@ -40,7 +40,7 @@ export default function Letters() {
   return (
     <PageShell>
       <Seo
-        title="The Letter Archive — Ars Sacra"
+        title="The Letter Archive — Locavit"
         description="Anonymized first letters from patrons to guild artists, shared with permission. A literacy resource: this is how you write a commission letter."
         path="/letters"
       />

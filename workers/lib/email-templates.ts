@@ -69,7 +69,7 @@ function renderLayout(opts: LayoutOpts): string {
     <div style="${CARD}">
       <div style="${PAD}">
         <div style="text-align:center;margin-bottom:24px">
-          <span style="font-family:Georgia,serif;font-size:24px;color:#3a1418">Ars Sacra</span>
+          <span style="font-family:Georgia,serif;font-size:24px;color:#3a1418">Locavit</span>
           <span style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;letter-spacing:0.22em;color:#a8893f;text-transform:uppercase;margin-left:6px;vertical-align:middle">Est. AD</span>
         </div>
         ${eyebrow}
@@ -161,8 +161,8 @@ export function magicLinkToVerifier(
   isVerification = false,
 ): { recipients: Recipient[]; category: EmailCategory; rendered: RenderedEmail } {
   const subject = isVerification
-    ? 'Endorsement requested — Ars Sacra'
-    : 'Sign in to Ars Sacra';
+    ? 'Endorsement requested — Locavit'
+    : 'Sign in to Locavit';
   const preheader = isVerification
     ? 'A guild artist has named you as a witness.'
     : 'Click the link to sign in. Expires in 30 minutes.';
@@ -170,7 +170,7 @@ export function magicLinkToVerifier(
     site,
     preheader,
     eyebrow: isVerification ? 'Endorsement request' : 'Sign in',
-    title: isVerification ? 'Would you endorse an artist?' : 'Sign in to Ars Sacra',
+    title: isVerification ? 'Would you endorse an artist?' : 'Sign in to Locavit',
     lede: isVerification
       ? "We don't accept artists without a witness from their parish. One click will let you endorse, decline, or ask for a conversation. You're under no obligation."
       : 'Use the button below to sign in. This link expires in 30 minutes and can only be used once.',
@@ -210,7 +210,7 @@ export function pastorEndorsementRequest(
   const preheader = `A guild artist has named you as a witness. One click.`;
   const body = `
     <p style="font-family:Georgia,serif;color:#3a1418;font-size:16px;line-height:1.6;margin:0 0 16px">
-      ${esc(safeArtist)} of ${esc(c.artist_city)} is applying to the Ars Sacra
+      ${esc(safeArtist)} of ${esc(c.artist_city)} is applying to the Locavit
       guild — a small, free fellowship of Catholic artists offering sacred
       art on commission. They have named you as their ${esc(roleLabel.toLowerCase())} at
       <strong>${esc(c.parish_or_community)}</strong>.

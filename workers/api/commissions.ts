@@ -101,7 +101,7 @@ app.post('/', requireAuth(), async (c) => {
 
   await run(
     c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, `${parsed.data.patron_name} sent a request. The artist will reply with a quote.`,
   );
   await run(
@@ -313,7 +313,7 @@ app.post('/:id/quote', requireAuth(), async (c) => {
     );
   }
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, `Quote: $${p.artistTotalUsd.toLocaleString()} to the artist, paid across three milestones. A ${Math.round(p.platformFeePct * 100)}% guild tithe is settled at the end.`,
   );
 
@@ -370,7 +370,7 @@ app.post('/:id/escrow/:stage/fund', requireAuth(), async (c) => {
   }
 
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, `Funded the ${stage} milestone. Funds are held in escrow.`,
   );
 
@@ -426,7 +426,7 @@ app.post('/:id/escrow/:stage/release', requireAuth(), async (c) => {
   }
 
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, stage === 'final'
       ? `Released the final payment. Commission delivered.`
       : `Released the ${stage} milestone to the artist.`,
@@ -463,7 +463,7 @@ app.post('/:id/midpoint', requireAuth(), async (c) => {
     newId('msg'), id, u.email.split('@')[0], parsed.data.body,
   );
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, 'Artist marked the midpoint. Review and release the midpoint payment when ready.',
   );
   return c.json({ commission: await loadCommission(c.env.DB, id) });
@@ -495,7 +495,7 @@ app.post('/:id/final', requireAuth(), async (c) => {
     newId('msg'), id, u.email.split('@')[0], parsed.data.body,
   );
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, 'Artist marked the work complete. Inspect and release the final payment.',
   );
   return c.json({ commission: await loadCommission(c.env.DB, id) });
@@ -515,7 +515,7 @@ app.post('/:id/messages', requireAuth(), async (c) => {
   if (role === null) return c.json({ ok: false, error: 'forbidden' }, 403);
 
   const authorRole = role === 'operator' ? 'system' : role;
-  const authorName = role === 'operator' ? 'Ars Sacra' : u.email.split('@')[0];
+  const authorName = role === 'operator' ? 'Locavit' : u.email.split('@')[0];
 
   await run(c.env.DB,
     `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, ?, ?, ?)`,
@@ -587,7 +587,7 @@ app.post('/:id/blessing', requireAuth(), async (c) => {
   const recBy = parsed.data.recorded_by.replace(/[\r\n]/g, ' ');
   const parish = parsed.data.parish_or_chapel?.replace(/[\r\n]/g, ' ');
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, `Blessing recorded by ${recBy}${parish ? ` at ${parish}` : ''}.`,
   );
   return c.json({ commission: await loadCommission(c.env.DB, id) });
@@ -620,7 +620,7 @@ app.post('/:id/cancel', requireAuth(), async (c) => {
     id,
   );
   await run(c.env.DB,
-    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Ars Sacra', ?)`,
+    `INSERT INTO commission_messages (id, commission_id, author_role, author_name, body) VALUES (?, ?, 'system', 'Locavit', ?)`,
     newId('msg'), id, 'Commission cancelled. Held funds were refunded to the patron.',
   );
   return c.json({ commission: await loadCommission(c.env.DB, id) });

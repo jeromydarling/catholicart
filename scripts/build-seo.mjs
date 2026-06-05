@@ -4,7 +4,7 @@ import { writeFile, readFile } from "fs/promises";
 import { resolve } from "path";
 
 const SITE =
-  process.env.ARS_SACRA_SITE ??
+  process.env.LOCAVIT_SITE ??
   process.env.VITE_SITE_URL ??
   "https://catholicart.jer-f84.workers.dev";
 // Cloudflare Vite plugin places client assets in dist/client/. Fall

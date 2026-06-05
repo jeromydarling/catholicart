@@ -93,10 +93,8 @@ export default function App() {
       <Route path="/chancery/:token" element={<Chancery />} />
       <Route path="/features" element={<Features />} />
       <Route path="/demo" element={<Demo />} />
-      {/* In gestation — features that need a real-world dependency
-          before they can flip on. Each page is honest about what it
-          needs. When the dependency lands, swap the page for the
-          working feature. */}
+      {/* Add-on feature detail pages — patron-facing descriptions of
+          guild offerings (Mass intentions, hand-bound books, etc.). */}
       <Route path="/mass-intentions" element={<ComingSoon pageKey="mass-intentions" />} />
       <Route path="/memorabilia-book" element={<ComingSoon pageKey="memorabilia-book" />} />
       <Route path="/thank-you-card" element={<ComingSoon pageKey="thank-you-card" />} />
@@ -118,7 +116,7 @@ function VanityArtist() {
   const artist = artistBySlug(slug);
   if (!artist) return <NotFound />;
   // Redirect to the canonical /artists/:slug so the URL the artist
-  // shares ("arssacra.com/maria-chrysostom") still resolves, but
+  // shares ("locavit.com/maria-chrysostom") still resolves, but
   // the rest of the app continues to link through /artists/ for
   // back-compat and clarity.
   return <Navigate to={`/artists/${slug}`} replace />;

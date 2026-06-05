@@ -1,4 +1,4 @@
--- Ars Sacra · Row Level Security
+-- Locavit · Row Level Security
 -- Apply after 0001_init.sql.
 --
 -- Policy framing:

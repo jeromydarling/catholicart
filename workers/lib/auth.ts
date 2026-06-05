@@ -13,7 +13,7 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { Env, AppVariables } from '../types';
 import { first, newId, nowIso } from './db';
 
-const COOKIE = 'arssacra_session';
+const COOKIE = 'locavit_session';
 const SESSION_TTL_S = 60 * 60 * 24 * 30; // 30 days
 const MAGIC_LINK_TTL_S = 60 * 30;          // 30 minutes
 

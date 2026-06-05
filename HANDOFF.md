@@ -1,4 +1,4 @@
-# Ars Sacra — handoff notes
+# Locavit — handoff notes
 
 A prototype marketplace for Catholic artists, in the spirit of John Paul II's
 1999 Letter to Artists and rooted in Catholic Social Teaching. Built overnight
@@ -29,7 +29,7 @@ Path alias: `@/*` -> `src/*`.
 
 ## Brand and naming
 
-The working brand is **Ars Sacra** ("Sacred Art"). It is a single source
+The working brand is **Locavit** ("Sacred Art"). It is a single source
 of truth at `src/data/brand.ts` — change `brand.name`, `tagline`, and
 `motto` there and the entire site updates. Title tag and meta description
 are in `index.html`.

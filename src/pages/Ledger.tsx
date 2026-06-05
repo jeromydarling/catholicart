@@ -98,7 +98,7 @@ export default function Ledger() {
     <PageShell>
       <Seo
         title="The Ledger — works made through the guild"
-        description="A quiet, public record of every commission made through Ars Sacra. The work, the artist, the patron, where it will live. Updated in real time."
+        description="A quiet, public record of every commission made through Locavit. The work, the artist, the patron, where it will live. Updated in real time."
         path="/ledger"
       />
       <section className="container pt-12 sm:pt-16">

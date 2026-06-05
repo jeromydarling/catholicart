@@ -63,7 +63,7 @@ export function renderLayout(opts: LayoutOpts): string {
         ${opts.body}
         ${cta}
         <hr style="${RULE}"/>
-        <div style="${FOOT}">${footerCategory}<a href="https://arssacra.local" style="color:#8d6e72;text-decoration:none">arssacra.local</a>${unsub}</div>
+        <div style="${FOOT}">${footerCategory}<a href="https://locavit.local" style="color:#8d6e72;text-decoration:none">locavit.local</a>${unsub}</div>
       </div>
     </div>
     <div style="text-align:center;margin-top:18px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:13px;color:#8d6e72">${escape(brand.motto)}</div>

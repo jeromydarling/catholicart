@@ -67,8 +67,9 @@ export default function Demo() {
           Commission a panel of St. Joseph.
         </h1>
         <p className="mt-3 font-serif text-base sm:text-lg text-ink-soft max-w-2xl">
-          A pretend commission. No real money. Walk through the eight
-          stages a real patron lives through — at the pace you choose.
+          Walk through the eight stages a patron lives through on
+          Locavit — from finding the artist to receiving the
+          certificate — at the pace you choose.
         </p>
 
         {/* Stepper */}
@@ -192,7 +193,7 @@ const STEPS: Step[] = [
     callout:
       "The synthesized text comes from the JP2 questionnaire each artist fills out — ten questions in the spirit of John Paul II's Letter to Artists, run through Claude Sonnet 4.6.",
     render: () => (
-      <BrowserFrame url="arssacra.com/sr-maria-chrysostom">
+      <BrowserFrame url="locavit.com/sr-maria-chrysostom">
         <MiniVocation />
       </BrowserFrame>
     ),
@@ -204,7 +205,7 @@ const STEPS: Step[] = [
     title: "Endorsed by a pastor, not a quiz.",
     body: "Every guild artist is verified by a parish priest, a religious superior, or a chancery. The pastor gets one email, follows one link, clicks one button — no account needed. You see the endorsement on the artist's profile.",
     render: () => (
-      <BrowserFrame url="arssacra.com/verify/...token">
+      <BrowserFrame url="locavit.com/verify/...token">
         <div className="p-5">
           <div className="rounded-md border border-olive-500/30 bg-olive-500/5 p-4">
             <div className="flex items-center gap-3">
@@ -243,7 +244,7 @@ const STEPS: Step[] = [
     title: "Write a plain letter.",
     body: "Tell the artist about the saint, the season, the room, the recipient. Be specific. Be patient. The letter is not a brief — it's how a real conversation begins. The artist will answer with a vision before any price is named.",
     render: () => (
-      <BrowserFrame url="arssacra.com/commission/new">
+      <BrowserFrame url="locavit.com/commission/new">
         <MiniLetterFlow />
       </BrowserFrame>
     ),
@@ -257,7 +258,7 @@ const STEPS: Step[] = [
     callout:
       "Funds sit in escrow, never co-mingled with the guild's. Released only when you approve each milestone — deposit, midpoint, final.",
     render: () => (
-      <BrowserFrame url="arssacra.com/workspace/joseph-panel#quote">
+      <BrowserFrame url="locavit.com/workspace/joseph-panel#quote">
         <div className="p-5">
           <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
             Quote · St. Joseph panel
@@ -295,7 +296,7 @@ const STEPS: Step[] = [
     title: "Watch the work come together.",
     body: "Studio photos, captions, the gesso lifting, the underdrawing transferring, the first gold leaf burnishing. You're there for the making, even if you're a continent away.",
     render: () => (
-      <BrowserFrame url="arssacra.com/workspace/joseph-panel#reel">
+      <BrowserFrame url="locavit.com/workspace/joseph-panel#reel">
         <MiniWipFeed />
       </BrowserFrame>
     ),
@@ -307,7 +308,7 @@ const STEPS: Step[] = [
     title: "Approve before the next release.",
     body: "Halfway through the work, the artist sends a study. You approve it — or you ask for a small turn. Only then does the second milestone release from escrow.",
     render: () => (
-      <BrowserFrame url="arssacra.com/workspace/joseph-panel#midpoint">
+      <BrowserFrame url="locavit.com/workspace/joseph-panel#midpoint">
         <div className="p-5">
           <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
             Midpoint study · awaiting your approval
@@ -344,7 +345,7 @@ const STEPS: Step[] = [
     title: "Provenance, sewn in.",
     body: "Each finished work ships with a printed certificate: your letter, the artist's vision, the studio timeline, the artist's signature line. So in fifty years someone can pick the panel up and know its story.",
     render: () => (
-      <BrowserFrame url="arssacra.com/certificate/joseph-panel">
+      <BrowserFrame url="locavit.com/certificate/joseph-panel">
         <MiniCertificate />
       </BrowserFrame>
     ),
@@ -358,7 +359,7 @@ const STEPS: Step[] = [
     callout:
       "If you opt in, your letter and the artist's vision can join the public archive — so the next patron can see how it's done.",
     render: () => (
-      <BrowserFrame url="arssacra.com/orders/joseph-panel">
+      <BrowserFrame url="locavit.com/orders/joseph-panel">
         <div className="p-6 text-center">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-gold-500 text-parchment-50">
             <PartyPopper className="h-6 w-6" />

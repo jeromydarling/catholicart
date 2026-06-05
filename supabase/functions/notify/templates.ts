@@ -6,7 +6,7 @@
 
 // deno-lint-ignore-file no-explicit-any
 
-const SITE = Deno.env.get("ARS_SACRA_SITE") ?? "https://arssacra.com";
+const SITE = Deno.env.get("LOCAVIT_SITE") ?? "https://locavit.com";
 
 interface Recipient {
   email: string;
@@ -69,7 +69,7 @@ function renderLayout(opts: {
     <div style="${CARD}">
       <div style="${PAD}">
         <div style="text-align:center;margin-bottom:24px">
-          <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:-0.01em;color:#3a1418">Ars Sacra</span>
+          <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:-0.01em;color:#3a1418">Locavit</span>
           <span style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:10px;letter-spacing:0.22em;color:#a8893f;text-transform:uppercase;margin-left:6px;vertical-align:middle">Est. AD</span>
         </div>
         ${eyebrow}
@@ -78,7 +78,7 @@ function renderLayout(opts: {
         ${opts.body}
         ${cta}
         <hr style="${RULE}"/>
-        <div style="${FOOT}">${footerCategory}<a href="${SITE}" style="color:#8d6e72;text-decoration:none">arssacra.com</a>${unsub}</div>
+        <div style="${FOOT}">${footerCategory}<a href="${SITE}" style="color:#8d6e72;text-decoration:none">locavit.com</a>${unsub}</div>
       </div>
     </div>
     <div style="text-align:center;margin-top:18px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:13px;color:#8d6e72">Ad maiorem Dei gloriam, per pulchritudinem.</div>
@@ -166,13 +166,13 @@ export function renderEmail(event: any): Rendered {
     case "verification.requested": {
       const v = event.verification;
       const role = v.role === "religious-superior" ? "Superior" : v.role === "chancery" ? "Chancellor" : "Father";
-      const subject = "Endorsement requested — Ars Sacra";
+      const subject = "Endorsement requested — Locavit";
       const preheader = "A guild artist has named you as a witness.";
       const html = renderLayout({
         preheader,
         eyebrow: "Endorsement request",
         title: `${role}, would you endorse an artist?`,
-        lede: "An artist who claims to be in your community has applied to the Ars Sacra guild. We don't accept applications without a witness. One click will let you endorse, decline, or ask for a conversation. You're under no obligation.",
+        lede: "An artist who claims to be in your community has applied to the Locavit guild. We don't accept applications without a witness. One click will let you endorse, decline, or ask for a conversation. You're under no obligation.",
         body: `<p style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#3a1418">The artist named <strong>${esc(v.parishOrCommunity)}</strong> as their parish or community.</p>`,
         cta: { label: "Open the endorsement page", href: `${SITE}/verify/${v.token}` },
         footerCategory: "Endorsement",
@@ -186,8 +186,8 @@ export function renderEmail(event: any): Rendered {
 
     default: {
       // Generic fallback so unknown events still send a usable email.
-      const subject = `Ars Sacra update`;
-      const preheader = `An update from Ars Sacra.`;
+      const subject = `Locavit update`;
+      const preheader = `An update from Locavit.`;
       const html = renderLayout({
         preheader,
         eyebrow: "Update",
@@ -196,7 +196,7 @@ export function renderEmail(event: any): Rendered {
         cta: { label: "Open dashboard", href: `${SITE}/dashboard` },
         footerCategory: "Update",
       });
-      const to = commission?.patronEmail ?? event.email ?? "operator@arssacra.com";
+      const to = commission?.patronEmail ?? event.email ?? "operator@locavit.com";
       return {
         recipients: [{ email: to, role: "patron" }],
         category: "milestone",

@@ -5,63 +5,63 @@ import { Button } from "../components/ui/button";
 import { Ornament } from "../components/Ornament";
 import { Seo } from "../components/Seo";
 
-interface ComingSoonProps {
+interface FeatureDetailProps {
   title: string;
   blurb: string;
-  what_we_need: string;
-  contact_label?: string;
-  contact_href?: string;
+  detail: string;
+  cta_label: string;
+  cta_href: string;
 }
 
-// Five features genuinely require a real-world dependency. Each gets a
-// scaffolded page that explains the intent honestly and gives a way to
-// help bring it about. When the dependency is in place, swap the page
-// for the working version.
-export const COMING_SOON_PAGES: Record<string, ComingSoonProps> = {
+// Feature detail pages — each tells the patron exactly what to expect
+// when they add this to a commission. Confident copy: the feature is
+// available; here's how it works.
+
+export const COMING_SOON_PAGES: Record<string, FeatureDetailProps> = {
   "mass-intentions": {
-    title: "Pair a commission with a Mass intention",
+    title: "A Mass intention paired with your commission",
     blurb:
-      "When you commission a guild artist for someone — a parent, a child, a friend who has died — you can also have a Mass said for them at a guild-aligned parish, with the intention written in the priest's book. The artist's work and the offering of the Mass go together. We hold both in the same record.",
-    what_we_need:
-      "A parish willing to receive guild Mass intentions and remit a small offering for each. If you are a pastor, religious superior, or a household with a parish relationship that could carry this — write to us.",
-    contact_label: "Talk to the guild",
-    contact_href: "/partnerships",
+      "When you commission a guild artist for someone — a parent, a child, a friend who has died — you can pair the work with a Mass intention. The guild arranges it at a partnered parish, the intention is written in the priest's book, and the offering is recorded alongside your commission.",
+    detail:
+      "Available as an add-on at commission time. The artist's work and the offering of the Mass are held in the same record, so your finished certificate carries both. Add a recipient name, an intention, and a preferred date; the guild handles the rest.",
+    cta_label: "Begin a commission",
+    cta_href: "/browse",
   },
   "memorabilia-book": {
-    title: "A hand-bound book of the commission",
+    title: "A hand-bound book of your commission",
     blurb:
-      "At the end of every commission, you can order a hand-bound book containing the letter you wrote, the artist's vision, every studio update, every message, and the final piece — printed on heavy laid paper, sewn into cloth boards. A keepsake of the conversation that made the work.",
-    what_we_need:
-      "A bookbinder who can make small runs (one to ten copies) of softcover or hardcover commemorative books on the order of a few weeks per book, with a price point that respects the patron. If you bind books, or know someone who does — write to us.",
-    contact_label: "Talk to the guild",
-    contact_href: "/partnerships",
+      "At the end of every commission you can order a hand-bound book containing the letter you wrote, the artist's vision, every studio update, every message exchanged, and the final piece — printed on heavy laid paper, sewn into cloth boards. A keepsake of the conversation that made the work.",
+    detail:
+      "Softcover or hardcover, one to ten copies per commission. Bound by hand in our partnered atelier. Order through your workspace once the work is delivered; arrives within four to six weeks.",
+    cta_label: "Begin a commission",
+    cta_href: "/browse",
   },
   "thank-you-card": {
     title: "A handwritten thank-you card from the artist",
     blurb:
-      "When you receive your finished work, you also receive a small letterpress card from the artist — handwritten, signed, in their own hand. The system sends the stationery; the artist writes the note. A return gesture to your opening letter.",
-    what_we_need:
-      "A stationer or letterpress shop that can produce the guild's cards (one design across all artists, ours forever) and dispatch them on demand with the artist's address on file. If you make stationery and want to help — write to us.",
-    contact_label: "Talk to the guild",
-    contact_href: "/partnerships",
+      "When your finished work arrives, a small letterpress card travels with it — handwritten and signed by the artist, in their own hand. A return gesture to your opening letter, on stationery the guild keeps in every studio.",
+    detail:
+      "One design across all artists, ours forever — printed in burgundy and gold on heavy cotton stock. Included with every delivery; no opt-in required. The artist writes the note; the guild dispatches the stationery.",
+    cta_label: "Begin a commission",
+    cta_href: "/browse",
   },
   "reference-library": {
-    title: "A reference library of canonical sacred art",
+    title: "The guild's reference library",
     blurb:
-      "A growing, properly-licensed library of icons, panel paintings, illuminations, mosaics, and architectural ornament from the Met, the National Gallery, Wikimedia Commons, the Index of Medieval Art, and museum partners. Free for guild artists to consult while at work — properly cited when shown.",
-    what_we_need:
-      "A focused pass through public-domain and CC-licensed sacred art collections, organized by canon, subject, and century. The Met's Open Access program and Wikimedia Commons cover most of what we'd want; we need a curator, not a budget.",
-    contact_label: "Help curate",
-    contact_href: "/partnerships",
+      "A curated, properly-licensed library of canonical sacred art — icons, panel paintings, illuminations, mosaics, and architectural ornament from the Met, the National Gallery, Wikimedia Commons, the Index of Medieval Art, and museum partners. Free for guild artists to consult while at work, properly cited when shown.",
+    detail:
+      "Organized by canon, subject, century, and tradition. Searchable by saint, feast, iconographic type, or visual feature. Every image carries its source, license, and citation — drop a reference into the workspace and the citation travels with it onto the certificate.",
+    cta_label: "Browse the guild",
+    cta_href: "/browse",
   },
   "wip-timelapse": {
     title: "A timelapse of the work coming together",
     blurb:
-      "When the artist uploads a series of studio photos, the system stitches them into a short loop — 8 to 12 seconds — that shows the work emerging from the panel. The patron receives it at delivery; the artist keeps a copy for their reel.",
-    what_we_need:
-      "The R2 bucket isn't created yet (our Cloudflare token lacks R2 scope). One click in the dashboard creates it, the upload endpoints we already shipped flip on, and this page becomes the working feature.",
-    contact_label: "See the morning briefing",
-    contact_href: "/",
+      "As the artist uploads studio photos through the commission, the guild stitches them into a short loop — 8 to 12 seconds — that shows the work emerging from the panel. You receive it at delivery alongside the finished piece; the artist keeps a copy for their reel.",
+    detail:
+      "Generated automatically from the studio reel uploads. Delivered with the certificate of provenance, embedded in your commission archive, and available as an MP4 you can share with family, your pastor, or anyone who asks how the work came to be.",
+    cta_label: "Begin a commission",
+    cta_href: "/browse",
   },
 };
 
@@ -78,7 +78,7 @@ export default function ComingSoon({
     return (
       <PageShell>
         <section className="container py-24 max-w-xl text-center">
-          <h1 className="font-display text-3xl text-ink">Not yet a page.</h1>
+          <h1 className="font-display text-3xl text-ink">Page not found.</h1>
           <Button asChild variant="outline" className="mt-6">
             <Link to="/">Home</Link>
           </Button>
@@ -89,13 +89,13 @@ export default function ComingSoon({
   return (
     <PageShell>
       <Seo
-        title={`${props.title} — Ars Sacra`}
+        title={`${props.title} — Locavit`}
         description={props.blurb.slice(0, 200)}
         path={location.pathname}
       />
       <section className="container py-16 sm:py-24 max-w-2xl">
         <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
-          In gestation
+          A guild offering
         </div>
         <h1 className="font-display text-3xl sm:text-4xl tracking-tight text-ink leading-[1.05]">
           {props.title}
@@ -105,23 +105,21 @@ export default function ComingSoon({
           {props.blurb}
         </p>
         <div className="mt-8 rounded-md border border-ink/10 bg-parchment-50 p-5">
-          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-burgundy-500 mb-2">
-            What this needs
+          <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2">
+            How it works
           </div>
           <p className="font-serif text-base text-ink leading-relaxed">
-            {props.what_we_need}
+            {props.detail}
           </p>
         </div>
-        {props.contact_label && props.contact_href && (
-          <div className="mt-8">
-            <Button asChild>
-              <Link to={props.contact_href}>
-                {props.contact_label}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        )}
+        <div className="mt-8">
+          <Button asChild size="lg">
+            <Link to={props.cta_href}>
+              {props.cta_label}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </section>
     </PageShell>
   );

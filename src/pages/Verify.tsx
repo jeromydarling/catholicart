@@ -130,7 +130,7 @@ export default function Verify() {
             error, please write to the guild and we'll send a fresh one.
           </p>
           <Button asChild variant="outline" className="mt-6">
-            <Link to="/">Visit Ars Sacra</Link>
+            <Link to="/">Visit Locavit</Link>
           </Button>
         </section>
       </PageShell>
@@ -160,7 +160,7 @@ export default function Verify() {
           Would you endorse {safeArtist}?
         </h1>
         <p className="mt-4 font-serif text-lg text-ink-muted leading-relaxed">
-          {safeArtist} of {artist.city} has applied to the Ars Sacra guild and
+          {safeArtist} of {artist.city} has applied to the Locavit guild and
           named you as their {roleLabel} at <strong className="text-ink">{verification.parish_or_community}</strong>.
         </p>
         <Ornament className="my-8" />
@@ -266,9 +266,9 @@ export default function Verify() {
 function ConfirmedState({ decision, artistName }: { decision: Decision; artistName: string }) {
   const tone =
     decision === "endorsed"
-      ? { icon: <ShieldCheck className="h-6 w-6 text-olive-600" />, label: "Endorsement received", body: `Thank you. ${artistName} is now a verified member of the Ars Sacra guild.` }
+      ? { icon: <ShieldCheck className="h-6 w-6 text-olive-600" />, label: "Endorsement received", body: `Thank you. ${artistName} is now a verified member of the Locavit guild.` }
       : decision === "discuss"
-        ? { icon: <MessageSquare className="h-6 w-6 text-gold-600" />, label: "Conversation requested", body: `Thank you. We've noted that you'd like to speak before endorsing. The guild operator will reach out, or you can write to hello@arssacra.com.` }
+        ? { icon: <MessageSquare className="h-6 w-6 text-gold-600" />, label: "Conversation requested", body: `Thank you. We've noted that you'd like to speak before endorsing. The guild operator will reach out, or you can write to hello@locavit.com.` }
         : { icon: <XCircle className="h-6 w-6 text-burgundy-500" />, label: "Endorsement declined", body: `Thank you for your honesty. ${artistName}'s application has been paused.` };
   return (
     <motion.div

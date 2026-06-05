@@ -131,7 +131,7 @@ export default function ArtistProfile() {
   return (
     <PageShell>
       <Seo
-        title={`${artist.honorific ? artist.honorific + " " : ""}${artist.name} · ${cats[0]?.shortName ?? "Artist"} · Ars Sacra`}
+        title={`${artist.honorific ? artist.honorific + " " : ""}${artist.name} · ${cats[0]?.shortName ?? "Artist"} · Locavit`}
         description={`${cats[0]?.name ?? "Sacred art"} commissions by ${artist.name}, ${artist.city}. ${bioText.slice(0, 140)}`}
         path={`/artists/${artist.slug}`}
         jsonLd={{
@@ -149,7 +149,7 @@ export default function ArtistProfile() {
           knowsAbout: cats.map((c) => c?.name),
           memberOf: {
             "@type": "Organization",
-            name: "Ars Sacra",
+            name: "Locavit",
             url: "https://catholicart.jer-f84.workers.dev",
           },
         }}

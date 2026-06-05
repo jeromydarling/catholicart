@@ -68,13 +68,13 @@ export const MENUS: MegaMenuDef[] = [
           {
             to: "/demo",
             label: "Walk through a commission",
-            description: "Eight steps from the letter to the certificate. No signup.",
+            description: "Eight steps from the letter to the certificate.",
             icon: PlayCircle,
           },
           {
             to: "/features",
-            label: "Every feature, plainly",
-            description: "The whole guild in one room — live, and in gestation.",
+            label: "Every feature of the guild",
+            description: "The whole guild in one room.",
             icon: Sparkles,
           },
         ],

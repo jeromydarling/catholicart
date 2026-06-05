@@ -1,10 +1,13 @@
 // Single source of truth for the brand. Rename here and the entire site updates.
+// "Locavit" — third-person singular perfect of Latin "locare," used on
+// commissioned artworks to credit the patron ("X locavit" = "X
+// commissioned this").
 export const brand = {
-  name: "Ars Sacra",
-  shortName: "Ars Sacra",
-  tagline: "Free for the good of the world.",
+  name: "Locavit",
+  shortName: "Locavit",
+  tagline: "Commission Beauty.",
   longTagline:
-    "A guild for commissioning beautiful, Catholic, made-by-human-hands art. Free to use. The artist keeps every cent of their quote; a small 2% is settled at the end to keep the guild open.",
+    "Commission beautiful, Catholic, made-by-human-hands art from a guild of pastor-endorsed artists. The artist keeps every cent of their quote; a 2% guild tithe settles at the end.",
   motto: "Ad maiorem Dei gloriam, per pulchritudinem.",
   mottoTranslation: "To the greater glory of God, by way of beauty.",
 } as const;

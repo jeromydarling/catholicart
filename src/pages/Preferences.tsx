@@ -123,7 +123,7 @@ export default function Preferences() {
 
             <div className="mt-6">
               <Button asChild variant="outline" size="sm">
-                <Link to="/">Back to Ars Sacra</Link>
+                <Link to="/">Back to Locavit</Link>
               </Button>
             </div>
           </div>

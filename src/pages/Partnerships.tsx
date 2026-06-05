@@ -18,7 +18,7 @@ export default function Partnerships() {
     <PageShell>
       <Seo
         title="Partnerships — for dioceses, religious orders & parishes"
-        description="Furnish a parish. Outfit a chapel. Adorn a cathedral. Ars Sacra builds custom ledgers for dioceses and Catholic institutions: vetted artists, multi-stakeholder approval, NET-30 invoicing."
+        description="Furnish a parish. Outfit a chapel. Adorn a cathedral. Locavit builds custom ledgers for dioceses and Catholic institutions: vetted artists, multi-stakeholder approval, NET-30 invoicing."
         path="/partnerships"
       />
       <section className="container pt-12 sm:pt-16">
@@ -172,9 +172,9 @@ export default function Partnerships() {
           table within a week.
         </p>
         <Button asChild size="lg" className="mt-8">
-          <a href="mailto:partnerships@arssacra.com">
+          <a href="mailto:partnerships@locavit.com">
             <Mail className="h-4 w-4 mr-2" />
-            partnerships@arssacra.com
+            partnerships@locavit.com
           </a>
         </Button>
       </section>

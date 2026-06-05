@@ -12,7 +12,7 @@ import type { Commission } from "../../types";
 import { renderLayout, htmlToText } from "./layout";
 import { formatPrice } from "../utils";
 
-const BASE = "https://arssacra.local";
+const BASE = "https://locavit.local";
 
 export interface Rendered {
   recipients: Recipient[];
@@ -37,7 +37,7 @@ function patron(c: Commission): Recipient {
 // commission row will carry the artist's user_id and we'll look it up.
 function artist(c: Commission, name?: string): Recipient {
   return {
-    email: `${c.artistSlug}@artists.arssacra.local`,
+    email: `${c.artistSlug}@artists.locavit.local`,
     name: name ?? c.artistSlug,
     role: "artist",
   };
@@ -330,13 +330,13 @@ export function renderEmail(e: EmailEvent): Rendered {
     case "verification.requested": {
       const v = e.verification;
       const role = v.role === "religious-superior" ? "Superior" : v.role === "chancery" ? "Chancellor" : "Father";
-      const subject = `Endorsement requested — Ars Sacra`;
+      const subject = `Endorsement requested — Locavit`;
       const preheader = `A guild artist has named you as a witness.`;
       const html = renderLayout({
         preheader,
         eyebrow: "Endorsement request",
         title: `${role}, would you endorse an artist?`,
-        lede: `An artist who claims to be in your community has applied to the Ars Sacra guild. We don't accept applications without a witness. One click will let you endorse, decline, or ask for a conversation. You're under no obligation.`,
+        lede: `An artist who claims to be in your community has applied to the Locavit guild. We don't accept applications without a witness. One click will let you endorse, decline, or ask for a conversation. You're under no obligation.`,
         body: `<p style="font-family:Georgia,serif;font-size:16px;line-height:1.6;color:#3a1418">The artist named <strong>${escapeHtml(v.parishOrCommunity)}</strong> as their parish or community.</p>`,
         cta: { label: "Open the endorsement page", href: `${BASE}/verify/${v.token}` },
         footerCategory: "Endorsement",
@@ -364,7 +364,7 @@ export function renderEmail(e: EmailEvent): Rendered {
         footerCategory: "Endorsement",
       });
       return {
-        recipients: [{ email: "applicant@arssacra.local", role: "artist" }],
+        recipients: [{ email: "applicant@locavit.local", role: "artist" }],
         category: "transactional",
         rendered: { subject, preheader, html, text: htmlToText(html) },
       };
@@ -382,7 +382,7 @@ export function renderEmail(e: EmailEvent): Rendered {
         footerCategory: "Endorsement",
       });
       return {
-        recipients: [{ email: "applicant@arssacra.local", role: "artist" }],
+        recipients: [{ email: "applicant@locavit.local", role: "artist" }],
         category: "transactional",
         rendered: { subject, preheader, html, text: htmlToText(html) },
       };
@@ -390,7 +390,7 @@ export function renderEmail(e: EmailEvent): Rendered {
 
     case "verification.chancery": {
       const v = e.verification;
-      const subject = `Chancery confirmation requested — Ars Sacra`;
+      const subject = `Chancery confirmation requested — Locavit`;
       const preheader = `A guild artist needs your office to confirm a parish endorsement.`;
       const html = renderLayout({
         preheader,
@@ -421,7 +421,7 @@ export function renderEmail(e: EmailEvent): Rendered {
         footerCategory: "Endorsement",
       });
       return {
-        recipients: [{ email: "applicant@arssacra.local", role: "artist" }],
+        recipients: [{ email: "applicant@locavit.local", role: "artist" }],
         category: "transactional",
         rendered: { subject, preheader, html, text: htmlToText(html) },
       };

@@ -1,4 +1,4 @@
--- Ars Sacra · reference data seed.
+-- Locavit · reference data seed.
 -- Apply after 0002_rls.sql.
 --
 -- Mirrors src/data/categories.ts, src/data/saints.ts, src/data/artist-tags.ts.

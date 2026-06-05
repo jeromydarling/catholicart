@@ -325,7 +325,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             {
               id: makeId("msg"),
               authorRole: "system",
-              authorName: "Ars Sacra",
+              authorName: "Locavit",
               body: `${input.patronName} sent a request. The artist will reply with a quote.`,
               createdAt: nowIso(),
             },
@@ -380,7 +380,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             {
               id: makeId("msg"),
               authorRole: "system",
-              authorName: "Ars Sacra",
+              authorName: "Locavit",
               body: `Quote: $${pricing.artistTotalUsd.toLocaleString()} to the artist, paid across three milestones. A 2% guild tithe is settled at the end.`,
               createdAt: nowIso(),
             },
@@ -408,7 +408,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               {
                 id: makeId("msg"),
                 authorRole: "system",
-                authorName: "Ars Sacra",
+                authorName: "Locavit",
                 body: `${c.patronName} funded the ${stage} milestone. Funds are held in escrow.`,
                 createdAt: nowIso(),
               },
@@ -451,7 +451,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
               {
                 id: makeId("msg"),
                 authorRole: "system",
-                authorName: "Ars Sacra",
+                authorName: "Locavit",
                 body:
                   stage === "final"
                     ? `${c.patronName} released the final payment. Commission delivered.`
@@ -485,7 +485,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             {
               id: makeId("msg"),
               authorRole: "system",
-              authorName: "Ars Sacra",
+              authorName: "Locavit",
               body: "Artist marked the midpoint. Review the work and release the midpoint payment when ready.",
               createdAt: nowIso(),
             },
@@ -511,7 +511,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             {
               id: makeId("msg"),
               authorRole: "system",
-              authorName: "Ars Sacra",
+              authorName: "Locavit",
               body: "Artist marked the work complete. Inspect and release the final payment.",
               createdAt: nowIso(),
             },
@@ -583,7 +583,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             {
               id: makeId("msg"),
               authorRole: "system",
-              authorName: "Ars Sacra",
+              authorName: "Locavit",
               body: `Blessing recorded by ${record.recordedBy}${record.parishOrChapel ? ` at ${record.parishOrChapel}` : ""}.`,
               createdAt: nowIso(),
             },
@@ -608,7 +608,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             {
               id: makeId("msg"),
               authorRole: "system",
-              authorName: "Ars Sacra",
+              authorName: "Locavit",
               body: "Commission cancelled. Held funds were refunded to the patron.",
               createdAt: nowIso(),
             },
@@ -627,7 +627,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             {
               id: makeId("msg"),
               authorRole: "system",
-              authorName: "Ars Sacra",
+              authorName: "Locavit",
               body: `Shipped via ${record.carrier}${record.trackingNumber ? ` · ${record.trackingNumber}` : ""}.`,
               createdAt: nowIso(),
             },
@@ -716,7 +716,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     {
                       id: makeId("msg"),
                       authorRole: "system" as const,
-                      authorName: "Ars Sacra",
+                      authorName: "Locavit",
                       body: `Dispute opened by the ${openedBy}: "${reason}". A guild mediator will reach out within 48 hours.`,
                       createdAt: nowIso(),
                     },
@@ -758,7 +758,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
                     {
                       id: makeId("msg"),
                       authorRole: "system" as const,
-                      authorName: "Ars Sacra",
+                      authorName: "Locavit",
                       body: `Dispute ${resolution.replace("resolved-", "resolved by ")}.${note ? ` ${note}` : ""}`,
                       createdAt: nowIso(),
                     },

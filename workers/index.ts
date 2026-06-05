@@ -24,8 +24,8 @@ const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 // some paths; we allow those through.
 const ALLOWED_ORIGINS = new Set([
   'https://catholicart.jer-f84.workers.dev',
-  'https://arssacra.com',
-  'https://www.arssacra.com',
+  'https://locavit.com',
+  'https://www.locavit.com',
   // local dev
   'http://localhost:5173',
   'http://localhost:8787',

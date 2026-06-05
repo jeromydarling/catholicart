@@ -14,7 +14,7 @@
   },
   "vars": {
     "SITE_URL": "https://catholicart.jer-f84.workers.dev",
-    "EMAIL_FROM": "Ars Sacra <hello@arssacra.com>"
+    "EMAIL_FROM": "Locavit <hello@locavit.com>"
   },
   "d1_databases": [
     {

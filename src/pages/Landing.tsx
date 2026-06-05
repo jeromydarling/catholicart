@@ -43,13 +43,13 @@ export default function Landing() {
   return (
     <PageShell>
       <Seo
-        title="Ars Sacra · A covenant between artist and patron"
-        description="A guild for commissioning Catholic sacred art, free for the good of the world. The artist receives 100% of the price they quote; a small 2% tithe is settled at the very end. Iconography, painting, sculpture, glass, music, verse."
+        title="Locavit · Commission Beauty"
+        description="Commission Catholic sacred art from a guild of pastor-endorsed artists. The artist receives 100% of their quote; a 2% guild tithe settles at the very end. Iconography, painting, sculpture, glass, music, verse."
         path="/"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "Organization",
-          name: "Ars Sacra",
+          name: "Locavit",
           url: "https://catholicart.jer-f84.workers.dev",
           slogan: "Ad maiorem Dei gloriam, per pulchritudinem.",
           description:
@@ -69,7 +69,7 @@ export default function Landing() {
             className="max-w-xl lg:max-w-2xl pb-52 sm:pb-44 lg:pb-32 pt-16 sm:pt-20"
           >
             <div className="font-sans text-[11px] uppercase tracking-[0.32em] text-gold-300 mb-4 sm:mb-5">
-              Free for the good of the world.
+              {brand.tagline}
             </div>
             <h1
               className="font-display text-[2.5rem] sm:text-6xl md:text-7xl lg:text-[5rem] leading-[1.04] tracking-tight text-parchment-50 drop-shadow-[0_2px_18px_rgba(0,0,0,0.45)]"
@@ -81,10 +81,10 @@ export default function Landing() {
               </span>
             </h1>
             <p className="mt-4 sm:mt-5 max-w-md lg:max-w-lg font-serif text-[15px] sm:text-lg lg:text-xl text-parchment-100 leading-relaxed drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]">
-              The guild is free. You write to an artist about what you want
-              made; they answer with a quote and a vision. The artist keeps
-              every cent. A 2% guild tithe is settled at the very end —
-              just enough to keep the lights on.
+              Write to a pastor-endorsed Catholic artist about what you want
+              made; they answer with a vision and a quote. The artist keeps
+              every cent. A 2% guild tithe settles at the very end — just
+              enough to keep the lights on.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg" variant="gold">
@@ -262,28 +262,27 @@ export default function Landing() {
           </h2>
           <p className="mt-5 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed">
             The artist's vocation site, the studio reel mid-commission,
-            and the certificate that ships with the work. Each of these
-            is a live React mockup — open the page and you'll find the
-            real version.
+            and the certificate that ships with the work. Three rooms
+            you can walk into right now.
           </p>
         </div>
         <div className="grid lg:grid-cols-3 gap-6">
           <FramedPreview
-            url="arssacra.com/sr-maria-chrysostom"
+            url="locavit.com/sr-maria-chrysostom"
             label="The artist's page"
             delay={0}
           >
             <MiniVocation />
           </FramedPreview>
           <FramedPreview
-            url="arssacra.com/workspace/joseph-panel"
+            url="locavit.com/workspace/joseph-panel"
             label="The studio reel"
             delay={0.1}
           >
             <MiniWipFeed />
           </FramedPreview>
           <FramedPreview
-            url="arssacra.com/certificate/joseph-panel"
+            url="locavit.com/certificate/joseph-panel"
             label="The provenance certificate"
             delay={0.2}
           >

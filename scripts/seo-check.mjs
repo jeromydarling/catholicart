@@ -39,7 +39,7 @@ for (const route of ROUTES) {
     const jsonLd = [...document.querySelectorAll('script[type="application/ld+json"]')].map((s) => s.textContent);
     return { title, description, og, canonical, jsonLdCount: jsonLd.length, descCount: allDescs.length };
   });
-  const ok = data.title.includes("Ars Sacra") && data.description.length > 30;
+  const ok = data.title.includes("Locavit") && data.description.length > 30;
   if (!ok) allOk = false;
   console.log(
     `${ok ? "✓" : "✗"} ${route}\n    title: ${data.title.slice(0, 80)}\n    desc:  ${data.description.slice(0, 80)}…\n    canonical: ${data.canonical}\n    og:title: ${data.og.slice(0, 60)}\n    json-ld: ${data.jsonLdCount} · desc-tags: ${data.descCount}`,

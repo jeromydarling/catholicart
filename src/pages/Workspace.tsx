@@ -105,7 +105,7 @@ export default function Workspace() {
   return (
     <PageShell>
       <Seo
-        title={`${deriveTitle(commission.scope, 60)} · Commission · Ars Sacra`}
+        title={`${deriveTitle(commission.scope, 60)} · Commission · Locavit`}
         description={`Commission workspace for ${commission.patronName} and ${artist?.name ?? "the artist"}. Status: ${stageCopy.label}.`}
         path={`/workspace/${commission.id}`}
         robots="noindex,nofollow"

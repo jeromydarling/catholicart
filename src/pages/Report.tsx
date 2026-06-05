@@ -15,7 +15,7 @@ export default function Report() {
     <PageShell>
       <Seo
         title="The Anti-Kitsch Report — what we will not commission"
-        description="A quarterly broadside from Ars Sacra naming the five failure modes of contemporary sacred art: the Gift-Shop Saint, the Bureaucratic Modern, AI Slop, the Polychrome Plastic, the Pious Pastiche."
+        description="A quarterly broadside from Locavit naming the five failure modes of contemporary sacred art: the Gift-Shop Saint, the Bureaucratic Modern, AI Slop, the Polychrome Plastic, the Pious Pastiche."
         path="/report"
       />
       <section className="relative overflow-hidden border-b border-ink/10">

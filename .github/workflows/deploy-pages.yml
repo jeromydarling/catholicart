@@ -1,4 +1,4 @@
-name: Deploy Ars Sacra to GitHub Pages
+name: Deploy Locavit to GitHub Pages
 
 on:
   push:

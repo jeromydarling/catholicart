@@ -80,7 +80,7 @@ export default function Apprenticeships() {
     <PageShell>
       <Seo
         title="Apprenticeships — fund the next master"
-        description="Ars Sacra pays young Catholic artists a stipend to spend two to three years inside a master's studio. No degree. No tuition. The old way. Funded by 1% of every commission."
+        description="Locavit pays young Catholic artists a stipend to spend two to three years inside a master's studio. No degree. No tuition. The old way. Funded by 1% of every commission."
         path="/apprenticeships"
       />
       <section className="container pt-12 sm:pt-16 max-w-5xl">
