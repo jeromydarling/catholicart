@@ -34,6 +34,11 @@ const staticRoutes = [
   "/apprenticeships",
   "/security",
   "/signup/artist",
+  "/features",
+  "/demo",
+  "/library",
+  "/letters",
+  "/dioceses",
 ];
 
 const now = new Date().toISOString();

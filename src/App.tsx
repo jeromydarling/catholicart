@@ -37,6 +37,8 @@ import Manifesto from "./pages/Manifesto";
 import Verify from "./pages/Verify";
 import Chancery from "./pages/Chancery";
 import ComingSoon from "./pages/ComingSoon";
+import Features from "./pages/Features";
+import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
 
 // Heavy pages — code-split so mapbox-gl etc. don't bloat the main bundle.
@@ -89,6 +91,8 @@ export default function App() {
       <Route path="/manifesto" element={<Manifesto />} />
       <Route path="/verify/:token" element={<Verify />} />
       <Route path="/chancery/:token" element={<Chancery />} />
+      <Route path="/features" element={<Features />} />
+      <Route path="/demo" element={<Demo />} />
       {/* In gestation — features that need a real-world dependency
           before they can flip on. Each page is honest about what it
           needs. When the dependency lands, swap the page for the

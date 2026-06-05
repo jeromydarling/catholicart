@@ -9,7 +9,9 @@ import {
   GraduationCap,
   HandHeart,
   MapPin,
+  PlayCircle,
   ScrollText,
+  Sparkles,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -63,6 +65,18 @@ export const MENUS: MegaMenuDef[] = [
             description: "Find the hand near you, or commission across the world.",
             icon: MapPin,
           },
+          {
+            to: "/demo",
+            label: "Walk through a commission",
+            description: "Eight steps from the letter to the certificate. No signup.",
+            icon: PlayCircle,
+          },
+          {
+            to: "/features",
+            label: "Every feature, plainly",
+            description: "The whole guild in one room — live, and in gestation.",
+            icon: Sparkles,
+          },
         ],
       },
       {
@@ -84,11 +98,11 @@ export const MENUS: MegaMenuDef[] = [
       },
     ],
     feature: {
-      eyebrow: "Now in the Church",
-      title: "Commission with the calendar.",
-      body: "Work delivered for the feast it was made to serve.",
-      to: "/browse",
-      cta: "Begin a commission",
+      eyebrow: "Never commissioned before?",
+      title: "Walk through one in two minutes.",
+      body: "A guided demo with chromeless screenshots — see exactly what a commission looks like, end to end.",
+      to: "/demo",
+      cta: "Start the walkthrough",
       paletteFrom: "#5d6f3d",
       paletteTo: "#1f2a11",
     },

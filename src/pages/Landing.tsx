@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Feather, HandHeart, MessagesSquare } from "lucide-react";
+import { ArrowRight, Feather, HandHeart, MessagesSquare, PlayCircle, Sparkles } from "lucide-react";
 import { brand } from "../data/brand";
 import { categories } from "../data/categories";
 import { artists } from "../data/artists";
@@ -14,6 +14,10 @@ import { ArtistCard } from "../components/ArtistCard";
 import { HeroVideo } from "../components/HeroVideo";
 import { LiturgicalSeasonBanner } from "../components/LiturgicalSeason";
 import { Seo } from "../components/Seo";
+import { BrowserFrame } from "../components/marketing/BrowserFrame";
+import { MiniVocation } from "../components/marketing/mini/MiniVocation";
+import { MiniWipFeed } from "../components/marketing/mini/MiniWipFeed";
+import { MiniCertificate } from "../components/marketing/mini/MiniCertificate";
 
 const HOW = [
   {
@@ -247,6 +251,61 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* See it working — chromeless browser frames showing the actual product */}
+      <section className="container pt-20 sm:pt-28">
+        <div className="max-w-3xl mb-12">
+          <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+            See it working
+          </div>
+          <h2 className="font-display text-4xl sm:text-5xl tracking-tight leading-[1.05] text-ink">
+            Three rooms of the same house.
+          </h2>
+          <p className="mt-5 font-serif text-lg sm:text-xl text-ink-soft leading-relaxed">
+            The artist's vocation site, the studio reel mid-commission,
+            and the certificate that ships with the work. Each of these
+            is a live React mockup — open the page and you'll find the
+            real version.
+          </p>
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <FramedPreview
+            url="arssacra.com/sr-maria-chrysostom"
+            label="The artist's page"
+            delay={0}
+          >
+            <MiniVocation />
+          </FramedPreview>
+          <FramedPreview
+            url="arssacra.com/workspace/joseph-panel"
+            label="The studio reel"
+            delay={0.1}
+          >
+            <MiniWipFeed />
+          </FramedPreview>
+          <FramedPreview
+            url="arssacra.com/certificate/joseph-panel"
+            label="The provenance certificate"
+            delay={0.2}
+          >
+            <MiniCertificate />
+          </FramedPreview>
+        </div>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Button asChild size="lg">
+            <Link to="/demo">
+              <PlayCircle className="mr-2 h-4 w-4" />
+              Walk through a commission
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="lg">
+            <Link to="/features">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Every feature, plainly
+            </Link>
+          </Button>
+        </div>
+      </section>
+
       {/* Manifesto excerpt */}
       <section className="container pt-20 sm:pt-28">
         <div className="max-w-3xl mx-auto">
@@ -360,6 +419,32 @@ function Tenet({ title, body }: { title: string; body: string }) {
         {body}
       </p>
     </div>
+  );
+}
+
+function FramedPreview({
+  url,
+  label,
+  delay,
+  children,
+}: {
+  url: string;
+  label: string;
+  delay: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-40px" }}
+      transition={{ duration: 0.6, delay, ease: "easeOut" }}
+    >
+      <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-2 px-1">
+        {label}
+      </div>
+      <BrowserFrame url={url}>{children}</BrowserFrame>
+    </motion.div>
   );
 }
 
