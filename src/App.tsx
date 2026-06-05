@@ -4,6 +4,7 @@ import Landing from "./pages/Landing";
 import Browse from "./pages/Browse";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistEdit from "./pages/ArtistEdit";
+import Diocese from "./pages/Diocese";
 import Commission from "./pages/Commission";
 import { artistBySlug } from "./data/artists";
 import Workspace from "./pages/Workspace";
@@ -70,6 +71,8 @@ export default function App() {
       <Route path="/partnerships/new" element={<IntakeForm />} />
       <Route path="/partnerships/:id" element={<IntakeDetail />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/dioceses" element={<Diocese />} />
+      <Route path="/dioceses/:slug" element={<Diocese />} />
       <Route path="/security" element={<Security />} />
       <Route path="/report" element={<Report />} />
       <Route path="/journal" element={<Journal />} />
