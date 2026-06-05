@@ -129,6 +129,122 @@ app.get('/', requireAuth(), async (c) => {
   return c.json({ commissions: rows });
 });
 
+// GET /api/commissions/letters — public anonymized letter archive.
+// Only commissions where the patron opted in (letter_public = 1) and
+// the work has been completed (delivered or blessed).
+app.get('/letters', async (c) => {
+  const rows = await all<{
+    id: string;
+    artist_slug: string;
+    artist_name: string;
+    patron_name: string;
+    category_slug: string | null;
+    feast_name: string | null;
+    completed_at: string | null;
+    letter_body: string;
+    vision_body: string | null;
+  }>(c.env.DB,
+    `SELECT c.id, a.slug AS artist_slug, a.name AS artist_name,
+            c.patron_name, c.category_slug, c.feast_name, c.completed_at,
+            (SELECT body FROM commission_messages
+               WHERE commission_id = c.id AND author_role = 'patron'
+               ORDER BY created_at ASC LIMIT 1) AS letter_body,
+            (SELECT body FROM commission_messages
+               WHERE commission_id = c.id AND author_role = 'artist'
+               ORDER BY created_at ASC LIMIT 1) AS vision_body
+       FROM commissions c
+       JOIN artists a ON a.id = c.artist_id
+       WHERE c.letter_public = 1
+         AND c.stage IN ('delivered', 'blessed')
+       ORDER BY c.completed_at DESC
+       LIMIT 50`);
+  const anon = (name: string): string => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0][0] + '.';
+    return `${parts[0][0]}. ${parts[parts.length - 1][0]}.`;
+  };
+  return c.json({
+    letters: rows
+      .filter((r) => r.letter_body)
+      .map((r) => ({
+        from: anon(r.patron_name),
+        to: r.artist_name,
+        artist_slug: r.artist_slug,
+        category: r.category_slug,
+        for_feast: r.feast_name,
+        completed_at: r.completed_at,
+        letter: r.letter_body,
+        vision: r.vision_body,
+      })),
+  });
+});
+
+// POST /api/commissions/:id/share — patron mints a 30-day signed share
+// token that lets recipients view the workspace read-only at
+// /share/:token. Token is the column's UUID-based value; revoke by
+// posting DELETE.
+app.post('/:id/share', requireAuth(), async (c) => {
+  const u = c.var.user!;
+  const id = c.req.param('id');
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'patron' && role !== 'operator') {
+    return c.json({ ok: false, error: 'forbidden' }, 403);
+  }
+  const token =
+    crypto.randomUUID().replace(/-/g, '') +
+    crypto.randomUUID().replace(/-/g, '');
+  await run(c.env.DB,
+    `UPDATE commissions SET share_token = ? WHERE id = ?`,
+    token, id);
+  return c.json({ ok: true, token, url: `${c.env.SITE_URL}/share/${token}` });
+});
+
+app.delete('/:id/share', requireAuth(), async (c) => {
+  const u = c.var.user!;
+  const id = c.req.param('id');
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'patron' && role !== 'operator') {
+    return c.json({ ok: false, error: 'forbidden' }, 403);
+  }
+  await run(c.env.DB,
+    `UPDATE commissions SET share_token = NULL WHERE id = ?`, id);
+  return c.json({ ok: true });
+});
+
+// PUT /api/commissions/:id/letter-public — patron toggles whether
+// their commission's letter (and vision response) appear in the
+// public Letter Archive. Anonymized in any case.
+const LetterPublicBody = z.object({ public: z.boolean() });
+app.put('/:id/letter-public', requireAuth(), async (c) => {
+  const u = c.var.user!;
+  const id = c.req.param('id');
+  const parsed = LetterPublicBody.safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) return c.json({ ok: false }, 400);
+  const { role, commission: cm } = await loadParticipantRole(c.env, id, u);
+  if (!cm) return c.json({ ok: false, error: 'not found' }, 404);
+  if (role !== 'patron' && role !== 'operator') {
+    return c.json({ ok: false, error: 'forbidden' }, 403);
+  }
+  await run(c.env.DB,
+    `UPDATE commissions SET letter_public = ? WHERE id = ?`,
+    parsed.data.public ? 1 : 0, id);
+  return c.json({ ok: true });
+});
+
+// GET /api/commissions/share/:token — public, read-only view.
+app.get('/share/:token', async (c) => {
+  const token = c.req.param('token');
+  if (!token || token.length < 32) return c.json({ ok: false }, 404);
+  const cm = await first<any>(c.env.DB,
+    `SELECT id FROM commissions WHERE share_token = ?`, token);
+  if (!cm) return c.json({ ok: false }, 404);
+  const full = await loadCommission(c.env.DB, cm.id);
+  if (!full) return c.json({ ok: false }, 404);
+  return c.json({ commission: full });
+});
+
 // GET /api/commissions/:id — participant or operator only.
 app.get('/:id', requireAuth(), async (c) => {
   const u = c.var.user!;

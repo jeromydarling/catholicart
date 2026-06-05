@@ -41,6 +41,7 @@ interface ArtistRow {
   sabbatical_until?: string | null;
   trained_under?: string | null;
   trained_under_slug?: string | null;
+  working_toward_feasts?: string | null; // JSON array string
 }
 
 // GET /api/artists?q=…&category=…&saint=…&diocese=…&order=…&accepting=true&min=&max=&saved=&sort=
@@ -397,6 +398,7 @@ const ProfileBody = z.object({
   sabbatical_until:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().or(z.literal('')),
   trained_under:     z.string().max(400).optional(),
   trained_under_slug: z.string().max(120).optional().or(z.literal('')),
+  working_toward_feasts: z.array(z.string().max(80)).max(40).optional(),
 });
 app.put('/:slug/profile', requireAuth(), async (c) => {
   const slug = c.req.param('slug');
@@ -421,6 +423,10 @@ app.put('/:slug/profile', requireAuth(), async (c) => {
   set('sabbatical_until', d.sabbatical_until || null);
   set('trained_under', d.trained_under ?? null);
   set('trained_under_slug', d.trained_under_slug || null);
+  if (d.working_toward_feasts !== undefined) {
+    sets.push('working_toward_feasts = ?');
+    binds.push(JSON.stringify(d.working_toward_feasts));
+  }
   if (d.profile_published !== undefined) {
     sets.push('profile_published = ?');
     binds.push(d.profile_published ? 1 : 0);
@@ -480,6 +486,51 @@ app.get('/:slug/house', async (c) => {
     mine = Boolean(row);
   }
   return c.json({ count: countRow?.n ?? 0, mine });
+});
+
+// GET /api/artists/:slug/patron-families — public. Groups completed
+// commissions by patron_email, returns anonymized households. Names
+// are first + last initial; emails are domain only. Useful to surface
+// "the Beauchamp family · 3 commissions · 2014–2026" on the profile.
+app.get('/:slug/patron-families', async (c) => {
+  const slug = c.req.param('slug');
+  const a = await first<{ id: string }>(c.env.DB,
+    `SELECT id FROM artists WHERE slug = ?`, slug);
+  if (!a) return c.json({ ok: false, error: 'not found' }, 404);
+  const rows = await all<{
+    patron_email: string;
+    patron_name: string;
+    n: number;
+    first_at: string;
+    last_at: string;
+  }>(c.env.DB,
+    `SELECT patron_email,
+            MAX(patron_name) AS patron_name,
+            COUNT(*) AS n,
+            MIN(created_at) AS first_at,
+            MAX(completed_at) AS last_at
+       FROM commissions
+       WHERE artist_id = ?
+         AND stage IN ('delivered','blessed')
+       GROUP BY patron_email
+       HAVING COUNT(*) > 1
+       ORDER BY n DESC, last_at DESC
+       LIMIT 20`,
+    a.id);
+  const anonName = (name: string): string => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+  };
+  return c.json({
+    families: rows.map((r) => ({
+      household: anonName(r.patron_name),
+      domain: (r.patron_email.split('@')[1] ?? '').toLowerCase(),
+      commissions: r.n,
+      first_year: r.first_at?.slice(0, 4),
+      last_year: r.last_at?.slice(0, 4) ?? r.first_at?.slice(0, 4),
+    })),
+  });
 });
 
 // GET /api/artists/:slug/earnings.csv?year=YYYY — artist or operator
@@ -666,12 +717,21 @@ function serialize(a: ArtistRow) {
   } catch {
     /* ignore */
   }
+  let workingTowardFeasts: string[] = [];
+  try {
+    workingTowardFeasts = a.working_toward_feasts
+      ? (JSON.parse(a.working_toward_feasts) as string[])
+      : [];
+  } catch {
+    /* ignore */
+  }
   return {
     ...a,
     bio,
     accepting_commissions: Boolean(a.accepting_commissions),
     custom_pricing: Boolean(a.custom_pricing),
     profile_published: Boolean(a.profile_published ?? 0),
+    working_toward_feasts: workingTowardFeasts,
   };
 }
 

@@ -5,6 +5,9 @@ import Browse from "./pages/Browse";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistEdit from "./pages/ArtistEdit";
 import Diocese from "./pages/Diocese";
+import Letters from "./pages/Letters";
+import Library from "./pages/Library";
+import Share from "./pages/Share";
 import Commission from "./pages/Commission";
 import { artistBySlug } from "./data/artists";
 import Workspace from "./pages/Workspace";
@@ -73,6 +76,9 @@ export default function App() {
       <Route path="/admin" element={<Admin />} />
       <Route path="/dioceses" element={<Diocese />} />
       <Route path="/dioceses/:slug" element={<Diocese />} />
+      <Route path="/letters" element={<Letters />} />
+      <Route path="/library" element={<Library />} />
+      <Route path="/share/:token" element={<Share />} />
       <Route path="/security" element={<Security />} />
       <Route path="/report" element={<Report />} />
       <Route path="/journal" element={<Journal />} />

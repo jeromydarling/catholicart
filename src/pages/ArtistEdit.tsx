@@ -19,6 +19,7 @@ import { Ornament } from "../components/Ornament";
 import { Seo } from "../components/Seo";
 import { api } from "../lib/api";
 import { artistBySlug } from "../data/artists";
+import { feastsForLiturgicalYear } from "../lib/liturgical";
 
 // The vocation questionnaire — 10 questions drawn from John Paul II's
 // Letter to Artists (1999). The artist answers in their own words.
@@ -172,6 +173,7 @@ export default function ArtistEdit() {
     trained_under: "",
     trained_under_slug: "",
   });
+  const [feastWindows, setFeastWindows] = useState<string[]>([]);
   const [profilePublished, setProfilePublished] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [savingQ, setSavingQ] = useState(false);
@@ -227,6 +229,8 @@ export default function ArtistEdit() {
           trained_under: (a.trained_under as string) ?? "",
           trained_under_slug: (a.trained_under_slug as string) ?? "",
         });
+        const wtf = a.working_toward_feasts;
+        setFeastWindows(Array.isArray(wtf) ? (wtf as string[]) : []);
         setProfilePublished(Boolean(a.profile_published));
       }
       setLoaded(true);
@@ -339,6 +343,7 @@ export default function ArtistEdit() {
       sabbatical_until: synth.sabbatical_until,
       trained_under: synth.trained_under,
       trained_under_slug: synth.trained_under_slug,
+      working_toward_feasts: feastWindows,
       profile_published: profilePublished,
     });
     setSavingP(false);
@@ -605,6 +610,13 @@ export default function ArtistEdit() {
                   well as <code className="font-mono text-xs">/artists/{slug}</code>.
                 </p>
               </div>
+
+              {/* Feast windows — the patron sees you "work toward Pentecost"
+                  on the commission form when their feast matches yours. */}
+              <FeastWindows
+                selected={feastWindows}
+                onChange={setFeastWindows}
+              />
 
               {/* Sabbatical mode — interior life protection. */}
               <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5">
@@ -1029,6 +1041,55 @@ function EarningsPanel({ slug }: { slug: string }) {
           with your accountant on your specific filing.
         </p>
       </aside>
+    </div>
+  );
+}
+
+// Feast windows — artist marks which upcoming feasts they accept work
+// toward. The full liturgical year's feasts are shown; selecting any
+// surfaces a "Works toward <feast>" indicator on the public profile,
+// and matches the patron's feast pick on the Commission form.
+function FeastWindows({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const upcoming = feastsForLiturgicalYear(new Date()).slice(0, 12);
+  const has = (slug: string) => selected.includes(slug);
+  const toggle = (slug: string) =>
+    has(slug)
+      ? onChange(selected.filter((s) => s !== slug))
+      : onChange([...selected, slug]);
+  return (
+    <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5">
+      <div className="font-display text-base text-ink">
+        Working toward feasts
+      </div>
+      <p className="mt-1 font-serif text-sm text-ink-soft leading-relaxed">
+        Pick the next feasts your studio is open to working toward. Patrons
+        whose commission targets one of these will see a small "works
+        toward this feast" mark on your profile.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        {upcoming.map((f) => (
+          <label
+            key={`${f.slug}-${f.date.toISOString()}`}
+            className="inline-flex items-center gap-2 font-serif text-sm text-ink cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              checked={has(f.slug)}
+              onChange={() => toggle(f.slug)}
+            />
+            <span>{f.name}</span>
+            <span className="text-ink-muted text-[11px] tabular-nums">
+              {f.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          </label>
+        ))}
+      </div>
     </div>
   );
 }

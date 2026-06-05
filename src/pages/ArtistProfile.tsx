@@ -29,6 +29,7 @@ import { similarArtists } from "../lib/recommend";
 import { useStore } from "../lib/store";
 import { StarRating } from "../components/StarRating";
 import { Seo } from "../components/Seo";
+import { feastsForLiturgicalYear } from "../lib/liturgical";
 
 interface LiveProfile {
   mission_statement: string;
@@ -42,8 +43,17 @@ interface LiveProfile {
   sabbatical_until: string;
   trained_under: string;
   trained_under_slug: string;
+  working_toward_feasts: string[];
   /** true when the signed-in user can edit this profile */
   is_owner: boolean;
+}
+
+interface PatronFamily {
+  household: string;
+  domain: string;
+  commissions: number;
+  first_year: string;
+  last_year: string;
 }
 
 export default function ArtistProfile() {
@@ -53,6 +63,7 @@ export default function ArtistProfile() {
   const [live, setLive] = useState<LiveProfile | null>(null);
   const [house, setHouse] = useState<{ count: number; mine: boolean } | null>(null);
   const [signedIn, setSignedIn] = useState(false);
+  const [families, setFamilies] = useState<PatronFamily[]>([]);
 
   // Pull the live profile fields from the API. Failures are silent —
   // the page still renders from the seed data. Owner detection is
@@ -61,15 +72,17 @@ export default function ArtistProfile() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [aRes, qRes, hRes, meRes] = await Promise.all([
+      const [aRes, qRes, hRes, meRes, pfRes] = await Promise.all([
         api.artist(slug),
         api.questionnaire(slug),
         api.houseStatus(slug),
         api.me(),
+        api.patronFamilies(slug),
       ]);
       if (cancelled) return;
       if (hRes.ok) setHouse(hRes.data);
       if (meRes.ok) setSignedIn(Boolean(meRes.data.user));
+      if (pfRes.ok) setFamilies(pfRes.data.families);
       if (cancelled) return;
       if (!aRes.ok) return;
       const a = aRes.data.artist as Record<string, unknown>;
@@ -85,6 +98,9 @@ export default function ArtistProfile() {
         sabbatical_until: (a.sabbatical_until as string) ?? "",
         trained_under: (a.trained_under as string) ?? "",
         trained_under_slug: (a.trained_under_slug as string) ?? "",
+        working_toward_feasts: Array.isArray(a.working_toward_feasts)
+          ? (a.working_toward_feasts as string[])
+          : [],
         is_owner: qRes.ok,
       });
     })();
@@ -538,6 +554,36 @@ export default function ArtistProfile() {
         </section>
       )}
 
+      {/* Working toward — when the artist has open feast windows. */}
+      {live?.profile_published && live.working_toward_feasts.length > 0 && (
+        <FeastWorkingTowardStrip slugs={live.working_toward_feasts} />
+      )}
+
+      {/* Patron families — recurring households. */}
+      {families.length > 0 && (
+        <section className="container mt-12 max-w-3xl">
+          <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-4">
+            Recurring households
+          </div>
+          <ul className="grid sm:grid-cols-2 gap-3">
+            {families.map((f, i) => (
+              <li
+                key={i}
+                className="rounded-md border border-ink/10 bg-parchment-50 p-4"
+              >
+                <div className="font-display text-base text-ink">
+                  The {f.household} household
+                </div>
+                <div className="mt-1 font-sans text-[11px] uppercase tracking-[0.18em] text-ink-muted tabular-nums">
+                  {f.commissions} commissions · {f.first_year}
+                  {f.last_year !== f.first_year && `–${f.last_year}`}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Tabs */}
       <section className="container mt-14 sm:mt-20">
         <Tabs defaultValue="portfolio">
@@ -917,5 +963,34 @@ function AvailabilityStat({ slug }: { slug: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Working-toward strip — a quiet horizontal mention of the feasts the
+// artist is open to working toward. Pulls from the same liturgical
+// data the editor uses, so labels stay in sync.
+function FeastWorkingTowardStrip({ slugs }: { slugs: string[] }) {
+  const all = feastsForLiturgicalYear(new Date());
+  const matched = all.filter((f) => slugs.includes(f.slug)).slice(0, 6);
+  if (matched.length === 0) return null;
+  return (
+    <section className="container mt-12 max-w-3xl">
+      <div className="font-sans text-[11px] uppercase tracking-[0.28em] text-gold-600 mb-3">
+        Working toward
+      </div>
+      <ul className="flex flex-wrap gap-3">
+        {matched.map((f) => (
+          <li
+            key={`${f.slug}-${f.date.toISOString()}`}
+            className="inline-flex items-baseline gap-2 rounded-full border border-ink/15 bg-parchment-50 px-3 py-1.5 font-serif text-sm text-ink"
+          >
+            <span>{f.name}</span>
+            <span className="text-ink-muted text-[11px] tabular-nums uppercase tracking-[0.18em]">
+              {f.date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

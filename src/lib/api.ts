@@ -82,7 +82,7 @@ export const api = {
         needs_expansion: Array<{ field: string; nudge: string }>;
       };
     }>(`/api/artists/${slug}/synthesize`, { method: 'POST' }),
-  saveArtistProfile: (slug: string, body: Record<string, string | boolean | undefined>) =>
+  saveArtistProfile: (slug: string, body: Record<string, string | boolean | string[] | undefined>) =>
     call<{ ok: boolean }>(`/api/artists/${slug}/profile`, {
       method: 'PUT', body: JSON.stringify(body),
     }),
@@ -94,6 +94,79 @@ export const api = {
     call<{ ok: boolean }>(`/api/artists/${slug}/house`, { method: 'POST' }),
   releaseHousePatron: (slug: string) =>
     call<{ ok: boolean }>(`/api/artists/${slug}/house`, { method: 'DELETE' }),
+
+  // Patron families on an artist
+  patronFamilies: (slug: string) =>
+    call<{ families: Array<{
+      household: string;
+      domain: string;
+      commissions: number;
+      first_year: string;
+      last_year: string;
+    }> }>(`/api/artists/${slug}/patron-families`),
+
+  // Studio visits
+  studioHours: (slug: string) =>
+    call<{ hours: Array<{ weekday: number; start_minute: number; end_minute: number; timezone: string; active: number }> }>(
+      `/api/studio/${slug}/hours`,
+    ),
+  saveStudioHours: (slug: string, body: {
+    timezone: string;
+    blocks: Array<{ weekday: number; start_minute: number; end_minute: number }>;
+  }) =>
+    call<{ ok: boolean }>(`/api/studio/${slug}/hours`, {
+      method: 'PUT', body: JSON.stringify(body),
+    }),
+  requestStudioVisit: (slug: string, body: {
+    patron_name: string;
+    patron_email: string;
+    scheduled_at: string;
+    duration_min?: number;
+    note?: string;
+  }) =>
+    call<{ ok: boolean; id: string }>(`/api/studio/${slug}/visits`, {
+      method: 'POST', body: JSON.stringify(body),
+    }),
+  listStudioVisits: (slug: string) =>
+    call<{ visits: Array<{
+      id: string;
+      patron_name: string;
+      patron_email: string;
+      scheduled_at: string;
+      duration_min: number;
+      note: string | null;
+      status: string;
+      created_at: string;
+    }> }>(`/api/studio/${slug}/visits`),
+  updateStudioVisit: (id: string, status: 'confirmed' | 'declined' | 'completed' | 'cancelled') =>
+    call<{ ok: boolean }>(`/api/studio/visits/${id}`, {
+      method: 'PATCH', body: JSON.stringify({ status }),
+    }),
+
+  // Commission share + letter archive
+  shareCommission: (id: string) =>
+    call<{ ok: boolean; token: string; url: string }>(`/api/commissions/${id}/share`, {
+      method: 'POST',
+    }),
+  unshareCommission: (id: string) =>
+    call<{ ok: boolean }>(`/api/commissions/${id}/share`, { method: 'DELETE' }),
+  sharedCommission: (token: string) =>
+    call<{ commission: unknown }>(`/api/commissions/share/${token}`),
+  setLetterPublic: (id: string, isPublic: boolean) =>
+    call<{ ok: boolean }>(`/api/commissions/${id}/letter-public`, {
+      method: 'PUT', body: JSON.stringify({ public: isPublic }),
+    }),
+  publicLetters: () =>
+    call<{ letters: Array<{
+      from: string;
+      to: string;
+      artist_slug: string;
+      category: string | null;
+      for_feast: string | null;
+      completed_at: string | null;
+      letter: string;
+      vision: string | null;
+    }> }>(`/api/commissions/letters`),
 
   // Verification (pastor's one-click endorsement)
   requestEndorsement: (slug: string, body: {
