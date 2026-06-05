@@ -1,4 +1,4 @@
-name: cf · live audit (one-shot, v3)
+name: cf · live audit (one-shot, v4)
 
 # Probes the live Worker from a GH runner (which CAN reach
 # workers.dev, unlike the agent sandbox). Runs the full smoke
