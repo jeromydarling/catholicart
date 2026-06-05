@@ -434,6 +434,96 @@ app.put('/:slug/profile', requireAuth(), async (c) => {
   return c.json({ ok: true });
 });
 
+// GET /api/artists/:slug/earnings.csv?year=YYYY — artist or operator
+// downloads a tax-ready record of every commission released to them
+// in the given year (or all years if year is omitted). Output is
+// Schedule C / 1099-K-friendly: one row per released escrow milestone.
+app.get('/:slug/earnings.csv', requireAuth(), async (c) => {
+  const slug = c.req.param('slug');
+  const ownership = await assertArtistOwnership(c.env, slug, c.var.user!);
+  if (!ownership) return c.json({ ok: false, error: 'forbidden' }, 403);
+  const year = c.req.query('year');
+  const yearFilter = year && /^\d{4}$/.test(year) ? year : null;
+
+  // Released escrow rows joined to their commissions. The artist's
+  // taxable income is the released amount on each milestone.
+  const rows = await all<{
+    released_at: string;
+    commission_id: string;
+    patron_name: string;
+    patron_email: string;
+    scope: string;
+    category_slug: string | null;
+    stage: string;
+    amount_usd: number;
+    certificate_serial: string | null;
+    certificate_title: string | null;
+  }>(c.env.DB,
+    `SELECT e.released_at, e.commission_id, c.patron_name, c.patron_email,
+            c.scope, c.category_slug, e.stage, e.amount_usd,
+            c.certificate_serial, c.certificate_title
+       FROM commission_escrow e
+       JOIN commissions c ON c.id = e.commission_id
+       WHERE c.artist_id = ?
+         AND e.status = 'released'
+         ${yearFilter ? `AND e.released_at LIKE ?` : ''}
+       ORDER BY e.released_at ASC`,
+    ...[ownership.id, ...(yearFilter ? [`${yearFilter}%`] : [])],
+  );
+
+  // Build CSV. Escape any field containing comma, quote, or newline.
+  const esc = (v: unknown) => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const header = [
+    'Date released',
+    'Commission ID',
+    'Patron (anonymized)',
+    'Patron email domain',
+    'Work title',
+    'Category',
+    'Milestone',
+    'Amount (USD)',
+    'Certificate serial',
+  ];
+  const anon = (name: string): string => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0];
+    return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+  };
+  const lines = [header.map(esc).join(',')];
+  let total = 0;
+  for (const r of rows) {
+    total += r.amount_usd;
+    lines.push([
+      r.released_at?.slice(0, 10),
+      r.commission_id,
+      anon(r.patron_name),
+      (r.patron_email.split('@')[1] ?? '').toLowerCase(),
+      r.certificate_title ?? (r.scope.split('\n')[0]?.slice(0, 80) ?? ''),
+      r.category_slug ?? '',
+      r.stage,
+      (r.amount_usd / 1).toFixed(2),
+      r.certificate_serial ?? '',
+    ].map(esc).join(','));
+  }
+  lines.push('');
+  lines.push([
+    '', '', '', '', 'TOTAL', '', '',
+    (total / 1).toFixed(2), '',
+  ].map(esc).join(','));
+
+  const filename = `arssacra-earnings-${slug}${yearFilter ? `-${yearFilter}` : ''}.csv`;
+  return new Response(lines.join('\n'), {
+    headers: {
+      'content-type': 'text/csv; charset=utf-8',
+      'content-disposition': `attachment; filename="${filename}"`,
+      'cache-control': 'no-store',
+    },
+  });
+});
+
 // POST /api/artists/:slug/verifications/request — artist or operator.
 // Creates a pending verification, sends a one-click endorsement email
 // to the pastor (or chancery contact, or religious superior).

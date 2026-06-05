@@ -139,7 +139,7 @@ const QUESTIONS: Question[] = [
   },
 ];
 
-type Tab = "questions" | "review" | "endorsement" | "links";
+type Tab = "questions" | "review" | "endorsement" | "links" | "earnings";
 
 interface VerificationRow {
   id: string;
@@ -399,6 +399,7 @@ export default function ArtistEdit() {
               ["review", "II. Review draft", null],
               ["endorsement", "III. Endorsement", null],
               ["links", "IV. Socials", null],
+              ["earnings", "V. Earnings", null],
             ] as const
           ).map(([id, label, count]) => (
             <button
@@ -714,6 +715,10 @@ export default function ArtistEdit() {
           </div>
         )}
 
+        {loaded && tab === "earnings" && (
+          <EarningsPanel slug={slug} />
+        )}
+
         {loaded && (
           <div className="pb-20">
             <div className="rounded-md border border-ink/10 bg-parchment-100 p-5 max-w-3xl">
@@ -952,6 +957,77 @@ function EndorsementPanel({
             ))}
           </ul>
         )}
+      </aside>
+    </div>
+  );
+}
+
+// Self-employed Catholic artists are often underbanked and intimidated
+// by Schedule C / 1099-K. We download a tax-ready CSV of every
+// released milestone in the chosen year — one row per payment event,
+// totaled at the bottom. The artist hands it to their accountant.
+function EarningsPanel({ slug }: { slug: string }) {
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear, currentYear - 1, currentYear - 2, currentYear - 3];
+  const [year, setYear] = useState<string>(String(currentYear));
+  return (
+    <div className="grid lg:grid-cols-12 gap-10 pb-20">
+      <div className="lg:col-span-8 space-y-5">
+        <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5 sm:p-6">
+          <div className="font-display text-lg text-ink mb-2">
+            Tax-ready earnings export
+          </div>
+          <p className="font-serif text-sm text-ink-soft leading-relaxed mb-5">
+            A CSV of every milestone released to you in the chosen year —
+            date, commission ID, patron (anonymized to first name + last
+            initial), category, work title, milestone, amount, certificate
+            serial. Totals at the bottom. Schedule C–shaped. Open it in
+            any spreadsheet or hand it to your accountant.
+          </p>
+          <div className="space-y-3">
+            <Field label="Tax year">
+              <select
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                className="flex h-11 w-full rounded-sm border border-ink/15 bg-parchment-50 px-3 font-sans text-sm focusable"
+              >
+                <option value="">All years (lifetime)</option>
+                {years.map((y) => (
+                  <option key={y} value={String(y)}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Button asChild className="w-full">
+              <a
+                href={`/api/artists/${slug}/earnings.csv${year ? `?year=${year}` : ""}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Download CSV
+              </a>
+            </Button>
+            <p className="font-serif text-xs italic text-ink-muted">
+              Your patrons' full names and emails are NOT in the export —
+              the file is yours to keep, but never compromises their
+              privacy if shared with a third party.
+            </p>
+          </div>
+        </div>
+      </div>
+      <aside className="lg:col-span-4">
+        <div className="font-sans text-[10px] uppercase tracking-[0.22em] text-gold-600 mb-3">
+          A note on tax
+        </div>
+        <p className="font-serif text-sm text-ink-soft leading-relaxed">
+          Each released milestone is taxable income to you in the year it
+          was released. If the patron funded in December and you
+          delivered (and released) in January, the income is January's,
+          not December's. We follow the cash-basis convention; check
+          with your accountant on your specific filing.
+        </p>
       </aside>
     </div>
   );
