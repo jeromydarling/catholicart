@@ -168,6 +168,7 @@ export default function ArtistEdit() {
     instagram_handle: "",
     x_handle: "",
     personal_url: "",
+    sabbatical_until: "",
   });
   const [profilePublished, setProfilePublished] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -220,6 +221,7 @@ export default function ArtistEdit() {
           instagram_handle: (a.instagram_handle as string) ?? "",
           x_handle: (a.x_handle as string) ?? "",
           personal_url: (a.personal_url as string) ?? "",
+          sabbatical_until: (a.sabbatical_until as string) ?? "",
         });
         setProfilePublished(Boolean(a.profile_published));
       }
@@ -330,6 +332,7 @@ export default function ArtistEdit() {
       instagram_handle: synth.instagram_handle,
       x_handle: synth.x_handle,
       personal_url: synth.personal_url,
+      sabbatical_until: synth.sabbatical_until,
       profile_published: profilePublished,
     });
     setSavingP(false);
@@ -572,6 +575,29 @@ export default function ArtistEdit() {
                   <code className="font-mono text-xs">/{slug}</code> as
                   well as <code className="font-mono text-xs">/artists/{slug}</code>.
                 </p>
+              </div>
+
+              {/* Sabbatical mode — interior life protection. */}
+              <div className="rounded-md border border-ink/10 bg-parchment-50 shadow-card p-5">
+                <div className="font-display text-base text-ink">
+                  On retreat
+                </div>
+                <p className="mt-1 font-serif text-sm text-ink-soft leading-relaxed">
+                  Set a date you'll return to the studio. Until then,
+                  patrons see "On retreat — back {synth.sabbatical_until ? new Date(synth.sabbatical_until).toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) : '___'}" on
+                  your profile, the commission button becomes "leave a
+                  letter for when they return," and no responsiveness
+                  clock runs against you. Leave empty to clear.
+                </p>
+                <div className="mt-3">
+                  <Input
+                    type="date"
+                    value={synth.sabbatical_until}
+                    onChange={(e) =>
+                      setSynth((s) => ({ ...s, sabbatical_until: e.target.value }))
+                    }
+                  />
+                </div>
               </div>
               <Button
                 onClick={saveProfile}

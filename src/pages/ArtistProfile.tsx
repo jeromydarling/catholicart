@@ -39,6 +39,7 @@ interface LiveProfile {
   x_handle: string;
   personal_url: string;
   profile_published: boolean;
+  sabbatical_until: string;
   /** true when the signed-in user can edit this profile */
   is_owner: boolean;
 }
@@ -72,6 +73,7 @@ export default function ArtistProfile() {
         x_handle: (a.x_handle as string) ?? "",
         personal_url: (a.personal_url as string) ?? "",
         profile_published: Boolean(a.profile_published),
+        sabbatical_until: (a.sabbatical_until as string) ?? "",
         is_owner: qRes.ok,
       });
     })();
@@ -154,11 +156,23 @@ export default function ArtistProfile() {
                     {c.name}
                   </Badge>
                 ))}
-                {artist.acceptingCommissions ? (
-                  <Badge variant="olive">Accepting commissions</Badge>
-                ) : (
-                  <Badge variant="outline">Not currently booking</Badge>
-                )}
+                {(() => {
+                  const onRetreat =
+                    live?.sabbatical_until &&
+                    new Date(live.sabbatical_until).getTime() > Date.now();
+                  if (onRetreat) {
+                    const back = new Date(live!.sabbatical_until).toLocaleDateString(
+                      undefined,
+                      { month: "long", day: "numeric" },
+                    );
+                    return <Badge variant="outline">On retreat · back {back}</Badge>;
+                  }
+                  return artist.acceptingCommissions ? (
+                    <Badge variant="olive">Accepting commissions</Badge>
+                  ) : (
+                    <Badge variant="outline">Not currently booking</Badge>
+                  );
+                })()}
                 {isVerified(artist) && (
                   <Badge
                     variant="olive"
@@ -326,26 +340,34 @@ export default function ArtistProfile() {
               )}
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Button
-                  asChild
-                  size="lg"
-                  disabled={!artist.acceptingCommissions}
-                >
-                  <Link to={`/commission/${artist.slug}`}>
-                    Begin a commission{" "}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                {artist.customPricing && (
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                  >
-                    <Link to={`/commission/${artist.slug}?custom=true`}>
-                      Request a custom quote
+                {live?.sabbatical_until &&
+                new Date(live.sabbatical_until).getTime() > Date.now() ? (
+                  <Button asChild size="lg" variant="outline">
+                    <Link to={`/commission/${artist.slug}`}>
+                      Leave a letter for when they return
+                      <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
+                ) : (
+                  <>
+                    <Button
+                      asChild
+                      size="lg"
+                      disabled={!artist.acceptingCommissions}
+                    >
+                      <Link to={`/commission/${artist.slug}`}>
+                        Begin a commission{" "}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                    {artist.customPricing && (
+                      <Button asChild variant="outline" size="lg">
+                        <Link to={`/commission/${artist.slug}?custom=true`}>
+                          Request a custom quote
+                        </Link>
+                      </Button>
+                    )}
+                  </>
                 )}
               </div>
 
