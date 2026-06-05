@@ -62,33 +62,56 @@ export function DiscoveryMap({ className, onSelect, selectedId }: Props) {
       map.on("load", () => {
         for (const e of DIRECTORY_ENTRIES) {
           if (e.lat === null || e.lon === null) continue;
-          const el = document.createElement("div");
-          el.className = "discovery-pin";
-          el.style.cssText = `
+          // The root element is positioned by Mapbox via `transform:
+          // translate(...)`. We must NOT write to its transform —
+          // doing so clobbers Mapbox's positioning and the pin
+          // "scatters." All visual effects live on the inner dot.
+          const root = document.createElement("div");
+          root.style.cssText = `
             width: 14px;
             height: 14px;
+            cursor: pointer;
+          `;
+          const dot = document.createElement("div");
+          dot.className = "discovery-pin-dot";
+          dot.dataset.entryId = e.id;
+          dot.style.cssText = `
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             background: #6e1b1b;
             border: 2px solid #fbf8f1;
             box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            cursor: pointer;
-            transition: transform 120ms ease;
+            transition: transform 120ms ease, background-color 120ms ease;
+            transform-origin: center center;
           `;
-          el.title = e.name;
-          el.addEventListener("mouseenter", () => (el.style.transform = "scale(1.3)"));
-          el.addEventListener("mouseleave", () => (el.style.transform = "scale(1)"));
-          el.addEventListener("click", (ev) => {
+          root.appendChild(dot);
+          root.title = e.name;
+          root.addEventListener("mouseenter", () => {
+            dot.style.transform = "scale(1.3)";
+          });
+          root.addEventListener("mouseleave", () => {
+            if (dot.dataset.selected !== "true") {
+              dot.style.transform = "scale(1)";
+            }
+          });
+          // Single shared handler that fires for tap and click. We
+          // stop propagation so the map's background click handler
+          // doesn't immediately clear the selection.
+          const handleSelect = (ev: Event) => {
             ev.stopPropagation();
             onSelect?.(e);
-          });
+          };
+          root.addEventListener("click", handleSelect);
 
-          const marker = new mapboxgl.Marker({ element: el })
+          const marker = new mapboxgl.Marker({ element: root })
             .setLngLat([e.lon, e.lat])
             .addTo(map);
           markersRef.current.set(e.id, marker);
         }
       });
 
+      // Background click on the map (canvas) clears the selection.
       map.on("click", () => onSelect?.(null));
     });
 
@@ -102,17 +125,17 @@ export function DiscoveryMap({ className, onSelect, selectedId }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Highlight the selected pin.
+  // Highlight the selected pin. We target the inner `.discovery-pin-dot`
+  // so Mapbox's positioning transform on the marker root is preserved.
   useEffect(() => {
     markersRef.current.forEach((marker, id) => {
-      const el = marker.getElement();
-      if (id === selectedId) {
-        el.style.background = "#c89a3b";
-        el.style.transform = "scale(1.4)";
-      } else {
-        el.style.background = "#6e1b1b";
-        el.style.transform = "scale(1)";
-      }
+      const root = marker.getElement();
+      const dot = root.querySelector<HTMLDivElement>(".discovery-pin-dot");
+      if (!dot) return;
+      const selected = id === selectedId;
+      dot.dataset.selected = String(selected);
+      dot.style.background = selected ? "#c89a3b" : "#6e1b1b";
+      dot.style.transform = selected ? "scale(1.4)" : "scale(1)";
     });
   }, [selectedId]);
 
